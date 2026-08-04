@@ -1,0 +1,977 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="飞书渠道注册与未注册用户跟踪表原型">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%233370ff'/%3E%3C/svg%3E">
+  <title>飞书协作 · 渠道与未注册跟踪</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.14/lib/theme-chalk/index.css">
+  <link rel="stylesheet" href="prototype.css">
+</head>
+<body>
+  <div id="prototypeNav"></div>
+  <div id="frameworkFallback" class="load-fallback" hidden>
+    Vue 2 或 Element UI 资源加载失败，请检查网络后刷新。协作表字段与规则仍保留在页面源码中。
+  </div>
+  <div id="app" data-loading>
+    <main id="feishuPage" class="base-page" data-diff-page="飞书协作 · 渠道与未注册跟踪">
+      <span id="channelDialogPageMeta" data-diff-page="新增渠道记录弹窗" hidden></span>
+      <header class="base-header">
+        <h1 class="base-title">非电商三方订单协作表</h1>
+        <span class="muted">渠道注册与未注册用户协同</span>
+      </header>
+      <section class="base-card">
+        <div class="base-tabs">
+          <button
+            class="base-tab"
+            :class="{ 'is-active': activeTab === 'channels' }"
+            type="button"
+            @click="activeTab = 'channels'"
+          >渠道注册表</button>
+          <button
+            class="base-tab"
+            :class="{ 'is-active': activeTab === 'unregistered' }"
+            type="button"
+            @click="activeTab = 'unregistered'"
+          >未注册用户跟踪表</button>
+        </div>
+
+        <section
+          v-show="activeTab === 'channels'"
+          id="channelView"
+          data-diff-page="渠道注册表"
+        >
+          <div id="channelToolbar" class="base-toolbar">
+            <el-button size="small" type="primary" @click="channelDialogVisible = true">
+              新增记录
+            </el-button>
+            <el-button size="small" @click="syncState">刷新</el-button>
+            <span class="base-toolbar-note">
+              渠道注册表只用于 Excel 中渠道名称与 shopid 的实时比对，不作为上传页枚举。
+            </span>
+          </div>
+          <div id="channelRegistry" class="base-table-scroll">
+            <table class="base-table">
+              <colgroup>
+                <col style="width: 150px"><col style="width: 160px"><col style="width: 120px">
+                <col style="width: 240px"><col style="width: 120px"><col style="width: 120px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>渠道名称</th>
+                  <th>shopid</th>
+                  <th>是否预充值</th>
+                  <th>佣金规则</th>
+                  <th>状态</th>
+                  <th>周知状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="channel in visibleChannels" :key="channel.shopid">
+                  <td :title="channel.channelName">{{ channel.channelName }}</td>
+                  <td :title="channel.shopid">{{ channel.shopid }}</td>
+                  <td>
+                    <span class="base-select-chip" :class="{ 'is-blue': channel.prepaid }">
+                      {{ channel.prepaid ? '是' : '否' }}
+                    </span>
+                  </td>
+                  <td :title="channel.commissionRule || '规则未配置'">
+                    <span v-if="channel.commissionRule">{{ channel.commissionRule }}</span>
+                    <el-tag v-else size="mini" type="warning">规则未配置</el-tag>
+                  </td>
+                  <td><span class="base-select-chip is-green">{{ channel.status }}</span></td>
+                  <td><span class="base-select-chip is-blue">{{ channel.noticeStatus }}</span></td>
+                </tr>
+                <tr v-if="!visibleChannels.length">
+                  <td colspan="6"><div class="empty">暂无渠道记录</div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section
+          v-show="activeTab === 'unregistered'"
+          id="unregisteredView"
+          data-diff-page="未注册用户跟踪表"
+        >
+          <div id="trackingToolbar" class="base-toolbar">
+            <span class="base-toolbar-note">
+              未注册期间每 30 分钟提醒；注册或退款完成后停止提醒。
+            </span>
+          </div>
+          <div id="unregisteredTracking" class="base-table-scroll">
+            <table class="base-table">
+              <colgroup>
+                <col style="width: 130px"><col style="width: 230px"><col style="width: 230px">
+                <col style="width: 170px"><col style="width: 130px"><col style="width: 150px">
+                <col style="width: 110px"><col style="width: 120px"><col style="width: 120px">
+                <col style="width: 110px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>手机号</th>
+                  <th>三方订单号</th>
+                  <th>商品名称</th>
+                  <th>下单时间</th>
+                  <th>渠道名称</th>
+                  <th>shopid</th>
+                  <th>注册状态</th>
+                  <th>账号ID</th>
+                  <th>订单状态</th>
+                  <th>处理结果</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="track in visibleTracks" :key="track.id">
+                  <td class="phone-masked" :title="track.phone">{{ maskPhone(track.phone) }}</td>
+                  <td :title="track.orderId">{{ track.orderId }}</td>
+                  <td :title="track.product">{{ track.product }}</td>
+                  <td>{{ track.orderTime }}</td>
+                  <td>{{ track.channelName }}</td>
+                  <td :title="track.shopid">{{ track.shopid }}</td>
+                  <td>
+                    <button
+                      class="base-select-chip"
+                      :class="{ 'is-green': track.registered }"
+                      :disabled="track.orderStatus === '退款成功'"
+                      type="button"
+                      @click="toggleRegistration(track)"
+                    >{{ track.registered ? '已注册' : '未注册' }}</button>
+                  </td>
+                  <td>{{ track.accountId || '—' }}</td>
+                  <td>
+                    <span
+                      class="base-select-chip"
+                      :class="{ 'is-green': track.orderStatus === '已支付' }"
+                    >{{ track.orderStatus }}</span>
+                  </td>
+                  <td>
+                    <span
+                      class="base-select-chip"
+                      :class="{ 'is-blue': track.processResult === '已完成' }"
+                    >{{ track.processResult }}</span>
+                  </td>
+                </tr>
+                <tr v-if="!visibleTracks.length">
+                  <td colspan="10"><div class="empty">暂无未注册用户记录</div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <el-dialog
+        title="新增渠道记录"
+        width="620px"
+        :visible.sync="channelDialogVisible"
+        append-to-body
+      >
+        <section id="channelDialog" data-diff-page="新增渠道记录弹窗">
+          <el-form
+            ref="channelForm"
+            :model="channelForm"
+            :rules="channelRules"
+            label-width="110px"
+            size="small"
+          >
+            <el-form-item label="渠道名称" prop="channelName">
+              <el-input v-model="channelForm.channelName"></el-input>
+            </el-form-item>
+            <el-form-item label="shopid" prop="shopid">
+              <el-input v-model="channelForm.shopid"></el-input>
+            </el-form-item>
+            <el-form-item label="是否预充值">
+              <el-switch v-model="channelForm.prepaid"></el-switch>
+            </el-form-item>
+            <el-form-item label="佣金规则">
+              <el-input v-model="channelForm.commissionRule" placeholder="可留空，留空后标记规则未配置"></el-input>
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select v-model="channelForm.status" style="width: 100%">
+                <el-option label="已生效" value="已生效"></el-option>
+                <el-option label="已停用" value="已停用"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="周知状态">
+              <el-select v-model="channelForm.noticeStatus" style="width: 100%">
+                <el-option label="已周知" value="已周知"></el-option>
+                <el-option label="待周知" value="待周知"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-form>
+        </section>
+        <span slot="footer">
+          <el-button size="small" @click="channelDialogVisible = false">取消</el-button>
+          <el-button size="small" type="primary" @click="saveChannel">确定</el-button>
+        </span>
+      </el-dialog>
+    </main>
+  </div>
+  <noscript>
+    <main class="base-page">页面需要启用 JavaScript。渠道注册与未注册跟踪字段仍可从源码查看。</main>
+  </noscript>
+
+  <script src="https://unpkg.com/vue@2.7.16/dist/vue.min.js" onerror="document.getElementById('frameworkFallback').hidden=false"></script>
+  <script src="https://unpkg.com/element-ui@2.15.14/lib/index.js" onerror="document.getElementById('frameworkFallback').hidden=false"></script>
+  <script src="prototype.js"></script>
+  <script>
+    (function () {
+      if (!window.Vue || !window.ELEMENT || !window.PrototypeApp) {
+        document.getElementById('frameworkFallback').hidden = false
+        return
+      }
+
+      PrototypeApp.renderNav('feishu')
+      const app = new Vue({
+        el: '#app',
+        data: function () {
+          return {
+            state: PrototypeApp.getState(),
+            activeTab: 'channels',
+            demoState: 'normal',
+            channelDialogVisible: false,
+            channelForm: {
+              channelName: '晨光优选',
+              shopid: 'chenguangyouxuan',
+              prepaid: false,
+              commissionRule: '',
+              status: '已生效',
+              noticeStatus: '已周知',
+            },
+            channelRules: {
+              channelName: [{ required: true, message: '请输入渠道名称', trigger: 'blur' }],
+              shopid: [{ required: true, message: '请输入 shopid', trigger: 'blur' }],
+            },
+          }
+        },
+        computed: {
+          visibleChannels: function () {
+            return this.demoState === 'empty' ? [] : this.state.channels
+          },
+          visibleTracks: function () {
+            if (this.demoState === 'empty') return []
+            if (this.demoState === 'registered') {
+              return this.state.unregistered.map(function (item) {
+                return item.id === 'track-001'
+                  ? { ...item, registered: true, accountId: 'YC138003', processResult: '已完成' }
+                  : item
+              })
+            }
+            if (this.demoState === 'refunded') {
+              return this.state.unregistered.filter(
+                (item) => item.orderStatus === '退款成功',
+              )
+            }
+            return this.state.unregistered
+          },
+        },
+        mounted: function () {
+          this.$el.removeAttribute('data-loading')
+          window.addEventListener('prototype-state-change', this.syncState)
+        },
+        beforeDestroy: function () {
+          window.removeEventListener('prototype-state-change', this.syncState)
+        },
+        methods: {
+          maskPhone: PrototypeApp.maskPhone,
+          syncState: function () {
+            this.state = PrototypeApp.getState()
+          },
+          toggleRegistration: function (track) {
+            if (track.orderStatus === '退款成功') {
+              this.$message.info('该订单已退款完成，停止提醒且不发放权益')
+              return
+            }
+            const state = PrototypeApp.getState()
+            const target = state.unregistered.find((item) => item.id === track.id)
+            if (!target) return
+            target.registered = !target.registered
+            target.accountId = target.registered ? `YC${target.phone.slice(-6)}` : ''
+            target.processResult = target.registered ? '已完成' : '待处理'
+            const order = state.orders.find((item) => item.id === target.orderId)
+            if (order) {
+              order.registered = target.registered
+              order.accountId = target.accountId
+              order.activatedAt = target.registered ? '2026-08-04 22:06:00' : ''
+              order.rights = target.registered ? '权益已发放' : '待注册后发放'
+            }
+            PrototypeApp.saveState(state)
+            this.$message.success(
+              target.registered
+                ? '用户已注册，订单已绑定并发放权益'
+                : '已恢复为未注册状态，将继续按规则提醒',
+            )
+          },
+          saveChannel: function () {
+            this.$refs.channelForm.validate((valid) => {
+              if (!valid) return
+              const state = PrototypeApp.getState()
+              const exists = state.channels.some(
+                (item) =>
+                  item.channelName === this.channelForm.channelName &&
+                  item.shopid === this.channelForm.shopid,
+              )
+              if (!exists) {
+                state.channels.push({
+                  ...this.channelForm,
+                  commissionRate: null,
+                })
+                PrototypeApp.saveState(state)
+              }
+              this.channelDialogVisible = false
+              this.$message.success(exists ? '已复用现有渠道关系' : '渠道记录已新增')
+            })
+          },
+        },
+      })
+
+      window.DIFF_HOOKS = {
+        locate: function (pageId) {
+          app.channelDialogVisible = false
+          if (pageId === 'channelView') app.activeTab = 'channels'
+          if (pageId === 'unregisteredView') app.activeTab = 'unregistered'
+          if (pageId === 'channelDialogPageMeta') app.channelDialogVisible = true
+        },
+        setDemoState: function (controlId, value) {
+          if (controlId !== 'feishuState') return
+          app.demoState = value
+          app.activeTab = value === 'normal' ? 'channels' : 'unregistered'
+        },
+      }
+    })()
+  </script>
+  <script>
+    window.DIFF_CHANGESET = {
+      meta: {
+        sddTitle: '非电商平台三方订单导入 SDD',
+        sddUrl: 'https://guanghe.feishu.cn/docx/Cw69djCbsosrPGxKlURcM3ZAn6m',
+        sddType: 'feishu',
+        demoControls: [{
+          id: 'feishuState',
+          label: '协作状态',
+          default: 'normal',
+          options: [
+            { value: 'normal', label: '渠道表' },
+            { value: 'unregistered', label: '未注册' },
+            { value: 'registered', label: '已注册' },
+            { value: 'refunded', label: '退款完成' },
+            { value: 'empty', label: '空态' }
+          ]
+        }]
+      },
+      changes: [
+        {
+          id: 'chg-feishu-channel-table',
+          level: 'module',
+          page: 'channelView',
+          module: '渠道注册表',
+          target: '#channelRegistry',
+          type: 'new',
+          title: '登记完整渠道匹配规则',
+          desc: '登记渠道名称、shopid、预充值、佣金、状态和周知状态，作为 Excel 实时校验依据。',
+          before: '无非电商渠道统一登记载体',
+          after: '渠道注册表提供六项真实业务字段',
+          examples: [
+            { case: '已登记', input: '小宝爸爸 / xiaobaobaba', result: 'Excel 渠道关系校验通过' },
+            { case: '不匹配', input: '小宝爸爸 / davdian', result: '上传前端校验失败' }
+          ],
+          sdd: { section: 'FR-1 上传入口', blockId: 'doxcn3Ht0Dk0NxezDMN13zOoHff' }
+        },
+        {
+          id: 'chg-feishu-add-channel',
+          level: 'module',
+          page: 'channelDialogPageMeta',
+          module: '渠道注册表',
+          target: '#channelDialog',
+          type: 'flow',
+          title: '新增渠道注册记录',
+          desc: '新增后立即进入 Excel 渠道关系匹配集合。',
+          before: '无标准化登记动作',
+          after: '支持新增六项渠道登记字段',
+          examples: [
+            { case: '新增', input: '晨光优选 / chenguangyouxuan', result: '新增记录并可用于后续导入' },
+            { case: '重复', input: '小宝爸爸 / xiaobaobaba', result: '复用已有关系，不重复新增' }
+          ],
+          sdd: { section: 'FR-1 上传入口', blockId: 'doxcn3Ht0Dk0NxezDMN13zOoHff' }
+        },
+        {
+          id: 'chg-feishu-unregistered',
+          level: 'module',
+          page: 'unregisteredView',
+          module: '未注册用户跟踪',
+          target: '#unregisteredTracking',
+          type: 'new',
+          title: '按天猫直充结构跟踪未注册用户',
+          desc: '手机号默认脱敏，记录订单、商品、渠道、注册、账号、订单和处理状态。',
+          before: '无新渠道专用跟踪表',
+          after: '新增十项对齐真实实例的字段',
+          examples: [
+            { case: '未注册', input: '订单=wanwuxinxuan20260731103', result: '处理结果=待处理，权益不发放' },
+            { case: '注册后', input: '点击 track-001 注册状态', result: '处理完成，C 端出现并发放权益' },
+            { case: '退款完成', input: '订单=wanwuxinxuan20260729099', result: '处理完成，停止提醒且不发权益' }
+          ],
+          sdd: { section: 'FR-4 洋葱订单同步与权益', blockId: 'doxcnBpsxepBxtMmueScIckHusc' }
+        },
+        {
+          id: 'chg-feishu-reminder',
+          level: 'field',
+          page: 'unregisteredView',
+          module: '自动化提醒',
+          target: '#trackingToolbar',
+          type: 'logic',
+          title: '将提醒规则收敛为自动化说明',
+          desc: '不再用列表列展示提醒次数；注册或退款完成后自动停止提醒。',
+          before: '列表展示最近提醒和提醒次数',
+          after: '顶部轻提示说明每 30 分钟提醒及停止条件',
+          examples: [
+            { case: '未注册', input: 'track-001=未注册', result: '每 30 分钟提醒' },
+            { case: '已注册', input: 'track-001=已注册', result: '停止提醒' },
+            { case: '退款完成', input: 'track-002=退款成功', result: '停止提醒并标记已完成' }
+          ],
+          sdd: { section: 'FR-4 洋葱订单同步与权益', blockId: 'doxcnBpsxepBxtMmueScIckHusc' }
+        }
+      ]
+    }
+  </script>
+  <script>
+/* ============ 原型变更标注引擎 proto-note（零依赖，可整段复用） ============
+   布局参考：固定右侧深色批注栏 + 页面编号锚点 + canvas 连线（axure 批注风格）
+   规则：默认不显示任何标注；按模块勾选显示；只联动 SDD（不展示 PRD） */
+(function () {
+  const CS = window.DIFF_CHANGESET;
+  if (!CS || !CS.changes || !CS.changes.length) return;
+
+  const TYPE_LABEL = { new: "新增", modify: "修改", copy: "文案", enum: "口径", logic: "逻辑", flow: "流程", remove: "删除" };
+  const LEVEL_LABEL = { page: "页面级", module: "模块级", field: "字段级" };
+  const LS_KEY = "diff-annotator-v3:" + location.pathname;
+  const PANEL_W = 360;
+
+  CS.changes.forEach((c, i) => { c._no = String(i + 1).padStart(2, "0"); });
+
+  /* ---------- 状态 ---------- */
+  const moduleKeys = [];
+  const byModule = {};
+  CS.changes.forEach(c => {
+    const key = c.page + "::" + c.module;
+    if (!byModule[key]) { byModule[key] = []; moduleKeys.push(key); }
+    byModule[key].push(c);
+  });
+  const byTarget = {};
+  CS.changes.forEach(c => { (byTarget[c.target] = byTarget[c.target] || []).push(c); });
+  const keyOf = c => c.page + "::" + c.module;
+
+  let state = { open: true, enabled: {}, demo: {} };
+  try { state = Object.assign(state, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); } catch (e) {}
+  state.enabled = state.enabled || {};
+  state.demo = state.demo || {};
+  moduleKeys.forEach(k => { if (!(k in state.enabled)) state.enabled[k] = false; });
+  const demoControls = Array.isArray(CS.meta.demoControls) ? CS.meta.demoControls : [];
+  demoControls.forEach(control => {
+    if (!(control.id in state.demo)) {
+      const firstOption = Array.isArray(control.options) ? control.options[0] : null;
+      state.demo[control.id] = control.default ?? (firstOption && firstOption.value);
+    }
+  });
+  const persist = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} };
+  const isOn = c => state.enabled[keyOf(c)];
+
+  function pageName(pid) {
+    const el = document.getElementById(pid);
+    return (el && el.getAttribute("data-diff-page")) || pid;
+  }
+
+  /* ---------- 样式 ---------- */
+  const style = document.createElement("style");
+  style.setAttribute("data-da", "1");
+  style.textContent = `
+  :root { --da-navy:#071d2f; --da-blue:#1479d1; --da-blue-soft:#2c93e8; --da-sky:#72c4ff; --da-panel-w:${PANEL_W}px; }
+  html.da-open { overflow-x:auto !important; }
+  body.da-open { padding-right:0 !important; overflow-x:visible !important; }
+  .da-scroll-spacer { position:absolute; top:0; width:var(--da-panel-w); height:1px; pointer-events:none; visibility:hidden; }
+
+  .da-launch { position:fixed; top:14px; right:14px; z-index:1200; display:inline-flex; align-items:center; gap:8px;
+    background:var(--da-navy); color:#fff; border:0; border-radius:999px; padding:9px 16px; font-size:13px; font-weight:600;
+    cursor:pointer; box-shadow:0 6px 20px rgba(7,29,47,.28); }
+  .da-launch .da-launch-n { color:var(--da-sky); font-weight:700; }
+
+  .da-panel { position:fixed; z-index:1100; top:0; right:0; bottom:0; width:var(--da-panel-w); overflow-y:auto;
+    color:rgba(255,255,255,.78); border-left:1px solid rgba(255,255,255,.08);
+    background:radial-gradient(circle at 100% 0, rgba(44,147,232,.16), transparent 20rem), var(--da-navy);
+    box-shadow:-18px 0 50px rgba(7,29,47,.12); font-size:12px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.2) transparent; }
+  .da-panel-inner { padding:20px 20px 40px; }
+  .da-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+  .da-top h2 { margin:0; color:#fff; font-size:17px; font-weight:740; letter-spacing:-.01em; }
+  .da-top h2 small { margin-left:6px; color:var(--da-sky); font-size:12px; font-weight:700; }
+  .da-top-actions { display:flex; align-items:center; gap:8px; }
+  .da-sdd-doc { color:var(--da-sky); font-size:11px; font-weight:650; text-decoration:none; white-space:nowrap; }
+  .da-sdd-doc:hover { text-decoration:underline; }
+  .da-hide { width:28px; height:28px; flex:0 0 auto; border:1px solid rgba(255,255,255,.14); border-radius:8px;
+    color:#fff; background:rgba(255,255,255,.06); font-size:14px; line-height:1; cursor:pointer; }
+  .da-hide:hover { background:rgba(255,255,255,.12); }
+
+  .da-demo { margin-bottom:12px; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:rgba(255,255,255,.045); }
+  .da-demo-title { margin-bottom:8px; color:#fff; font-size:12px; font-weight:700; }
+  .da-demo-row + .da-demo-row { margin-top:9px; }
+  .da-demo-label { display:block; margin-bottom:5px; color:rgba(255,255,255,.45); font-size:10px; font-weight:650; }
+  .da-segments { display:flex; padding:2px; border:1px solid rgba(255,255,255,.1); border-radius:8px; background:rgba(5,17,28,.4); }
+  .da-segment { min-width:0; flex:1; min-height:28px; border:0; border-radius:6px; color:rgba(255,255,255,.58);
+    background:transparent; font-size:11px; cursor:pointer; }
+  .da-segment:hover { color:#fff; }
+  .da-segment.da-selected { color:#fff; background:rgba(44,147,232,.42); box-shadow:0 1px 5px rgba(0,0,0,.16); }
+
+  .da-mods { margin-bottom:20px; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:rgba(255,255,255,.045); }
+  .da-mods-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .da-mods-head span { color:#fff; font-size:12px; font-weight:700; }
+  .da-bulk { display:flex; gap:10px; }
+  .da-bulk button { border:0; background:none; padding:0; color:rgba(255,255,255,.5); font-size:11px; cursor:pointer; }
+  .da-bulk button:hover { color:var(--da-sky); }
+  .da-mod-group { margin-top:8px; }
+  .da-mod-group-name { margin-bottom:2px; color:rgba(255,255,255,.4); font-size:10px; font-weight:650; letter-spacing:.04em; }
+  .da-mod { display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:7px; cursor:pointer; }
+  .da-mod:hover { background:rgba(255,255,255,.06); }
+  .da-mod input { margin:0; flex:0 0 auto; accent-color:var(--da-blue-soft); cursor:pointer; }
+  .da-mod-name { flex:1; min-width:0; color:rgba(255,255,255,.86); font-size:12px; font-weight:550; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .da-mod-types { flex:0 0 auto; color:rgba(255,255,255,.34); font-size:10px; }
+
+  .da-note-section { margin-bottom:18px; }
+  .da-note-heading { display:flex; align-items:center; gap:9px; margin-bottom:10px; color:#fff; font-size:12px; font-weight:700; }
+  .da-note-heading::after { height:1px; flex:1; background:rgba(255,255,255,.1); content:""; }
+  .da-empty { padding:10px 2px; color:rgba(255,255,255,.35); font-size:11px; }
+
+  .da-note { position:relative; scroll-margin-top:16px; margin-bottom:9px; padding:12px 13px; border:1px solid rgba(255,255,255,.1);
+    border-radius:11px; background:rgba(255,255,255,.045); cursor:pointer;
+    transition:border-color .18s ease, background .18s ease, transform .18s ease; }
+  .da-note::before { content:""; position:absolute; top:23px; left:-15px; width:14px; height:1px;
+    background:rgba(114,196,255,.32); transition:background .16s ease, box-shadow .16s ease; }
+  .da-note::after { content:""; position:absolute; top:20px; left:-19px; width:7px; height:7px; border-radius:50%;
+    border:1px solid rgba(114,196,255,.55); background:var(--da-navy); transition:background .16s ease, box-shadow .16s ease; }
+  .da-note:hover, .da-note.da-active { border-color:rgba(114,196,255,.65); background:rgba(44,147,232,.13); transform:translateX(-3px); }
+  .da-note.da-active::before { background:#72c4ff; box-shadow:0 0 12px rgba(44,147,232,.62); }
+  .da-note.da-active::after { background:#72c4ff; box-shadow:0 0 0 4px rgba(44,147,232,.18); }
+  .da-note-head { display:flex; align-items:center; gap:9px; margin-bottom:6px; color:#fff; font-size:12px; font-weight:700; }
+  .da-no { display:inline-grid; width:22px; height:22px; flex:0 0 auto; place-items:center; border:1px solid rgba(114,196,255,.3);
+    border-radius:50%; color:#8fd1ff; background:rgba(44,147,232,.09); font-size:9px; font-weight:800; }
+  .da-note.da-active .da-no { color:var(--da-navy); border-color:#bfe6ff; background:#bfe6ff; }
+  .da-note-kind { flex:0 0 auto; margin-left:auto; color:rgba(255,255,255,.35); font-size:10px; font-weight:500; }
+  .da-note p { margin:0; color:rgba(255,255,255,.62); font-size:11px; line-height:1.75; }
+  .da-note-ba { margin-top:8px; padding:7px 9px; border-radius:7px; background:rgba(5,17,28,.52); font-size:10px; line-height:1.7; color:rgba(255,255,255,.55); }
+  .da-note-ba b { color:#bfe6ff; font-weight:650; }
+  .da-examples { margin-top:8px; overflow:hidden; border:1px solid rgba(114,196,255,.15); border-radius:7px; background:rgba(5,17,28,.34); }
+  .da-example { display:grid; grid-template-columns:58px minmax(0,1fr); gap:4px 8px; padding:7px 9px; font-size:10px; line-height:1.55; }
+  .da-example + .da-example { border-top:1px solid rgba(255,255,255,.07); }
+  .da-example-case { grid-row:1 / span 2; color:#bfe6ff; font-weight:650; }
+  .da-example-input { min-width:0; color:#fff; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap:anywhere; }
+  .da-example-result { color:rgba(255,255,255,.5); }
+  .da-example-result::before { content:"→ "; color:rgba(114,196,255,.55); }
+  .da-note-sdd { display:inline-flex; align-items:center; gap:5px; margin-top:9px; color:var(--da-sky); font-size:10.5px;
+    font-weight:650; text-decoration:none; }
+  .da-note-sdd:hover { text-decoration:underline; }
+
+  .da-anchors { position:absolute; left:0; top:0; width:0; height:0; z-index:1050; pointer-events:none; }
+  .da-anchor { position:absolute; display:grid; width:22px; height:22px; place-items:center; border:1px solid rgba(20,121,209,.28);
+    border-radius:50%; color:var(--da-blue); background:#eff8ff; font-size:9px; font-weight:800; cursor:pointer;
+    pointer-events:auto; box-shadow:0 2px 8px rgba(7,29,47,.14); transition:transform .15s ease, background .15s ease; }
+  .da-anchor:hover { transform:scale(1.1); }
+  .da-anchor.da-active { color:#fff; border-color:var(--da-blue-soft); background:var(--da-blue);
+    box-shadow:0 0 0 4px rgba(44,147,232,.16), 0 5px 14px rgba(20,121,209,.24); transform:scale(1.08); }
+
+  .da-outlined { outline:1.5px dashed rgba(20,121,209,.45) !important; outline-offset:2px; }
+  @keyframes da-pulse { 0% { box-shadow:0 0 0 0 rgba(44,147,232,.4); } 100% { box-shadow:0 0 0 14px rgba(44,147,232,0); } }
+  .da-pulsing { animation:da-pulse .9s ease-out 2; }
+
+  .da-wires { position:fixed; inset:0; z-index:1040; width:100vw; height:100vh; pointer-events:none; }
+
+  @media print { .da-panel, .da-anchors, .da-wires, .da-launch, .da-scroll-spacer { display:none !important; }
+    html.da-open { overflow-x:visible !important; } body.da-open { padding-right:0 !important; } }
+  `;
+  document.head.appendChild(style);
+
+  /* ---------- DOM 骨架 ---------- */
+  const launcher = document.createElement("button");
+  launcher.className = "da-launch";
+  launcher.setAttribute("data-da", "1");
+  launcher.innerHTML = '变更导览 <span class="da-launch-n">' + CS.changes.length + "</span>";
+  document.body.appendChild(launcher);
+
+  const panel = document.createElement("aside");
+  panel.className = "da-panel";
+  panel.setAttribute("data-da", "1");
+  document.body.appendChild(panel);
+
+  // 在业务页面真实右边缘后追加与批注栏等宽的滚动缓冲区。
+  // 它只扩展 scrollWidth，不改变、压缩或重排原页面。
+  const scrollSpacer = document.createElement("div");
+  scrollSpacer.className = "da-scroll-spacer";
+  scrollSpacer.setAttribute("data-da", "1");
+  document.body.appendChild(scrollSpacer);
+
+  const anchorLayer = document.createElement("div");
+  anchorLayer.className = "da-anchors";
+  anchorLayer.setAttribute("data-da", "1");
+  document.body.appendChild(anchorLayer);
+
+  const wires = document.createElement("canvas");
+  wires.className = "da-wires";
+  wires.setAttribute("data-da", "1");
+  document.body.appendChild(wires);
+  const wctx = wires.getContext("2d");
+
+  let activeId = null;   // 悬停中的变更
+  let pinnedId = null;   // 点击固定的变更（再次点击取消）
+
+  /* ---------- 面板渲染 ---------- */
+  const pages = [];
+  const modsByPage = {};
+  moduleKeys.forEach(k => {
+    const p = k.split("::")[0];
+    if (!modsByPage[p]) { modsByPage[p] = []; pages.push(p); }
+    modsByPage[p].push(k);
+  });
+
+  function renderPanel() {
+    let html = '<div class="da-panel-inner">';
+    html += '<div class="da-top"><h2>变更导览<small>' + CS.changes.length + "</small></h2><div class=\"da-top-actions\">";
+    if (CS.meta.sddUrl) html += '<a class="da-sdd-doc" target="_blank" href="' + CS.meta.sddUrl + '">' + (CS.meta.sddTitle || "SDD") + " ↗</a>";
+    html += '<button class="da-hide" title="收起">✕</button></div></div>';
+
+    if (demoControls.length && window.DIFF_HOOKS && typeof window.DIFF_HOOKS.setDemoState === "function") {
+      html += '<section class="da-demo"><div class="da-demo-title">演示状态</div>';
+      demoControls.forEach(control => {
+        html += '<div class="da-demo-row"><span class="da-demo-label">' + control.label + '</span><div class="da-segments">';
+        (control.options || []).forEach(option => {
+          const selected = state.demo[control.id] === option.value;
+          html += '<button class="da-segment' + (selected ? " da-selected" : "") + '" data-demo-control="' + control.id +
+            '" data-demo-value="' + option.value + '">' + option.label + "</button>";
+        });
+        html += "</div></div>";
+      });
+      html += "</section>";
+    }
+
+    html += '<div class="da-mods"><div class="da-mods-head"><span>模块</span><span class="da-bulk"><button data-all="on">全部显示</button><button data-all="off">全部隐藏</button></span></div>';
+    pages.forEach(p => {
+      html += '<div class="da-mod-group"><div class="da-mod-group-name">' + pageName(p) + "</div>";
+      modsByPage[p].forEach(k => {
+        const mod = k.split("::")[1];
+        const types = [...new Set(byModule[k].map(c => TYPE_LABEL[c.type] || "变更"))].join("·");
+        html += '<label class="da-mod" data-key="' + k + '"><input type="checkbox"' + (state.enabled[k] ? " checked" : "") + ">";
+        html += '<span class="da-mod-name">' + mod + '</span><span class="da-mod-types">' + types + "</span></label>";
+      });
+      html += "</div>";
+    });
+    html += "</div>";
+
+    const anyOn = CS.changes.some(isOn);
+    if (!anyOn) {
+      html += '<div class="da-empty">勾选模块后展示对应标注与连线</div>';
+    } else {
+      pages.forEach(p => {
+        const list = CS.changes.filter(c => c.page === p && isOn(c));
+        if (!list.length) return;
+        html += '<section class="da-note-section"><h3 class="da-note-heading">' + pageName(p) + "</h3>";
+        list.forEach(c => {
+          html += '<article class="da-note" id="da-note-' + c.id + '" data-chg="' + c.id + '">';
+          html += '<div class="da-note-head"><span class="da-no">' + c._no + '</span><span>' + c.title + '</span>';
+          html += '<span class="da-note-kind">' + (TYPE_LABEL[c.type] || "变更") + " · " + (LEVEL_LABEL[c.level] || "") + "</span></div>";
+          html += "<p>" + c.desc + "</p>";
+          if (c.before && c.after) html += '<div class="da-note-ba"><b>前</b>　' + c.before + '<br><b>后</b>　' + c.after + "</div>";
+          if (Array.isArray(c.examples) && c.examples.length) {
+            html += '<div class="da-examples">';
+            c.examples.forEach(example => {
+              html += '<div class="da-example"><span class="da-example-case">' + example.case + '</span>' +
+                '<code class="da-example-input">' + example.input + '</code>' +
+                '<span class="da-example-result">' + example.result + "</span></div>";
+            });
+            html += "</div>";
+          }
+          if (c.sdd && CS.meta.sddUrl && c.sdd.blockId) {
+            html += '<a class="da-note-sdd" target="_blank" href="' + CS.meta.sddUrl + "#" + c.sdd.blockId + '">SDD · ' + c.sdd.section + " ↗</a>";
+          } else if (c.sdd && c.sdd.section) {
+            html += '<span class="da-note-sdd" style="color:rgba(255,255,255,.4)">SDD · ' + c.sdd.section + "</span>";
+          }
+          html += "</article>";
+        });
+        html += "</section>";
+      });
+    }
+    html += "</div>";
+    panel.innerHTML = html;
+    bindPanel();
+  }
+
+  function bindPanel() {
+    panel.querySelector(".da-hide").addEventListener("click", () => setOpen(false));
+    panel.querySelectorAll("[data-demo-control]").forEach(button => {
+      button.addEventListener("click", () => {
+        const controlId = button.getAttribute("data-demo-control");
+        const value = button.getAttribute("data-demo-value");
+        state.demo[controlId] = value;
+        persist();
+        window.DIFF_HOOKS.setDemoState(controlId, value);
+        renderPanel();
+        setTimeout(scheduleUpdate, 80);
+      });
+    });
+    panel.querySelectorAll(".da-mod input").forEach(cb => {
+      cb.addEventListener("change", () => {
+        const k = cb.closest(".da-mod").getAttribute("data-key");
+        state.enabled[k] = cb.checked;
+        if (pinnedId && !isOn(CS.changes.find(x => x.id === pinnedId))) pinnedId = null;
+        persist();
+        renderPanel();
+        syncAnnotations();
+        applyActive();
+        if (cb.checked) locateModule(k);
+      });
+    });
+    panel.querySelectorAll("[data-all]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const on = btn.getAttribute("data-all") === "on";
+        moduleKeys.forEach(k => { state.enabled[k] = on; });
+        if (!on) pinnedId = null;
+        persist(); renderPanel(); syncAnnotations(); applyActive();
+      });
+    });
+    panel.querySelectorAll(".da-note").forEach(card => {
+      const id = card.getAttribute("data-chg");
+      card.addEventListener("mouseenter", () => setActive(id));
+      card.addEventListener("mouseleave", () => clearActive(id));
+      card.addEventListener("click", e => {
+        if (e.target.closest("a")) return;
+        const c = CS.changes.find(x => x.id === id);
+        if (!c) return;
+        pinnedId = id;
+        applyActive();
+        locateChange(c);
+      });
+    });
+    panel.addEventListener("scroll", scheduleUpdate, { passive: true });
+  }
+
+  /* ---------- 锚点浮层 ---------- */
+  const anchorEls = {};   // change.id -> { el, last:{x,y,shown} }
+  CS.changes.forEach(c => {
+    const a = document.createElement("button");
+    a.className = "da-anchor";
+    a.setAttribute("data-da", "1");
+    a.textContent = c._no;
+    a.style.display = "none";
+    a.addEventListener("mouseenter", () => setActive(c.id));
+    a.addEventListener("mouseleave", () => clearActive(c.id));
+    a.addEventListener("click", () => {
+      togglePin(c.id);
+      if (pinnedId === c.id) {
+        const card = document.getElementById("da-note-" + c.id);
+        if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+    anchorLayer.appendChild(a);
+    anchorEls[c.id] = { el: a, last: { x: -1, y: -1, shown: false } };
+  });
+
+  function targetVisible(el, rect) {
+    if (!el.getClientRects().length) return false;
+    // 遮挡检测（仅当取样点在视口内才有意义）：取样点若不属于目标元素（如被弹窗蒙层盖住），视为不可见。
+    // 目标滚出视口时不做钳制、不强行隐藏——锚点随文档自然滚出即可。
+    const inViewport = (x, y) => x >= 0 && x <= innerWidth && y >= 0 && y <= innerHeight;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    if (inViewport(cx, cy)) {
+      const top = document.elementFromPoint(cx, cy);
+      if (top && (el === top || el.contains(top) || top.contains(el))) return true;
+      const sx = rect.left + 10, sy = rect.top + 10;
+      if (inViewport(sx, sy)) {
+        const top2 = document.elementFromPoint(sx, sy);
+        return !!(top2 && (el === top2 || el.contains(top2) || top2.contains(el)));
+      }
+      return false;
+    }
+    return true;
+  }
+
+  function syncAnnotations() {
+    Object.keys(byTarget).forEach(t => {
+      const el = document.querySelector(t);
+      if (!el) return;
+      const on = byTarget[t].some(isOn) && state.open;
+      el.classList.toggle("da-outlined", on);
+    });
+    scheduleUpdate();
+  }
+
+  function updateOverlay() {
+    // 锚点钉在目标左上角，使用文档坐标（以锚点层自身为基准），随页面原生滚动——
+    // 杜绝 fixed 浮层"滚动事件追帧"造成的抖动漂移，也不做视口钳制（滚出即自然滚出）
+    const layerRect = anchorLayer.getBoundingClientRect();
+    Object.keys(byTarget).forEach(t => {
+      const el = document.querySelector(t);
+      const rect = el ? el.getBoundingClientRect() : null;
+      const visible = el && state.open && rect && targetVisible(el, rect);
+      byTarget[t].forEach((c, slot) => {
+        const rec = anchorEls[c.id];
+        const show = visible && isOn(c);
+        if (!show) {
+          if (rec.last.shown) { rec.el.style.display = "none"; rec.last.shown = false; }
+          return;
+        }
+        const x = Math.max(rect.left - 11, 2) + slot * 25 - layerRect.left;
+        const y = rect.top - 11 - layerRect.top;
+        if (!rec.last.shown) { rec.el.style.display = "grid"; rec.last.shown = true; }
+        if (rec.last.x !== x || rec.last.y !== y) {
+          rec.el.style.left = x + "px";
+          rec.el.style.top = y + "px";
+          rec.last.x = x; rec.last.y = y;
+        }
+      });
+    });
+    drawWires();
+  }
+
+  /* ---------- 连线 ---------- */
+  function setWireSize() {
+    const ratio = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.round(innerWidth * ratio));
+    const h = Math.max(1, Math.round(innerHeight * ratio));
+    if (wires.width !== w || wires.height !== h) { wires.width = w; wires.height = h; }
+    wctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+
+  function wirePath(sx, sy, ex, ey, active) {
+    const gap = Math.max(38, ex - sx);
+    wctx.save();
+    wctx.beginPath();
+    wctx.moveTo(sx, sy);
+    wctx.bezierCurveTo(sx + Math.min(120, gap * 0.42), sy, ex - Math.min(82, gap * 0.28), ey, ex, ey);
+    wctx.lineWidth = active ? 2 : 1.3;
+    wctx.strokeStyle = active ? "rgba(44,147,232,.96)" : "rgba(44,147,232,.42)";
+    wctx.shadowColor = active ? "rgba(44,147,232,.7)" : "transparent";
+    wctx.shadowBlur = active ? 9 : 0;
+    wctx.stroke();
+    wctx.shadowBlur = 0;
+    wctx.beginPath(); wctx.arc(sx, sy, active ? 3.2 : 2.1, 0, Math.PI * 2);
+    wctx.fillStyle = active ? "#2c93e8" : "rgba(44,147,232,.5)"; wctx.fill();
+    wctx.beginPath(); wctx.arc(ex - 1, ey, active ? 3 : 2, 0, Math.PI * 2);
+    wctx.fillStyle = active ? "#72c4ff" : "rgba(114,196,255,.45)"; wctx.fill();
+    wctx.restore();
+  }
+
+  function drawWires() {
+    setWireSize();
+    wctx.clearRect(0, 0, innerWidth, innerHeight);
+    if (!state.open) return;
+    // 一个编号一条线：固定态优先于悬停态（滚动中误触发的 hover 不得篡改已选中的连线）
+    const id = pinnedId || activeId;
+    if (!id) return;
+    const c = CS.changes.find(x => x.id === id);
+    if (!c || !isOn(c)) return;
+    const rec = anchorEls[id];
+    if (!rec.last.shown) return;
+    // 起点取锚点实时视口坐标（锚点在文档流中，滚动时坐标必须现算，不能用缓存）
+    const ar = rec.el.getBoundingClientRect();
+    if (ar.bottom < 0 || ar.top > innerHeight) return; // 锚点滚出视口则不画线
+    const card = document.getElementById("da-note-" + id);
+    if (!card) return;
+    const cr = card.querySelector(".da-no").getBoundingClientRect();
+    if (cr.bottom < 40 || cr.top > innerHeight - 8) return;
+    wirePath(ar.right, ar.top + ar.height / 2, innerWidth - PANEL_W + 1, cr.top + cr.height / 2, true);
+  }
+
+  /* ---------- 高亮联动 ---------- */
+  function applyActive() {
+    // 固定态优先：钉住某编号后，悬停其他锚点不改变高亮与连线
+    const id = pinnedId || activeId;
+    CS.changes.forEach(c => {
+      anchorEls[c.id].el.classList.toggle("da-active", c.id === id);
+      const card = document.getElementById("da-note-" + c.id);
+      if (card) card.classList.toggle("da-active", c.id === id);
+    });
+    drawWires();
+  }
+  function setActive(id) { activeId = id; applyActive(); }
+  function clearActive(id) { if (activeId === id) { activeId = null; applyActive(); } }
+  function togglePin(id) {
+    pinnedId = pinnedId === id ? null : id;
+    applyActive();
+  }
+
+  /* ---------- 定位 ---------- */
+  function locateChange(c) {
+    if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.locate === "function") window.DIFF_HOOKS.locate(c.page);
+    else if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.showPage === "function") window.DIFF_HOOKS.showPage(c.page);
+    setTimeout(() => {
+      const el = document.querySelector(c.target);
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.classList.remove("da-pulsing"); void el.offsetWidth; el.classList.add("da-pulsing");
+      setTimeout(() => el.classList.remove("da-pulsing"), 2000);
+      scheduleUpdate();
+    }, 160);
+  }
+  function locateModule(key) { locateChange(byModule[key][0]); }
+
+  /* ---------- 内容视口 ---------- */
+  function syncScrollSpace() {
+    if (!state.open) return;
+    // 先移除自身对 scrollWidth 的贡献，测出业务页面原始宽度，再补 PANEL_W。
+    scrollSpacer.style.display = "none";
+    const contentWidth = Math.max(document.documentElement.clientWidth, document.documentElement.scrollWidth);
+    scrollSpacer.style.left = contentWidth + "px";
+    scrollSpacer.style.display = "block";
+  }
+
+  /* ---------- 开关 ---------- */
+  function setOpen(open) {
+    state.open = open;
+    persist();
+    document.documentElement.classList.toggle("da-open", open);
+    document.body.classList.toggle("da-open", open);
+    panel.style.display = open ? "" : "none";
+    launcher.style.display = open ? "none" : "";
+    if (open) {
+      syncScrollSpace();
+    } else {
+      scrollSpacer.style.display = "none";
+      if (scrollX) window.scrollTo(0, scrollY);
+    }
+    syncAnnotations();
+  }
+  launcher.addEventListener("click", () => setOpen(true));
+
+  /* ---------- 更新调度 ---------- */
+  let frame = 0;
+  function scheduleUpdate() {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(updateOverlay);
+  }
+  window.addEventListener("scroll", scheduleUpdate, { passive: true, capture: true });
+  window.addEventListener("resize", () => {
+    syncScrollSpace();
+    scheduleUpdate();
+  }, { passive: true });
+  document.addEventListener("click", e => {
+    if (e.target.closest("[data-da]")) return;
+    setTimeout(scheduleUpdate, 60);
+    setTimeout(scheduleUpdate, 360);
+  }, true);
+  const mo = new MutationObserver(records => {
+    if (records.every(r => r.target && r.target.closest && r.target.closest("[data-da]"))) return;
+    syncScrollSpace();
+    scheduleUpdate();
+  });
+  mo.observe(document.body, { attributes: true, attributeFilter: ["class", "style"], childList: true, subtree: true });
+
+  /* ---------- 初始 ---------- */
+  if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.setDemoState === "function") {
+    demoControls.forEach(control => window.DIFF_HOOKS.setDemoState(control.id, state.demo[control.id]));
+  }
+  renderPanel();
+  setOpen(state.open);
+  setTimeout(scheduleUpdate, 150);
+})();
+
+</script>
+</body>
+</html>
