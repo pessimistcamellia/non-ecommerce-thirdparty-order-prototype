@@ -1,0 +1,1208 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="非电商三方订单运营后台文件上传原型">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%233370ff'/%3E%3C/svg%3E">
+  <title>运营后台 · 文件上传</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.14/lib/theme-chalk/index.css">
+  <link rel="stylesheet" href="prototype.css">
+</head>
+<body>
+  <div id="prototypeNav"></div>
+  <div id="frameworkFallback" class="load-fallback" hidden>
+    Vue 2 或 Element UI 资源加载失败，请检查网络后刷新。业务规则与示例数据仍保留在页面源码中。
+  </div>
+  <div id="app" data-loading>
+    <main id="uploadPage" class="content-view" data-diff-page="运营后台 · 文件上传">
+      <span id="uploadDialogPageMeta" data-diff-page="上传文件弹窗" hidden></span>
+      <span id="uploadDetailDialogPageMeta" data-diff-page="上传结果详情弹窗" hidden></span>
+      <el-form id="uploadFilters" :inline="true" :model="filters" size="small">
+        <el-form-item label="平台">
+          <el-select
+            id="platformFilter"
+            v-model="filters.platform"
+            clearable
+            placeholder="全部"
+            style="width: 220px"
+            @change="handleFilterPlatformChange"
+          >
+            <el-option
+              v-for="platform in platforms"
+              :key="platform"
+              :label="platform"
+              :value="platform"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="文件类型">
+          <el-select
+            id="fileTypeFilter"
+            v-model="filters.fileType"
+            clearable
+            placeholder="全部"
+            style="width: 220px"
+            @change="handleFilterTypeChange"
+          >
+            <el-option
+              v-for="fileType in filterFileTypes"
+              :key="fileType"
+              :label="fileType"
+              :value="fileType"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="applyFilters">查询</el-button>
+          <el-button @click="resetFilters">重置</el-button>
+          <el-button id="openUploadDialog" type="primary" @click="openUploadDialog">
+            上传文件
+          </el-button>
+        </el-form-item>
+      </el-form>
+
+      <div class="page-heading">
+        <h1>文件上传历史</h1>
+        <span class="page-heading__hint">异步校验可能耗时数分钟，完成后通过飞书个人消息通知</span>
+      </div>
+
+      <el-table
+        id="uploadHistory"
+        v-loading="tableLoading"
+        :data="visibleUploads"
+        border
+        stripe
+        empty-text="暂无符合条件的上传记录"
+        style="width: 100%"
+      >
+        <el-table-column prop="platform" label="平台" min-width="220" show-overflow-tooltip></el-table-column>
+        <el-table-column prop="fileType" label="文件类型" width="120"></el-table-column>
+        <el-table-column prop="id" label="上传ID" width="90"></el-table-column>
+        <el-table-column prop="file" label="文件链接" min-width="250" show-overflow-tooltip>
+          <template slot-scope="scope">
+            <el-button type="text" @click="downloadSource(scope.row)">{{ scope.row.file }}</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column prop="time" label="上传时间" width="170"></el-table-column>
+        <el-table-column min-width="210" show-overflow-tooltip>
+          <template slot="header"><span id="uploadUserColumn">上传用户</span></template>
+          <template slot-scope="scope">
+            <span class="upload-user" :title="scope.row.user">{{ scope.row.user }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column min-width="190">
+          <template slot="header"><span id="uploadResultColumn">上传结果</span></template>
+          <template slot-scope="scope">
+            <div class="result-display">
+              <div class="result-display__main" :class="resultClass(scope.row)">
+                <span class="result-display__dot"></span>
+                {{ resultLabel(scope.row) }}
+              </div>
+              <div class="result-display__meta">
+                <template v-if="scope.row.result === 'processing'">结果将通过飞书消息推送</template>
+                <template v-else>总 {{ scope.row.total }} | 成功 {{ scope.row.success }} | 失败 {{ scope.row.failed }}</template>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="190" fixed="right">
+          <template slot-scope="scope">
+            <el-button type="text" @click="openDetail(scope.row)">查看详情</el-button>
+            <el-button
+              v-if="scope.row.result === 'failed'"
+              type="text"
+              @click="downloadResult(scope.row)"
+            >下载校验结果</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="pagination">
+        <el-pagination
+          background
+          layout="total, prev, pager, next"
+          :page-size="10"
+          :total="visibleUploads.length"
+        ></el-pagination>
+      </div>
+
+      <el-dialog
+        title="上传文件"
+        width="700px"
+        :visible.sync="uploadDialogVisible"
+        :close-on-click-modal="false"
+        append-to-body
+        @closed="resetUploadForm"
+      >
+        <section id="uploadDialog" data-diff-page="上传文件弹窗">
+          <el-form
+            ref="uploadForm"
+            :model="uploadForm"
+            :rules="uploadRules"
+            label-width="118px"
+            size="small"
+          >
+            <el-form-item id="platformField" label="平台" prop="platform">
+              <el-select
+                v-model="uploadForm.platform"
+                style="width: 100%"
+                @change="handleUploadPlatformChange"
+              >
+                <el-option
+                  v-for="platform in platforms"
+                  :key="platform"
+                  :label="platform"
+                  :value="platform"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="店铺" v-if="showShopField">
+              <el-select v-model="uploadForm.shop" placeholder="请选择店铺" style="width: 100%">
+                <el-option label="示例旗舰店" value="demo-shop"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item id="fileTypeField" label="文件类型" prop="fileType">
+              <el-select v-model="uploadForm.fileType" style="width: 100%">
+                <el-option
+                  v-for="fileType in uploadFileTypes"
+                  :key="fileType"
+                  :label="fileType"
+                  :value="fileType"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item id="excelTemplateField" label="下载模板">
+              <el-button type="text" @click="downloadTemplate">
+                非电商三方订单导入模板.xlsx
+              </el-button>
+              <div class="dialog-subtext">Excel 包含“支付成功订单表”和“退款订单表”两个 sheet。</div>
+            </el-form-item>
+            <el-form-item
+              id="uploadFileField"
+              label="上传文件"
+              prop="fileName"
+              :error="fileValidationError"
+            >
+              <el-upload
+                ref="fileUpload"
+                action="#"
+                :auto-upload="false"
+                :show-file-list="false"
+                accept=".xlsx"
+              >
+                <el-button
+                  slot="trigger"
+                  type="primary"
+                  plain
+                  @click.stop.prevent="selectFixtureFile"
+                >选择文件</el-button>
+              </el-upload>
+              <div class="dialog-subtext">仅支持 .xlsx，单个文件不超过 10MB；当前将载入右侧演示场景对应 fixture。</div>
+              <div v-if="uploadForm.fileName" class="dialog-file-name">
+                {{ uploadForm.fileName }}
+              </div>
+            </el-form-item>
+            <el-alert
+              id="validationNotice"
+              class="dialog-notice"
+              type="warning"
+              :closable="false"
+              show-icon
+              title="前端校验通过后进入异步校验；全部通过后数据入库，失败则 0 行入库。异步结果将通过飞书消息推送。"
+            ></el-alert>
+          </el-form>
+        </section>
+        <span slot="footer">
+          <el-button size="small" @click="uploadDialogVisible = false">取消</el-button>
+          <el-button
+            id="submitUpload"
+            size="small"
+            type="primary"
+            :loading="submitting"
+            :disabled="submitting"
+            @click="submitUpload"
+          >确定</el-button>
+        </span>
+      </el-dialog>
+
+      <el-dialog
+        title="上传结果详情"
+        width="760px"
+        :visible.sync="detailDialogVisible"
+        append-to-body
+      >
+        <section id="uploadDetailDialog" data-diff-page="上传结果详情弹窗">
+          <template v-if="selectedUpload">
+            <el-descriptions :column="2" border>
+              <el-descriptions-item label="上传ID">{{ selectedUpload.id }}</el-descriptions-item>
+              <el-descriptions-item label="上传用户">{{ selectedUpload.user }}</el-descriptions-item>
+              <el-descriptions-item label="文件">{{ selectedUpload.file }}</el-descriptions-item>
+              <el-descriptions-item label="状态">
+                <el-tag :type="detailTagType">{{ resultLabel(selectedUpload) }}</el-tag>
+              </el-descriptions-item>
+            </el-descriptions>
+            <el-table
+              v-if="selectedUpload.errors && selectedUpload.errors.length"
+              id="uploadDetailBody"
+              class="detail-errors"
+              :data="selectedUpload.errors.map((reason, index) => ({ row: index + 2, reason }))"
+              border
+            >
+              <el-table-column prop="row" label="行号" width="80"></el-table-column>
+              <el-table-column prop="reason" label="校验不通过原因"></el-table-column>
+            </el-table>
+            <el-alert
+              v-else
+              id="uploadDetailBody"
+              class="detail-errors"
+              type="success"
+              :closable="false"
+              title="全表校验通过，数据已入库。"
+            ></el-alert>
+          </template>
+        </section>
+        <span slot="footer">
+          <el-button size="small" @click="detailDialogVisible = false">关闭</el-button>
+          <el-button
+            v-if="selectedUpload && selectedUpload.result === 'failed'"
+            size="small"
+            type="primary"
+            @click="downloadResult(selectedUpload)"
+          >下载校验结果</el-button>
+        </span>
+      </el-dialog>
+    </main>
+  </div>
+  <noscript>
+    <main class="content-view">页面需要启用 JavaScript。正常技术栈为 Vue 2 + Element UI。</main>
+  </noscript>
+
+  <script src="https://unpkg.com/vue@2.7.16/dist/vue.min.js" onerror="document.getElementById('frameworkFallback').hidden=false"></script>
+  <script src="https://unpkg.com/element-ui@2.15.14/lib/index.js" onerror="document.getElementById('frameworkFallback').hidden=false"></script>
+  <script src="prototype.js"></script>
+  <script>
+    (function () {
+      if (!window.Vue || !window.ELEMENT || !window.PrototypeApp) {
+        document.getElementById('frameworkFallback').hidden = false
+        return
+      }
+
+      PrototypeApp.renderNav('upload')
+      const app = new Vue({
+        el: '#app',
+        data: function () {
+          return {
+            state: PrototypeApp.getState(),
+            filters: { platform: '', fileType: '' },
+            appliedFilters: { platform: '', fileType: '' },
+            tableLoading: false,
+            uploadDialogVisible: false,
+            detailDialogVisible: false,
+            selectedUpload: null,
+            submitting: false,
+            fileValidationError: '',
+            scenarioKey: 'normal',
+            uploadForm: {
+              platform: '非电商平台的三方订单',
+              shop: '',
+              fileType: '导入订单',
+              fileName: '',
+            },
+            uploadRules: {
+              platform: [{ required: true, message: '请选择平台', trigger: 'change' }],
+              fileType: [{ required: true, message: '请选择文件类型', trigger: 'change' }],
+              fileName: [{ required: true, message: '请选择 Excel 文件', trigger: 'change' }],
+            },
+          }
+        },
+        computed: {
+          platforms: function () {
+            return Object.keys(PrototypeApp.FILE_TYPES_BY_PLATFORM)
+          },
+          filterFileTypes: function () {
+            if (this.filters.platform) {
+              return PrototypeApp.FILE_TYPES_BY_PLATFORM[this.filters.platform] || []
+            }
+            return Array.from(
+              new Set(
+                Object.values(PrototypeApp.FILE_TYPES_BY_PLATFORM).reduce(
+                  function (all, values) { return all.concat(values) },
+                  [],
+                ),
+              ),
+            )
+          },
+          uploadFileTypes: function () {
+            return PrototypeApp.FILE_TYPES_BY_PLATFORM[this.uploadForm.platform] || []
+          },
+          visibleUploads: function () {
+            const platform = this.appliedFilters.platform
+            const fileType = this.appliedFilters.fileType
+            return this.state.uploads.filter(function (item) {
+              return (!platform || item.platform === platform) &&
+                (!fileType || item.fileType === fileType)
+            })
+          },
+          showShopField: function () {
+            return ['天猫', '京东', '微店', 'PDD', '抖店', '有赞'].includes(
+              this.uploadForm.platform,
+            )
+          },
+          detailTagType: function () {
+            if (!this.selectedUpload) return 'info'
+            if (this.selectedUpload.result === 'success') return 'success'
+            if (this.selectedUpload.result === 'failed') return 'danger'
+            return 'warning'
+          },
+          activeScenario: function () {
+            return PrototypeApp.UPLOAD_SCENARIOS[this.scenarioKey]
+          },
+        },
+        mounted: function () {
+          this.$el.removeAttribute('data-loading')
+          window.addEventListener('prototype-state-change', this.syncState)
+        },
+        beforeDestroy: function () {
+          window.removeEventListener('prototype-state-change', this.syncState)
+        },
+        methods: {
+          syncState: function () {
+            this.state = PrototypeApp.getState()
+          },
+          handleFilterPlatformChange: function (platform) {
+            if (!platform) return
+            const values = PrototypeApp.FILE_TYPES_BY_PLATFORM[platform] || []
+            if (!values.includes(this.filters.fileType)) this.filters.fileType = values[0] || ''
+          },
+          handleFilterTypeChange: function (fileType) {
+            if (fileType === '导入订单') this.filters.platform = '非电商平台的三方订单'
+          },
+          applyFilters: function () {
+            this.tableLoading = true
+            setTimeout(() => {
+              this.appliedFilters = { ...this.filters }
+              this.tableLoading = false
+            }, 260)
+          },
+          resetFilters: function () {
+            this.filters = { platform: '', fileType: '' }
+            this.appliedFilters = { platform: '', fileType: '' }
+          },
+          openUploadDialog: function () {
+            this.uploadDialogVisible = true
+          },
+          resetUploadForm: function () {
+            this.fileValidationError = ''
+            this.submitting = false
+            this.uploadForm = {
+              platform: '非电商平台的三方订单',
+              shop: '',
+              fileType: '导入订单',
+              fileName: '',
+            }
+            this.$nextTick(() => this.$refs.uploadForm && this.$refs.uploadForm.clearValidate())
+          },
+          handleUploadPlatformChange: function (platform) {
+            this.uploadForm.fileType =
+              (PrototypeApp.FILE_TYPES_BY_PLATFORM[platform] || [])[0] || ''
+          },
+          selectFixtureFile: function () {
+            this.fileValidationError = ''
+            this.uploadForm.fileName = this.activeScenario.fileName
+            this.$nextTick(() => this.$refs.uploadForm.validateField('fileName'))
+          },
+          submitUpload: function () {
+            if (this.submitting) return
+            this.$refs.uploadForm.validate((valid) => {
+              if (!valid) return
+              const scenario = this.activeScenario
+              if (scenario.frontendError) {
+                this.fileValidationError = scenario.frontendError
+                this.$message.error(scenario.frontendError)
+                return
+              }
+              this.submitting = true
+              const state = PrototypeApp.getState()
+              const nextId = Math.max.apply(null, state.uploads.map((item) => item.id)) + 1
+              state.uploads.unshift({
+                id: nextId,
+                platform: this.uploadForm.platform,
+                fileType: this.uploadForm.fileType,
+                file: this.uploadForm.fileName,
+                time: '2026-08-04 21:58:00',
+                user: 'panxingyu@guanghe.tv',
+                result: 'processing',
+                total: 1,
+                success: 0,
+                failed: 0,
+              })
+              PrototypeApp.saveState(state)
+              this.uploadDialogVisible = false
+              this.$message({
+                type: 'success',
+                duration: 3600,
+                message: '前端校验通过，已进入异步校验。结果将通过飞书消息推送。',
+              })
+              setTimeout(() => this.completeAsyncUpload(nextId, scenario), 1800)
+            })
+          },
+          completeAsyncUpload: function (uploadId, scenario) {
+            const state = PrototypeApp.getState()
+            const upload = state.uploads.find((item) => item.id === uploadId)
+            if (!upload) return
+            const succeeded = scenario.asyncResult === 'success'
+            upload.result = succeeded ? 'success' : 'failed'
+            upload.success = succeeded ? 1 : 0
+            upload.failed = succeeded ? 0 : 1
+            upload.errors = succeeded ? undefined : [scenario.asyncError]
+            if (succeeded) PrototypeApp.addOrderFromScenario(state, scenario)
+            const notification = {
+              channel: 'PushFeiShuPerson',
+              recipient: upload.user,
+              content: succeeded
+                ? `文件 ${upload.file} 异步校验通过，数据已入库`
+                : `文件 ${upload.file} 异步校验失败，0 行入库`,
+              time: '2026-08-04 22:00:00',
+            }
+            state.notifications.unshift(notification)
+            PrototypeApp.saveState(state)
+            this.$notify({
+              title: '飞书个人消息',
+              type: succeeded ? 'success' : 'error',
+              duration: 5200,
+              message: `${notification.content}。复用现有个人消息链路，无需新增机器人或公众号。`,
+            })
+          },
+          resultLabel: function (upload) {
+            if (upload.result === 'success') return '导入成功'
+            if (upload.result === 'failed') return '导入失败'
+            return '异步校验中'
+          },
+          resultClass: function (upload) {
+            return `is-${upload.result}`
+          },
+          openDetail: function (upload) {
+            this.selectedUpload = upload
+            this.detailDialogVisible = true
+          },
+          downloadTemplate: function () {
+            PrototypeApp.downloadCsv(
+              '非电商三方订单导入模板.csv',
+              '支付成功订单表：渠道名称,shopid,订单ID,收件人姓名,电话号码,收货省,收货市,收货区,详细地址,商品名称,商品数量,组合商品ID,订单实付金额\n退款订单表：订单ID,本账期退款金额,退款原因描述',
+            )
+          },
+          downloadResult: function (upload) {
+            PrototypeApp.downloadCsv(
+              `${upload.file.replace('.xlsx', '')}_校验结果.csv`,
+              `行号,校验不通过原因\n${(upload.errors || []).map((reason, index) => `${index + 2},${reason}`).join('\n')}`,
+            )
+          },
+          downloadSource: function (upload) {
+            PrototypeApp.downloadCsv(
+              upload.file.replace('.xlsx', '.csv'),
+              '渠道名称,shopid,订单ID,商品名称,商品数量,订单实付金额\n小宝爸爸,xiaobaobaba,xiaobaobaba20260804001,洋葱英语年度课程,1,899',
+            )
+          },
+        },
+      })
+
+      window.DIFF_HOOKS = {
+        locate: function (pageId) {
+          app.uploadDialogVisible = false
+          app.detailDialogVisible = false
+          if (pageId === 'uploadDialogPageMeta') app.uploadDialogVisible = true
+          if (pageId === 'uploadDetailDialogPageMeta') {
+            app.selectedUpload =
+              app.state.uploads.find((item) => item.id === 149) || app.state.uploads[0]
+            app.detailDialogVisible = true
+          }
+        },
+        setDemoState: function (controlId, value) {
+          if (controlId !== 'uploadScenario') return
+          app.scenarioKey = value
+          app.fileValidationError = ''
+          app.uploadForm.fileName = ''
+        },
+      }
+    })()
+  </script>
+  <script>
+    window.DIFF_CHANGESET = {
+      meta: {
+        sddTitle: '非电商平台三方订单导入 SDD',
+        sddUrl: 'https://guanghe.feishu.cn/docx/Cw69djCbsosrPGxKlURcM3ZAn6m',
+        sddType: 'feishu',
+        demoControls: [{
+          id: 'uploadScenario',
+          label: '上传 fixture',
+          default: 'normal',
+          options: [
+            { value: 'normal', label: '正常' },
+            { value: 'required', label: '必填缺失' },
+            { value: 'duplicate', label: 'ID重复' },
+            { value: 'amount', label: '金额/数量' },
+            { value: 'channel', label: '渠道关系' },
+            { value: 'asyncProduct', label: '商品异步' },
+            { value: 'asyncRefund', label: '退款异步' }
+          ]
+        }]
+      },
+      changes: [
+        {
+          id: 'chg-upload-platform',
+          level: 'field',
+          page: 'uploadPage',
+          module: '筛选条件',
+          target: '#platformFilter',
+          type: 'enum',
+          title: '新增非电商平台筛选值',
+          desc: '平台与文件类型保持真实联动，新平台只对应“导入订单”。',
+          before: '仅含天猫、京东、微店、PDD、抖店、有赞',
+          after: '新增“非电商平台的三方订单”，其他平台文件类型不变',
+          examples: [
+            { case: '新平台', input: '平台=非电商平台的三方订单', result: '文件类型联动为“导入订单”' },
+            { case: '天猫', input: '平台=天猫', result: '展示六种天猫真实文件类型' }
+          ],
+          sdd: { section: 'FR-1 上传入口', blockId: 'doxcn3Ht0Dk0NxezDMN13zOoHff' }
+        },
+        {
+          id: 'chg-upload-result',
+          level: 'field',
+          page: 'uploadPage',
+          module: '上传历史',
+          target: '#uploadResultColumn',
+          type: 'new',
+          title: '展示异步导入结果',
+          desc: '结果采用圆点、状态和行数两行结构；处理中明确结果通过飞书推送。',
+          before: '无上传结果字段',
+          after: '展示导入成功、导入失败、异步校验中及统计',
+          examples: [
+            { case: '处理中', input: '上传ID=148', result: '显示“异步校验中”和飞书推送说明' },
+            { case: '失败', input: '上传ID=149', result: '总 2 | 成功 0 | 失败 2' },
+            { case: '成功', input: '上传ID=150', result: '总 1 | 成功 1 | 失败 0' }
+          ],
+          sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
+        },
+        {
+          id: 'chg-upload-user',
+          level: 'field',
+          page: 'uploadPage',
+          module: '上传历史',
+          target: '#uploadUserColumn',
+          type: 'new',
+          title: '完整展示上传用户',
+          desc: '列宽至少 210px，完整邮箱优先展示，超长内容使用 tooltip。',
+          before: '无上传用户字段',
+          after: '新增上传用户并支持完整邮箱追溯',
+          sdd: { section: 'FR-1 上传入口', blockId: 'doxcn3Ht0Dk0NxezDMN13zOoHff' }
+        },
+        {
+          id: 'chg-upload-template',
+          level: 'field',
+          page: 'uploadDialogPageMeta',
+          module: 'Excel 与前端校验',
+          target: '#uploadFileField',
+          type: 'logic',
+          title: '从 Excel 读取并实时校验',
+          desc: '渠道名称和 shopid 从 Excel 读取后与渠道注册表比对，前端失败不生成上传记录。',
+          before: '弹窗选择渠道和 shopid',
+          after: '删除渠道选择，由 Excel fixture 驱动同步校验',
+          examples: [
+            { case: '正常', input: '小宝爸爸_202608新增订单.xlsx', result: '进入异步校验并生成上传记录' },
+            { case: '必填缺失', input: '支付表商品名称为空.xlsx', result: '立即提示，不生成上传记录' },
+            { case: '订单ID重复', input: '同文件订单ID重复.xlsx', result: '立即提示，不生成上传记录' },
+            { case: '金额/数量', input: '金额数量错误.xlsx', result: '金额≤0或数量≠1时立即提示' },
+            { case: '渠道关系', input: '小宝爸爸_davdian_关系错误.xlsx', result: '与注册表不符，立即提示' }
+          ],
+          sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
+        },
+        {
+          id: 'chg-upload-async',
+          level: 'module',
+          page: 'uploadDialogPageMeta',
+          module: '异步校验与入库',
+          target: '#validationNotice',
+          type: 'flow',
+          title: '异步全表校验后数据入库',
+          desc: '异步校验可能耗时数分钟；任一失败则 0 行入库。',
+          before: '提交后仅提示稍后查看',
+          after: '前端校验 → 异步校验 → 全部通过后数据入库',
+          examples: [
+            { case: '商品失败', input: '组合商品不存在.xlsx', result: '异步失败，0 行入库' },
+            { case: '退款失败', input: '累计退款超额.xlsx', result: '异步失败，0 行入库' },
+            { case: '全部通过', input: '小宝爸爸_202608新增订单.xlsx', result: '三表预览和跟踪表出现新增数据' }
+          ],
+          sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
+        },
+        {
+          id: 'chg-upload-feishu-notice',
+          level: 'module',
+          page: 'uploadPage',
+          module: '飞书个人消息',
+          target: '#uploadHistory',
+          type: 'flow',
+          title: '复用现有个人消息链路',
+          desc: '复用 PushFeiShuPerson 邮箱转 open_id 的个人消息链路，无需新增机器人或公众号。',
+          before: '异步完成依赖人工刷新查看',
+          after: '完成后向上传用户发送飞书个人消息',
+          examples: [
+            { case: '成功', input: '小宝爸爸_202608新增订单.xlsx', result: '个人消息告知校验通过并已入库' },
+            { case: '失败', input: '组合商品不存在.xlsx', result: '个人消息告知失败且 0 行入库' }
+          ],
+          sdd: { section: 'FR-8 导入任务飞书通知', blockId: 'doxcnfXlBZKPkw1Z9u75sVlBz5k' }
+        },
+        {
+          id: 'chg-upload-detail',
+          level: 'module',
+          page: 'uploadDetailDialogPageMeta',
+          module: '失败结果',
+          target: '#uploadDetailBody',
+          type: 'new',
+          title: '查看并下载失败原因',
+          desc: '失败记录以 Element Dialog 和表格展示逐行原因。',
+          before: '无失败详情和结果文件',
+          after: '可查看失败原因并下载校验结果',
+          sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
+        }
+      ]
+    }
+  </script>
+  <script>
+/* ============ 原型变更标注引擎 proto-note（零依赖，可整段复用） ============
+   布局参考：固定右侧深色批注栏 + 页面编号锚点 + canvas 连线（axure 批注风格）
+   规则：默认不显示任何标注；按模块勾选显示；只联动 SDD（不展示 PRD） */
+(function () {
+  const CS = window.DIFF_CHANGESET;
+  if (!CS || !CS.changes || !CS.changes.length) return;
+
+  const TYPE_LABEL = { new: "新增", modify: "修改", copy: "文案", enum: "口径", logic: "逻辑", flow: "流程", remove: "删除" };
+  const LEVEL_LABEL = { page: "页面级", module: "模块级", field: "字段级" };
+  const LS_KEY = "diff-annotator-v3:" + location.pathname;
+  const PANEL_W = 360;
+
+  CS.changes.forEach((c, i) => { c._no = String(i + 1).padStart(2, "0"); });
+
+  /* ---------- 状态 ---------- */
+  const moduleKeys = [];
+  const byModule = {};
+  CS.changes.forEach(c => {
+    const key = c.page + "::" + c.module;
+    if (!byModule[key]) { byModule[key] = []; moduleKeys.push(key); }
+    byModule[key].push(c);
+  });
+  const byTarget = {};
+  CS.changes.forEach(c => { (byTarget[c.target] = byTarget[c.target] || []).push(c); });
+  const keyOf = c => c.page + "::" + c.module;
+
+  let state = { open: true, enabled: {}, demo: {} };
+  try { state = Object.assign(state, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); } catch (e) {}
+  state.enabled = state.enabled || {};
+  state.demo = state.demo || {};
+  moduleKeys.forEach(k => { if (!(k in state.enabled)) state.enabled[k] = false; });
+  const demoControls = Array.isArray(CS.meta.demoControls) ? CS.meta.demoControls : [];
+  demoControls.forEach(control => {
+    if (!(control.id in state.demo)) {
+      const firstOption = Array.isArray(control.options) ? control.options[0] : null;
+      state.demo[control.id] = control.default ?? (firstOption && firstOption.value);
+    }
+  });
+  const persist = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} };
+  const isOn = c => state.enabled[keyOf(c)];
+
+  function pageName(pid) {
+    const el = document.getElementById(pid);
+    return (el && el.getAttribute("data-diff-page")) || pid;
+  }
+
+  /* ---------- 样式 ---------- */
+  const style = document.createElement("style");
+  style.setAttribute("data-da", "1");
+  style.textContent = `
+  :root { --da-navy:#071d2f; --da-blue:#1479d1; --da-blue-soft:#2c93e8; --da-sky:#72c4ff; --da-panel-w:${PANEL_W}px; }
+  html.da-open { overflow-x:auto !important; }
+  body.da-open { padding-right:0 !important; overflow-x:visible !important; }
+  .da-scroll-spacer { position:absolute; top:0; width:var(--da-panel-w); height:1px; pointer-events:none; visibility:hidden; }
+
+  .da-launch { position:fixed; top:14px; right:14px; z-index:1200; display:inline-flex; align-items:center; gap:8px;
+    background:var(--da-navy); color:#fff; border:0; border-radius:999px; padding:9px 16px; font-size:13px; font-weight:600;
+    cursor:pointer; box-shadow:0 6px 20px rgba(7,29,47,.28); }
+  .da-launch .da-launch-n { color:var(--da-sky); font-weight:700; }
+
+  .da-panel { position:fixed; z-index:1100; top:0; right:0; bottom:0; width:var(--da-panel-w); overflow-y:auto;
+    color:rgba(255,255,255,.78); border-left:1px solid rgba(255,255,255,.08);
+    background:radial-gradient(circle at 100% 0, rgba(44,147,232,.16), transparent 20rem), var(--da-navy);
+    box-shadow:-18px 0 50px rgba(7,29,47,.12); font-size:12px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.2) transparent; }
+  .da-panel-inner { padding:20px 20px 40px; }
+  .da-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+  .da-top h2 { margin:0; color:#fff; font-size:17px; font-weight:740; letter-spacing:-.01em; }
+  .da-top h2 small { margin-left:6px; color:var(--da-sky); font-size:12px; font-weight:700; }
+  .da-top-actions { display:flex; align-items:center; gap:8px; }
+  .da-sdd-doc { color:var(--da-sky); font-size:11px; font-weight:650; text-decoration:none; white-space:nowrap; }
+  .da-sdd-doc:hover { text-decoration:underline; }
+  .da-hide { width:28px; height:28px; flex:0 0 auto; border:1px solid rgba(255,255,255,.14); border-radius:8px;
+    color:#fff; background:rgba(255,255,255,.06); font-size:14px; line-height:1; cursor:pointer; }
+  .da-hide:hover { background:rgba(255,255,255,.12); }
+
+  .da-demo { margin-bottom:12px; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:rgba(255,255,255,.045); }
+  .da-demo-title { margin-bottom:8px; color:#fff; font-size:12px; font-weight:700; }
+  .da-demo-row + .da-demo-row { margin-top:9px; }
+  .da-demo-label { display:block; margin-bottom:5px; color:rgba(255,255,255,.45); font-size:10px; font-weight:650; }
+  .da-segments { display:flex; padding:2px; border:1px solid rgba(255,255,255,.1); border-radius:8px; background:rgba(5,17,28,.4); }
+  .da-segment { min-width:0; flex:1; min-height:28px; border:0; border-radius:6px; color:rgba(255,255,255,.58);
+    background:transparent; font-size:11px; cursor:pointer; }
+  .da-segment:hover { color:#fff; }
+  .da-segment.da-selected { color:#fff; background:rgba(44,147,232,.42); box-shadow:0 1px 5px rgba(0,0,0,.16); }
+
+  .da-mods { margin-bottom:20px; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:rgba(255,255,255,.045); }
+  .da-mods-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .da-mods-head span { color:#fff; font-size:12px; font-weight:700; }
+  .da-bulk { display:flex; gap:10px; }
+  .da-bulk button { border:0; background:none; padding:0; color:rgba(255,255,255,.5); font-size:11px; cursor:pointer; }
+  .da-bulk button:hover { color:var(--da-sky); }
+  .da-mod-group { margin-top:8px; }
+  .da-mod-group-name { margin-bottom:2px; color:rgba(255,255,255,.4); font-size:10px; font-weight:650; letter-spacing:.04em; }
+  .da-mod { display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:7px; cursor:pointer; }
+  .da-mod:hover { background:rgba(255,255,255,.06); }
+  .da-mod input { margin:0; flex:0 0 auto; accent-color:var(--da-blue-soft); cursor:pointer; }
+  .da-mod-name { flex:1; min-width:0; color:rgba(255,255,255,.86); font-size:12px; font-weight:550; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .da-mod-types { flex:0 0 auto; color:rgba(255,255,255,.34); font-size:10px; }
+
+  .da-note-section { margin-bottom:18px; }
+  .da-note-heading { display:flex; align-items:center; gap:9px; margin-bottom:10px; color:#fff; font-size:12px; font-weight:700; }
+  .da-note-heading::after { height:1px; flex:1; background:rgba(255,255,255,.1); content:""; }
+  .da-empty { padding:10px 2px; color:rgba(255,255,255,.35); font-size:11px; }
+
+  .da-note { position:relative; scroll-margin-top:16px; margin-bottom:9px; padding:12px 13px; border:1px solid rgba(255,255,255,.1);
+    border-radius:11px; background:rgba(255,255,255,.045); cursor:pointer;
+    transition:border-color .18s ease, background .18s ease, transform .18s ease; }
+  .da-note::before { content:""; position:absolute; top:23px; left:-15px; width:14px; height:1px;
+    background:rgba(114,196,255,.32); transition:background .16s ease, box-shadow .16s ease; }
+  .da-note::after { content:""; position:absolute; top:20px; left:-19px; width:7px; height:7px; border-radius:50%;
+    border:1px solid rgba(114,196,255,.55); background:var(--da-navy); transition:background .16s ease, box-shadow .16s ease; }
+  .da-note:hover, .da-note.da-active { border-color:rgba(114,196,255,.65); background:rgba(44,147,232,.13); transform:translateX(-3px); }
+  .da-note.da-active::before { background:#72c4ff; box-shadow:0 0 12px rgba(44,147,232,.62); }
+  .da-note.da-active::after { background:#72c4ff; box-shadow:0 0 0 4px rgba(44,147,232,.18); }
+  .da-note-head { display:flex; align-items:center; gap:9px; margin-bottom:6px; color:#fff; font-size:12px; font-weight:700; }
+  .da-no { display:inline-grid; width:22px; height:22px; flex:0 0 auto; place-items:center; border:1px solid rgba(114,196,255,.3);
+    border-radius:50%; color:#8fd1ff; background:rgba(44,147,232,.09); font-size:9px; font-weight:800; }
+  .da-note.da-active .da-no { color:var(--da-navy); border-color:#bfe6ff; background:#bfe6ff; }
+  .da-note-kind { flex:0 0 auto; margin-left:auto; color:rgba(255,255,255,.35); font-size:10px; font-weight:500; }
+  .da-note p { margin:0; color:rgba(255,255,255,.62); font-size:11px; line-height:1.75; }
+  .da-note-ba { margin-top:8px; padding:7px 9px; border-radius:7px; background:rgba(5,17,28,.52); font-size:10px; line-height:1.7; color:rgba(255,255,255,.55); }
+  .da-note-ba b { color:#bfe6ff; font-weight:650; }
+  .da-examples { margin-top:8px; overflow:hidden; border:1px solid rgba(114,196,255,.15); border-radius:7px; background:rgba(5,17,28,.34); }
+  .da-example { display:grid; grid-template-columns:58px minmax(0,1fr); gap:4px 8px; padding:7px 9px; font-size:10px; line-height:1.55; }
+  .da-example + .da-example { border-top:1px solid rgba(255,255,255,.07); }
+  .da-example-case { grid-row:1 / span 2; color:#bfe6ff; font-weight:650; }
+  .da-example-input { min-width:0; color:#fff; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap:anywhere; }
+  .da-example-result { color:rgba(255,255,255,.5); }
+  .da-example-result::before { content:"→ "; color:rgba(114,196,255,.55); }
+  .da-note-sdd { display:inline-flex; align-items:center; gap:5px; margin-top:9px; color:var(--da-sky); font-size:10.5px;
+    font-weight:650; text-decoration:none; }
+  .da-note-sdd:hover { text-decoration:underline; }
+
+  .da-anchors { position:absolute; left:0; top:0; width:0; height:0; z-index:1050; pointer-events:none; }
+  .da-anchor { position:absolute; display:grid; width:22px; height:22px; place-items:center; border:1px solid rgba(20,121,209,.28);
+    border-radius:50%; color:var(--da-blue); background:#eff8ff; font-size:9px; font-weight:800; cursor:pointer;
+    pointer-events:auto; box-shadow:0 2px 8px rgba(7,29,47,.14); transition:transform .15s ease, background .15s ease; }
+  .da-anchor:hover { transform:scale(1.1); }
+  .da-anchor.da-active { color:#fff; border-color:var(--da-blue-soft); background:var(--da-blue);
+    box-shadow:0 0 0 4px rgba(44,147,232,.16), 0 5px 14px rgba(20,121,209,.24); transform:scale(1.08); }
+
+  .da-outlined { outline:1.5px dashed rgba(20,121,209,.45) !important; outline-offset:2px; }
+  @keyframes da-pulse { 0% { box-shadow:0 0 0 0 rgba(44,147,232,.4); } 100% { box-shadow:0 0 0 14px rgba(44,147,232,0); } }
+  .da-pulsing { animation:da-pulse .9s ease-out 2; }
+
+  .da-wires { position:fixed; inset:0; z-index:1040; width:100vw; height:100vh; pointer-events:none; }
+
+  @media print { .da-panel, .da-anchors, .da-wires, .da-launch, .da-scroll-spacer { display:none !important; }
+    html.da-open { overflow-x:visible !important; } body.da-open { padding-right:0 !important; } }
+  `;
+  document.head.appendChild(style);
+
+  /* ---------- DOM 骨架 ---------- */
+  const launcher = document.createElement("button");
+  launcher.className = "da-launch";
+  launcher.setAttribute("data-da", "1");
+  launcher.innerHTML = '变更导览 <span class="da-launch-n">' + CS.changes.length + "</span>";
+  document.body.appendChild(launcher);
+
+  const panel = document.createElement("aside");
+  panel.className = "da-panel";
+  panel.setAttribute("data-da", "1");
+  document.body.appendChild(panel);
+
+  // 在业务页面真实右边缘后追加与批注栏等宽的滚动缓冲区。
+  // 它只扩展 scrollWidth，不改变、压缩或重排原页面。
+  const scrollSpacer = document.createElement("div");
+  scrollSpacer.className = "da-scroll-spacer";
+  scrollSpacer.setAttribute("data-da", "1");
+  document.body.appendChild(scrollSpacer);
+
+  const anchorLayer = document.createElement("div");
+  anchorLayer.className = "da-anchors";
+  anchorLayer.setAttribute("data-da", "1");
+  document.body.appendChild(anchorLayer);
+
+  const wires = document.createElement("canvas");
+  wires.className = "da-wires";
+  wires.setAttribute("data-da", "1");
+  document.body.appendChild(wires);
+  const wctx = wires.getContext("2d");
+
+  let activeId = null;   // 悬停中的变更
+  let pinnedId = null;   // 点击固定的变更（再次点击取消）
+
+  /* ---------- 面板渲染 ---------- */
+  const pages = [];
+  const modsByPage = {};
+  moduleKeys.forEach(k => {
+    const p = k.split("::")[0];
+    if (!modsByPage[p]) { modsByPage[p] = []; pages.push(p); }
+    modsByPage[p].push(k);
+  });
+
+  function renderPanel() {
+    let html = '<div class="da-panel-inner">';
+    html += '<div class="da-top"><h2>变更导览<small>' + CS.changes.length + "</small></h2><div class=\"da-top-actions\">";
+    if (CS.meta.sddUrl) html += '<a class="da-sdd-doc" target="_blank" href="' + CS.meta.sddUrl + '">' + (CS.meta.sddTitle || "SDD") + " ↗</a>";
+    html += '<button class="da-hide" title="收起">✕</button></div></div>';
+
+    if (demoControls.length && window.DIFF_HOOKS && typeof window.DIFF_HOOKS.setDemoState === "function") {
+      html += '<section class="da-demo"><div class="da-demo-title">演示状态</div>';
+      demoControls.forEach(control => {
+        html += '<div class="da-demo-row"><span class="da-demo-label">' + control.label + '</span><div class="da-segments">';
+        (control.options || []).forEach(option => {
+          const selected = state.demo[control.id] === option.value;
+          html += '<button class="da-segment' + (selected ? " da-selected" : "") + '" data-demo-control="' + control.id +
+            '" data-demo-value="' + option.value + '">' + option.label + "</button>";
+        });
+        html += "</div></div>";
+      });
+      html += "</section>";
+    }
+
+    html += '<div class="da-mods"><div class="da-mods-head"><span>模块</span><span class="da-bulk"><button data-all="on">全部显示</button><button data-all="off">全部隐藏</button></span></div>';
+    pages.forEach(p => {
+      html += '<div class="da-mod-group"><div class="da-mod-group-name">' + pageName(p) + "</div>";
+      modsByPage[p].forEach(k => {
+        const mod = k.split("::")[1];
+        const types = [...new Set(byModule[k].map(c => TYPE_LABEL[c.type] || "变更"))].join("·");
+        html += '<label class="da-mod" data-key="' + k + '"><input type="checkbox"' + (state.enabled[k] ? " checked" : "") + ">";
+        html += '<span class="da-mod-name">' + mod + '</span><span class="da-mod-types">' + types + "</span></label>";
+      });
+      html += "</div>";
+    });
+    html += "</div>";
+
+    const anyOn = CS.changes.some(isOn);
+    if (!anyOn) {
+      html += '<div class="da-empty">勾选模块后展示对应标注与连线</div>';
+    } else {
+      pages.forEach(p => {
+        const list = CS.changes.filter(c => c.page === p && isOn(c));
+        if (!list.length) return;
+        html += '<section class="da-note-section"><h3 class="da-note-heading">' + pageName(p) + "</h3>";
+        list.forEach(c => {
+          html += '<article class="da-note" id="da-note-' + c.id + '" data-chg="' + c.id + '">';
+          html += '<div class="da-note-head"><span class="da-no">' + c._no + '</span><span>' + c.title + '</span>';
+          html += '<span class="da-note-kind">' + (TYPE_LABEL[c.type] || "变更") + " · " + (LEVEL_LABEL[c.level] || "") + "</span></div>";
+          html += "<p>" + c.desc + "</p>";
+          if (c.before && c.after) html += '<div class="da-note-ba"><b>前</b>　' + c.before + '<br><b>后</b>　' + c.after + "</div>";
+          if (Array.isArray(c.examples) && c.examples.length) {
+            html += '<div class="da-examples">';
+            c.examples.forEach(example => {
+              html += '<div class="da-example"><span class="da-example-case">' + example.case + '</span>' +
+                '<code class="da-example-input">' + example.input + '</code>' +
+                '<span class="da-example-result">' + example.result + "</span></div>";
+            });
+            html += "</div>";
+          }
+          if (c.sdd && CS.meta.sddUrl && c.sdd.blockId) {
+            html += '<a class="da-note-sdd" target="_blank" href="' + CS.meta.sddUrl + "#" + c.sdd.blockId + '">SDD · ' + c.sdd.section + " ↗</a>";
+          } else if (c.sdd && c.sdd.section) {
+            html += '<span class="da-note-sdd" style="color:rgba(255,255,255,.4)">SDD · ' + c.sdd.section + "</span>";
+          }
+          html += "</article>";
+        });
+        html += "</section>";
+      });
+    }
+    html += "</div>";
+    panel.innerHTML = html;
+    bindPanel();
+  }
+
+  function bindPanel() {
+    panel.querySelector(".da-hide").addEventListener("click", () => setOpen(false));
+    panel.querySelectorAll("[data-demo-control]").forEach(button => {
+      button.addEventListener("click", () => {
+        const controlId = button.getAttribute("data-demo-control");
+        const value = button.getAttribute("data-demo-value");
+        state.demo[controlId] = value;
+        persist();
+        window.DIFF_HOOKS.setDemoState(controlId, value);
+        renderPanel();
+        setTimeout(scheduleUpdate, 80);
+      });
+    });
+    panel.querySelectorAll(".da-mod input").forEach(cb => {
+      cb.addEventListener("change", () => {
+        const k = cb.closest(".da-mod").getAttribute("data-key");
+        state.enabled[k] = cb.checked;
+        if (pinnedId && !isOn(CS.changes.find(x => x.id === pinnedId))) pinnedId = null;
+        persist();
+        renderPanel();
+        syncAnnotations();
+        applyActive();
+        if (cb.checked) locateModule(k);
+      });
+    });
+    panel.querySelectorAll("[data-all]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const on = btn.getAttribute("data-all") === "on";
+        moduleKeys.forEach(k => { state.enabled[k] = on; });
+        if (!on) pinnedId = null;
+        persist(); renderPanel(); syncAnnotations(); applyActive();
+      });
+    });
+    panel.querySelectorAll(".da-note").forEach(card => {
+      const id = card.getAttribute("data-chg");
+      card.addEventListener("mouseenter", () => setActive(id));
+      card.addEventListener("mouseleave", () => clearActive(id));
+      card.addEventListener("click", e => {
+        if (e.target.closest("a")) return;
+        const c = CS.changes.find(x => x.id === id);
+        if (!c) return;
+        pinnedId = id;
+        applyActive();
+        locateChange(c);
+      });
+    });
+    panel.addEventListener("scroll", scheduleUpdate, { passive: true });
+  }
+
+  /* ---------- 锚点浮层 ---------- */
+  const anchorEls = {};   // change.id -> { el, last:{x,y,shown} }
+  CS.changes.forEach(c => {
+    const a = document.createElement("button");
+    a.className = "da-anchor";
+    a.setAttribute("data-da", "1");
+    a.textContent = c._no;
+    a.style.display = "none";
+    a.addEventListener("mouseenter", () => setActive(c.id));
+    a.addEventListener("mouseleave", () => clearActive(c.id));
+    a.addEventListener("click", () => {
+      togglePin(c.id);
+      if (pinnedId === c.id) {
+        const card = document.getElementById("da-note-" + c.id);
+        if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+    anchorLayer.appendChild(a);
+    anchorEls[c.id] = { el: a, last: { x: -1, y: -1, shown: false } };
+  });
+
+  function targetVisible(el, rect) {
+    if (!el.getClientRects().length) return false;
+    // 遮挡检测（仅当取样点在视口内才有意义）：取样点若不属于目标元素（如被弹窗蒙层盖住），视为不可见。
+    // 目标滚出视口时不做钳制、不强行隐藏——锚点随文档自然滚出即可。
+    const inViewport = (x, y) => x >= 0 && x <= innerWidth && y >= 0 && y <= innerHeight;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    if (inViewport(cx, cy)) {
+      const top = document.elementFromPoint(cx, cy);
+      if (top && (el === top || el.contains(top) || top.contains(el))) return true;
+      const sx = rect.left + 10, sy = rect.top + 10;
+      if (inViewport(sx, sy)) {
+        const top2 = document.elementFromPoint(sx, sy);
+        return !!(top2 && (el === top2 || el.contains(top2) || top2.contains(el)));
+      }
+      return false;
+    }
+    return true;
+  }
+
+  function syncAnnotations() {
+    Object.keys(byTarget).forEach(t => {
+      const el = document.querySelector(t);
+      if (!el) return;
+      const on = byTarget[t].some(isOn) && state.open;
+      el.classList.toggle("da-outlined", on);
+    });
+    scheduleUpdate();
+  }
+
+  function updateOverlay() {
+    // 锚点钉在目标左上角，使用文档坐标（以锚点层自身为基准），随页面原生滚动——
+    // 杜绝 fixed 浮层"滚动事件追帧"造成的抖动漂移，也不做视口钳制（滚出即自然滚出）
+    const layerRect = anchorLayer.getBoundingClientRect();
+    Object.keys(byTarget).forEach(t => {
+      const el = document.querySelector(t);
+      const rect = el ? el.getBoundingClientRect() : null;
+      const visible = el && state.open && rect && targetVisible(el, rect);
+      byTarget[t].forEach((c, slot) => {
+        const rec = anchorEls[c.id];
+        const show = visible && isOn(c);
+        if (!show) {
+          if (rec.last.shown) { rec.el.style.display = "none"; rec.last.shown = false; }
+          return;
+        }
+        const x = Math.max(rect.left - 11, 2) + slot * 25 - layerRect.left;
+        const y = rect.top - 11 - layerRect.top;
+        if (!rec.last.shown) { rec.el.style.display = "grid"; rec.last.shown = true; }
+        if (rec.last.x !== x || rec.last.y !== y) {
+          rec.el.style.left = x + "px";
+          rec.el.style.top = y + "px";
+          rec.last.x = x; rec.last.y = y;
+        }
+      });
+    });
+    drawWires();
+  }
+
+  /* ---------- 连线 ---------- */
+  function setWireSize() {
+    const ratio = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.round(innerWidth * ratio));
+    const h = Math.max(1, Math.round(innerHeight * ratio));
+    if (wires.width !== w || wires.height !== h) { wires.width = w; wires.height = h; }
+    wctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+
+  function wirePath(sx, sy, ex, ey, active) {
+    const gap = Math.max(38, ex - sx);
+    wctx.save();
+    wctx.beginPath();
+    wctx.moveTo(sx, sy);
+    wctx.bezierCurveTo(sx + Math.min(120, gap * 0.42), sy, ex - Math.min(82, gap * 0.28), ey, ex, ey);
+    wctx.lineWidth = active ? 2 : 1.3;
+    wctx.strokeStyle = active ? "rgba(44,147,232,.96)" : "rgba(44,147,232,.42)";
+    wctx.shadowColor = active ? "rgba(44,147,232,.7)" : "transparent";
+    wctx.shadowBlur = active ? 9 : 0;
+    wctx.stroke();
+    wctx.shadowBlur = 0;
+    wctx.beginPath(); wctx.arc(sx, sy, active ? 3.2 : 2.1, 0, Math.PI * 2);
+    wctx.fillStyle = active ? "#2c93e8" : "rgba(44,147,232,.5)"; wctx.fill();
+    wctx.beginPath(); wctx.arc(ex - 1, ey, active ? 3 : 2, 0, Math.PI * 2);
+    wctx.fillStyle = active ? "#72c4ff" : "rgba(114,196,255,.45)"; wctx.fill();
+    wctx.restore();
+  }
+
+  function drawWires() {
+    setWireSize();
+    wctx.clearRect(0, 0, innerWidth, innerHeight);
+    if (!state.open) return;
+    // 一个编号一条线：固定态优先于悬停态（滚动中误触发的 hover 不得篡改已选中的连线）
+    const id = pinnedId || activeId;
+    if (!id) return;
+    const c = CS.changes.find(x => x.id === id);
+    if (!c || !isOn(c)) return;
+    const rec = anchorEls[id];
+    if (!rec.last.shown) return;
+    // 起点取锚点实时视口坐标（锚点在文档流中，滚动时坐标必须现算，不能用缓存）
+    const ar = rec.el.getBoundingClientRect();
+    if (ar.bottom < 0 || ar.top > innerHeight) return; // 锚点滚出视口则不画线
+    const card = document.getElementById("da-note-" + id);
+    if (!card) return;
+    const cr = card.querySelector(".da-no").getBoundingClientRect();
+    if (cr.bottom < 40 || cr.top > innerHeight - 8) return;
+    wirePath(ar.right, ar.top + ar.height / 2, innerWidth - PANEL_W + 1, cr.top + cr.height / 2, true);
+  }
+
+  /* ---------- 高亮联动 ---------- */
+  function applyActive() {
+    // 固定态优先：钉住某编号后，悬停其他锚点不改变高亮与连线
+    const id = pinnedId || activeId;
+    CS.changes.forEach(c => {
+      anchorEls[c.id].el.classList.toggle("da-active", c.id === id);
+      const card = document.getElementById("da-note-" + c.id);
+      if (card) card.classList.toggle("da-active", c.id === id);
+    });
+    drawWires();
+  }
+  function setActive(id) { activeId = id; applyActive(); }
+  function clearActive(id) { if (activeId === id) { activeId = null; applyActive(); } }
+  function togglePin(id) {
+    pinnedId = pinnedId === id ? null : id;
+    applyActive();
+  }
+
+  /* ---------- 定位 ---------- */
+  function locateChange(c) {
+    if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.locate === "function") window.DIFF_HOOKS.locate(c.page);
+    else if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.showPage === "function") window.DIFF_HOOKS.showPage(c.page);
+    setTimeout(() => {
+      const el = document.querySelector(c.target);
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.classList.remove("da-pulsing"); void el.offsetWidth; el.classList.add("da-pulsing");
+      setTimeout(() => el.classList.remove("da-pulsing"), 2000);
+      scheduleUpdate();
+    }, 160);
+  }
+  function locateModule(key) { locateChange(byModule[key][0]); }
+
+  /* ---------- 内容视口 ---------- */
+  function syncScrollSpace() {
+    if (!state.open) return;
+    // 先移除自身对 scrollWidth 的贡献，测出业务页面原始宽度，再补 PANEL_W。
+    scrollSpacer.style.display = "none";
+    const contentWidth = Math.max(document.documentElement.clientWidth, document.documentElement.scrollWidth);
+    scrollSpacer.style.left = contentWidth + "px";
+    scrollSpacer.style.display = "block";
+  }
+
+  /* ---------- 开关 ---------- */
+  function setOpen(open) {
+    state.open = open;
+    persist();
+    document.documentElement.classList.toggle("da-open", open);
+    document.body.classList.toggle("da-open", open);
+    panel.style.display = open ? "" : "none";
+    launcher.style.display = open ? "none" : "";
+    if (open) {
+      syncScrollSpace();
+    } else {
+      scrollSpacer.style.display = "none";
+      if (scrollX) window.scrollTo(0, scrollY);
+    }
+    syncAnnotations();
+  }
+  launcher.addEventListener("click", () => setOpen(true));
+
+  /* ---------- 更新调度 ---------- */
+  let frame = 0;
+  function scheduleUpdate() {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(updateOverlay);
+  }
+  window.addEventListener("scroll", scheduleUpdate, { passive: true, capture: true });
+  window.addEventListener("resize", () => {
+    syncScrollSpace();
+    scheduleUpdate();
+  }, { passive: true });
+  document.addEventListener("click", e => {
+    if (e.target.closest("[data-da]")) return;
+    setTimeout(scheduleUpdate, 60);
+    setTimeout(scheduleUpdate, 360);
+  }, true);
+  const mo = new MutationObserver(records => {
+    if (records.every(r => r.target && r.target.closest && r.target.closest("[data-da]"))) return;
+    syncScrollSpace();
+    scheduleUpdate();
+  });
+  mo.observe(document.body, { attributes: true, attributeFilter: ["class", "style"], childList: true, subtree: true });
+
+  /* ---------- 初始 ---------- */
+  if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.setDemoState === "function") {
+    demoControls.forEach(control => window.DIFF_HOOKS.setDemoState(control.id, state.demo[control.id]));
+  }
+  renderPanel();
+  setOpen(state.open);
+  setTimeout(scheduleUpdate, 150);
+})();
+
+</script>
+</body>
+</html>
