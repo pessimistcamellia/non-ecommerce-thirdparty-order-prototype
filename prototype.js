@@ -80,9 +80,15 @@
       frontendError: 'Excel 渠道“小宝爸爸 / davdian”与渠道注册表不符',
     },
     multiFrontend: {
-      label: '多项实时错误',
-      fileName: '多项实时校验错误.xlsx',
+      label: '7 类聚合错误',
+      fileName: '全量前端校验错误.xlsx',
       frontendErrors: [
+        {
+          sheet: '工作簿',
+          row: '—',
+          field: 'sheet / 表头',
+          reason: '缺少“退款订单表”，且支付成功订单表缺少“组合商品 ID”列',
+        },
         {
           sheet: '支付成功订单表',
           row: '第 2 行',
@@ -98,12 +104,30 @@
         {
           sheet: '支付成功订单表',
           row: '第 4 行',
-          field: '商品数量',
-          reason: '商品数量必须为 1',
+          field: '订单实付金额',
+          reason: '订单实付金额必须为大于 0 的数字',
         },
         {
           sheet: '支付成功订单表',
           row: '第 5 行',
+          field: '商品数量',
+          reason: '商品数量必须为 1，当前值为 2',
+        },
+        {
+          sheet: '支付成功订单表',
+          row: '第 6 行',
+          field: '电话号码',
+          reason: '电话号码格式错误，必须为 11 位手机号',
+        },
+        {
+          sheet: '支付成功订单表',
+          row: '第 7 行',
+          field: '订单 ID',
+          reason: '订单 ID 应以本行 shopid“xiaobaobaba”开头',
+        },
+        {
+          sheet: '支付成功订单表',
+          row: '第 8 行',
           field: '渠道名称 / shopid',
           reason: '小宝爸爸 / davdian 与渠道注册表不匹配',
         },
