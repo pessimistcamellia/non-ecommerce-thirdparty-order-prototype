@@ -79,6 +79,36 @@
       fileName: '小宝爸爸_davdian_关系错误.xlsx',
       frontendError: 'Excel 渠道“小宝爸爸 / davdian”与渠道注册表不符',
     },
+    multiFrontend: {
+      label: '多项实时错误',
+      fileName: '多项实时校验错误.xlsx',
+      frontendErrors: [
+        {
+          sheet: '支付成功订单表',
+          row: '第 2 行',
+          field: '商品名称',
+          reason: '商品名称为必填项',
+        },
+        {
+          sheet: '支付成功订单表',
+          row: '第 2、3 行',
+          field: '订单 ID',
+          reason: '订单 ID xiaobaobaba20260804002 重复',
+        },
+        {
+          sheet: '支付成功订单表',
+          row: '第 4 行',
+          field: '商品数量',
+          reason: '商品数量必须为 1',
+        },
+        {
+          sheet: '支付成功订单表',
+          row: '第 5 行',
+          field: '渠道名称 / shopid',
+          reason: '小宝爸爸 / davdian 与渠道注册表不匹配',
+        },
+      ],
+    },
     asyncProduct: {
       label: '异步商品失败',
       fileName: '组合商品不存在.xlsx',
