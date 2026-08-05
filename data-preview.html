@@ -67,9 +67,9 @@
                 stripe
                 style="width: 100%"
               >
-              <el-table-column prop="channelName" label="渠道名称" width="120" fixed="left"></el-table-column>
+              <el-table-column prop="id" label="订单ID" width="230" fixed="left" show-overflow-tooltip></el-table-column>
+              <el-table-column prop="channelName" label="渠道名称" width="120"></el-table-column>
               <el-table-column prop="shopid" label="shopid" width="140" show-overflow-tooltip></el-table-column>
-              <el-table-column prop="id" label="订单ID" width="230" show-overflow-tooltip></el-table-column>
               <el-table-column prop="recipient" label="收件人姓名" width="110"></el-table-column>
               <el-table-column prop="phone" label="电话号码" width="130"></el-table-column>
               <el-table-column prop="province" label="收货省" width="100"></el-table-column>
@@ -129,7 +129,8 @@
                 stripe
                 style="width: 100%"
               >
-              <el-table-column label="结算时间" width="170" fixed="left">
+              <el-table-column prop="id" label="订单ID" width="230" fixed="left" show-overflow-tooltip></el-table-column>
+              <el-table-column label="结算时间" width="170">
                 <template slot-scope="scope">
                   <span v-if="scope.row.settlementAt">{{ scope.row.settlementAt }}</span>
                   <el-tooltip
@@ -145,7 +146,6 @@
               <el-table-column prop="createdAt" label="订单支付时间" width="170"></el-table-column>
               <el-table-column prop="channelName" label="渠道名称" width="120"></el-table-column>
               <el-table-column prop="shopid" label="shopid" width="140"></el-table-column>
-              <el-table-column prop="id" label="订单ID" width="230" show-overflow-tooltip></el-table-column>
               <el-table-column label="洋葱ID" width="130">
                 <template slot-scope="scope">{{ scope.row.accountId || '—' }}</template>
               </el-table-column>
@@ -319,9 +319,9 @@
           target: '#workbookTabs',
           type: 'enum',
           title: '按财务口径拆分字段',
-          desc: '达人佣金仅出现在结算表；订单支付时间取数据成功入库时间。',
+          desc: '三张业务表均以订单ID作为第一列；达人佣金仅出现在结算表。',
           before: '无三表字段口径',
-          after: '订单、退款、结算字段各归其表',
+          after: '订单、退款、结算表首列统一为订单ID，其他字段各归其表',
           examples: [
             { case: '支付时间', input: '订单=xiaobaobaba20260731101', result: '订单支付时间=2026-07-31 11:02:18' },
             { case: '结算金额', input: '支付=600；累计退款=400', result: '订单结算金额=200' },
