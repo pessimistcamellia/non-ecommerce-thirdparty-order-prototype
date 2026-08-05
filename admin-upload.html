@@ -19,6 +19,7 @@
       <span id="uploadDialogPageMeta" data-diff-page="上传文件弹窗" hidden></span>
       <span id="uploadDetailDialogPageMeta" data-diff-page="上传结果详情弹窗" hidden></span>
       <span id="validationRulesDialogPageMeta" data-diff-page="导入校验规则弹窗" hidden></span>
+      <span id="frontendErrorDialogPageMeta" data-diff-page="前端校验结果弹窗" hidden></span>
       <el-form id="uploadFilters" :inline="true" :model="filters" size="small">
         <el-form-item label="平台">
           <el-select
@@ -305,6 +306,37 @@
           <el-button size="small" type="primary" @click="validationRulesVisible = false">知道了</el-button>
         </span>
       </el-dialog>
+
+      <el-dialog
+        title="前端校验结果"
+        width="860px"
+        :visible.sync="frontendErrorDialogVisible"
+        append-to-body
+      >
+        <section id="frontendErrorDialog" data-diff-page="前端校验结果弹窗">
+          <el-alert
+            type="error"
+            :closable="false"
+            show-icon
+            :title="`本次共发现 ${frontendErrorRows.length} 条错误，请一次性修正后重新上传。`"
+          ></el-alert>
+          <el-table
+            id="frontendErrorTable"
+            class="detail-errors"
+            :data="frontendErrorRows"
+            border
+            stripe
+          >
+            <el-table-column prop="sheet" label="sheet" width="150"></el-table-column>
+            <el-table-column prop="row" label="行号" width="100"></el-table-column>
+            <el-table-column prop="field" label="字段" width="160"></el-table-column>
+            <el-table-column prop="reason" label="校验不通过原因"></el-table-column>
+          </el-table>
+        </section>
+        <span slot="footer">
+          <el-button size="small" type="primary" @click="frontendErrorDialogVisible = false">返回修改文件</el-button>
+        </span>
+      </el-dialog>
     </main>
   </div>
   <noscript>
@@ -333,6 +365,8 @@
             uploadDialogVisible: false,
             detailDialogVisible: false,
             validationRulesVisible: false,
+            frontendErrorDialogVisible: false,
+            frontendErrorRows: [],
             selectedUpload: null,
             submitting: false,
             fileValidationError: '',
@@ -465,6 +499,8 @@
           },
           resetUploadForm: function () {
             this.fileValidationError = ''
+            this.frontendErrorRows = []
+            this.frontendErrorDialogVisible = false
             this.submitting = false
             this.uploadForm = {
               platform: '非电商平台的三方订单',
@@ -483,14 +519,35 @@
             this.uploadForm.fileName = this.activeScenario.fileName
             this.$nextTick(() => this.$refs.uploadForm.validateField('fileName'))
           },
+          getFrontendErrorRows: function (scenario) {
+            if (Array.isArray(scenario.frontendErrors)) return scenario.frontendErrors
+            if (!scenario.frontendError) return []
+            const locations = {
+              required: { sheet: '支付成功订单表', row: '第 2 行', field: '商品名称' },
+              duplicate: { sheet: '支付成功订单表', row: '第 2、3 行', field: '订单 ID' },
+              amount: { sheet: '支付成功订单表', row: '第 2 行', field: '实付金额 / 商品数量' },
+              channel: { sheet: '支付成功订单表', row: '第 2 行', field: '渠道名称 / shopid' },
+            }
+            return [{
+              ...(locations[this.scenarioKey] || {
+                sheet: '支付成功订单表',
+                row: '—',
+                field: '—',
+              }),
+              reason: scenario.frontendError,
+            }]
+          },
           submitUpload: function () {
             if (this.submitting) return
             this.$refs.uploadForm.validate((valid) => {
               if (!valid) return
               const scenario = this.activeScenario
-              if (scenario.frontendError) {
-                this.fileValidationError = scenario.frontendError
-                this.$message.error(scenario.frontendError)
+              const frontendErrors = this.getFrontendErrorRows(scenario)
+              if (frontendErrors.length) {
+                this.frontendErrorRows = frontendErrors
+                this.fileValidationError = `前端校验未通过，共发现 ${frontendErrors.length} 条错误`
+                this.frontendErrorDialogVisible = true
+                this.$message.error(`前端校验未通过，共发现 ${frontendErrors.length} 条错误，请查看详情`)
                 return
               }
               this.submitting = true
@@ -583,6 +640,7 @@
           app.uploadDialogVisible = false
           app.detailDialogVisible = false
           app.validationRulesVisible = false
+          app.frontendErrorDialogVisible = false
           if (pageId === 'uploadDialogPageMeta') app.uploadDialogVisible = true
           if (pageId === 'uploadDetailDialogPageMeta') {
             app.selectedUpload =
@@ -592,11 +650,18 @@
           if (pageId === 'validationRulesDialogPageMeta') {
             app.validationRulesVisible = true
           }
+          if (pageId === 'frontendErrorDialogPageMeta') {
+            app.frontendErrorRows =
+              PrototypeApp.UPLOAD_SCENARIOS.multiFrontend.frontendErrors
+            app.frontendErrorDialogVisible = true
+          }
         },
         setDemoState: function (controlId, value) {
           if (controlId !== 'uploadScenario') return
           app.scenarioKey = value
           app.fileValidationError = ''
+          app.frontendErrorRows = []
+          app.frontendErrorDialogVisible = false
           app.uploadForm.fileName = ''
         },
       }
@@ -618,6 +683,7 @@
             { value: 'duplicate', label: 'ID重复' },
             { value: 'amount', label: '金额/数量' },
             { value: 'channel', label: '渠道关系' },
+            { value: 'multiFrontend', label: '多项错误' },
             { value: 'asyncProduct', label: '商品异步' },
             { value: 'asyncRefund', label: '退款异步' }
           ]
@@ -707,7 +773,28 @@
             { case: '必填缺失', input: '第 2 行商品名称为空', result: '立即提示，不创建上传记录' },
             { case: '订单ID重复', input: '第 2、3 行订单ID相同', result: '标记两个重复行号' },
             { case: '金额/数量', input: '实付金额≤0或商品数量≠1', result: '立即拦截' },
-            { case: '渠道关系', input: '小宝爸爸 / davdian', result: '与注册表不匹配，立即拦截' }
+            { case: '渠道关系', input: '小宝爸爸 / davdian', result: '与注册表不匹配，立即拦截' },
+            { case: '多项错误', input: '多项实时校验错误.xlsx', result: '一次返回全部错误，不逐条试错' }
+          ],
+          sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
+        },
+        {
+          id: 'chg-upload-frontend-error-summary',
+          level: 'module',
+          page: 'frontendErrorDialogPageMeta',
+          module: '前端错误汇总',
+          target: '#frontendErrorTable',
+          type: 'logic',
+          title: '一次汇总全表实时校验错误',
+          desc: '前端完整扫描两个 sheet 后集中展示 sheet、行号、字段和原因；Toast 只提示错误总数。',
+          before: '一次 Toast 仅反馈一条错误，需反复上传试错',
+          after: '一次反馈全部错误，修正一轮后再重新上传',
+          examples: [
+            {
+              case: '多项命中',
+              input: '多项实时校验错误.xlsx',
+              result: '一次展示 4 条错误，且不创建上传记录'
+            }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
         },
