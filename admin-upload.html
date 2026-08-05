@@ -683,7 +683,7 @@
             { value: 'duplicate', label: 'ID重复' },
             { value: 'amount', label: '金额/数量' },
             { value: 'channel', label: '渠道关系' },
-            { value: 'multiFrontend', label: '多项错误' },
+            { value: 'multiFrontend', label: '7类聚合' },
             { value: 'asyncProduct', label: '商品异步' },
             { value: 'asyncRefund', label: '退款异步' }
           ]
@@ -774,7 +774,7 @@
             { case: '订单ID重复', input: '第 2、3 行订单ID相同', result: '标记两个重复行号' },
             { case: '金额/数量', input: '实付金额≤0或商品数量≠1', result: '立即拦截' },
             { case: '渠道关系', input: '小宝爸爸 / davdian', result: '与注册表不匹配，立即拦截' },
-            { case: '多项错误', input: '多项实时校验错误.xlsx', result: '一次返回全部错误，不逐条试错' }
+            { case: '7类聚合错误', input: '全量前端校验错误.xlsx', result: '一次返回 8 条错误，覆盖全部 7 类实时规则' }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
         },
@@ -792,8 +792,8 @@
           examples: [
             {
               case: '多项命中',
-              input: '多项实时校验错误.xlsx',
-              result: '一次展示 4 条错误，且不创建上传记录'
+              input: '全量前端校验错误.xlsx',
+              result: '一次展示 8 条错误，覆盖 7 类实时规则，且不创建上传记录'
             }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
