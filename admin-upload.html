@@ -370,7 +370,7 @@
             selectedUpload: null,
             submitting: false,
             fileValidationError: '',
-            scenarioKey: 'normal',
+            scenarioKey: 'multiFrontend',
             uploadForm: {
               platform: '非电商平台的三方订单',
               shop: '',
@@ -657,8 +657,9 @@
           }
         },
         setDemoState: function (controlId, value) {
-          if (controlId !== 'uploadScenario') return
-          app.scenarioKey = value
+          if (controlId !== 'uploadScenarioV2') return
+          const legacySingleCases = ['required', 'duplicate', 'amount', 'channel']
+          app.scenarioKey = legacySingleCases.includes(value) ? 'multiFrontend' : value
           app.fileValidationError = ''
           app.frontendErrorRows = []
           app.frontendErrorDialogVisible = false
@@ -674,16 +675,12 @@
         sddUrl: 'https://guanghe.feishu.cn/docx/Cw69djCbsosrPGxKlURcM3ZAn6m',
         sddType: 'feishu',
         demoControls: [{
-          id: 'uploadScenario',
+          id: 'uploadScenarioV2',
           label: '上传 fixture',
-          default: 'normal',
+          default: 'multiFrontend',
           options: [
+            { value: 'multiFrontend', label: '7类聚合（默认）' },
             { value: 'normal', label: '正常' },
-            { value: 'required', label: '必填缺失' },
-            { value: 'duplicate', label: 'ID重复' },
-            { value: 'amount', label: '金额/数量' },
-            { value: 'channel', label: '渠道关系' },
-            { value: 'multiFrontend', label: '7类聚合' },
             { value: 'asyncProduct', label: '商品异步' },
             { value: 'asyncRefund', label: '退款异步' }
           ]
