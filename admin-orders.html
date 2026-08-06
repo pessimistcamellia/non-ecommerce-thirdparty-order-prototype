@@ -8,6 +8,33 @@
   <title>运营后台 · 订单管理</title>
   <link rel="stylesheet" href="https://unpkg.com/element-plus@2.8.8/dist/index.css">
   <link rel="stylesheet" href="prototype.css">
+  <style>
+    /* 对齐线上 shadow-admin 订单管理页（Vue3 + Element Plus）的自定义样式，类名与线上 om-* 保持一致 */
+    .om-page-header { display: flex; align-items: center; justify-content: space-between; margin: 0 0 14px; }
+    .om-page-header h1 { margin: 0; color: #303133; font-size: 18px; font-weight: 600; }
+    .om-search-card { margin-bottom: 16px; }
+    .om-search-form .el-form-item { margin-bottom: 16px; }
+    .om-search-form__mode { margin-right: 12px; }
+    .om-search-form__note { color: #909399; font-size: 12px; }
+    .om-search-form__actions { display: flex; justify-content: center; gap: 12px; margin-top: 4px; }
+    .om-search-form__hint-block { display: block; margin-top: 10px; text-align: center; }
+    .om-el-table { font-size: 13px; }
+    .om-el-table .el-table__header th { color: #909399; background: #fff; font-weight: 600; font-size: 13px; }
+    .om-cell-order { text-align: left; }
+    .om-cell-goods--name { color: #303133; font-size: 13px; font-weight: 500; line-height: 1.5; }
+    .om-cell-goods--muted { color: #909399; }
+    .om-cell-meta { margin-top: 6px; padding: 10px; color: #606266; background: #f5f7fa; border-radius: 4px; font-size: 12px; line-height: 1.9; }
+    .om-meta-row { display: flex; gap: 6px; }
+    .om-meta-label { flex: 0 0 86px; color: #909399; }
+    .om-meta-value { min-width: 0; color: #606266; }
+    .om-meta-value--id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .om-cell-id { word-break: break-all; }
+    .om-table__strike { color: #606266; text-decoration: line-through; }
+    .om-table__action-row { line-height: normal; }
+    .om-table__action-row + .om-table__action-row { margin-top: 4px; }
+    .om-table__action-row .el-button { height: 20px; padding: 2px; font-size: 14px; }
+    .om-pagination { display: flex; justify-content: flex-end; margin-top: 14px; }
+  </style>
 </head>
 <body>
   <div id="prototypeNav"></div>
@@ -18,104 +45,200 @@
     <main id="ordersPage" class="content-view orders-content" data-diff-page="运营后台 · 订单管理">
       <span id="orderDetailDialogPageMeta" data-diff-page="订单详情弹窗" hidden></span>
       <span id="logisticsDialogPageMeta" data-diff-page="物流信息弹窗" hidden></span>
-      <el-form id="orderFilters" :inline="true" :model="filters" size="small">
-        <el-form-item label="洋葱订单号">
-          <el-input v-model="filters.orderId" clearable placeholder="请输入订单号" style="width: 220px"></el-input>
-        </el-form-item>
-        <el-form-item id="paymentPlatformFilter" label="支付平台">
-          <el-select v-model="filters.platform" clearable placeholder="全部" style="width: 220px">
-            <el-option label="微信" value="微信"></el-option>
-            <el-option label="支付宝" value="支付宝"></el-option>
-            <el-option label="非电商平台的三方订单" value="非电商平台的三方订单"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="订单状态">
-          <el-select v-model="filters.status" clearable placeholder="全部" style="width: 160px">
-            <el-option label="已支付" value="已支付"></el-option>
-            <el-option label="部分退款" value="部分退款"></el-option>
-            <el-option label="退款成功" value="退款成功"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="applyFilters">查询</el-button>
-          <el-button @click="resetFilters">重置</el-button>
-        </el-form-item>
-      </el-form>
-
-      <div class="page-heading">
-        <h1>洋葱订单列表</h1>
-        <span class="page-heading__hint">支付平台统一，具体渠道通过 shopid 区分</span>
+      <div class="om-page-header">
+        <h1>订单管理</h1>
+        <el-button plain @click="notifyStub('原型不切换旧版页面')">返回旧版</el-button>
       </div>
 
-      <el-table
-        id="orderList"
-        v-loading="loading"
-        :data="visibleOrders"
-        border
-        stripe
-        empty-text="暂无符合条件的订单"
-        style="width: 100%"
-      >
-        <el-table-column label="订单商品" width="320" fixed="left">
-          <template #default="scope">
-            <div class="order-product">
-              <div class="order-product__thumb">课</div>
-              <div>
-                <div class="order-product__name">{{ scope.row.product }}</div>
-                <div class="order-product__meta">
-                  {{ scope.row.createdAt }}<br>
-                  {{ scope.row.id }}<br>
-                  支付平台：非电商平台的三方订单<br>
-                  发货状态：{{ scope.row.shipment }} · 售后：{{ scope.row.status }}
+      <el-card class="om-search-card" shadow="never">
+        <el-form id="orderFilters" class="om-search-form" :model="filters" label-width="84px" label-position="right">
+          <el-divider content-position="left">订单信息</el-divider>
+          <el-form-item label="创建时间">
+            <el-date-picker
+              v-model="filters.createdRange"
+              type="datetimerange"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              style="width: 420px"
+            ></el-date-picker>
+          </el-form-item>
+          <el-form-item label="交易状态">
+            <el-radio-group v-model="filters.statusMode" class="om-search-form__mode">
+              <el-radio value="all">不限</el-radio>
+              <el-radio value="pick">筛选交易状态</el-radio>
+            </el-radio-group>
+            <span class="om-search-form__note">（筛选满足以下任何状态的订单）</span>
+          </el-form-item>
+          <el-form-item v-if="filters.statusMode === 'pick'" label=" ">
+            <el-checkbox-group v-model="filters.statuses">
+              <el-checkbox value="已支付">已支付</el-checkbox>
+              <el-checkbox value="部分退款">部分退款</el-checkbox>
+              <el-checkbox value="退款成功">退款成功</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+
+          <el-divider content-position="left">订单商品信息</el-divider>
+          <el-form-item label="商品筛选">
+            <el-input v-model="filters.productKeyword" clearable placeholder="请输入洋葱系统内部的商品ID" style="width: 420px">
+              <template #prepend>根据商品ID查询</template>
+            </el-input>
+          </el-form-item>
+
+          <el-divider content-position="left">订单用户信息</el-divider>
+          <el-form-item label="用户筛选">
+            <el-input v-model="filters.accountId" clearable placeholder="请输入用户的洋葱ID" style="width: 420px">
+              <template #prepend>根据用户洋葱ID查询</template>
+            </el-input>
+          </el-form-item>
+          <el-form-item label="支付平台">
+            <el-radio-group v-model="filters.platformMode" class="om-search-form__mode">
+              <el-radio value="all">不限</el-radio>
+              <el-radio value="pick">筛选支付平台</el-radio>
+            </el-radio-group>
+            <span class="om-search-form__note">筛选使用以下任何支付平台的订单</span>
+          </el-form-item>
+          <el-form-item v-if="filters.platformMode === 'pick'" label=" ">
+            <el-checkbox-group v-model="filters.platforms">
+              <el-checkbox value="微信">微信</el-checkbox>
+              <el-checkbox value="支付宝">支付宝</el-checkbox>
+              <el-checkbox value="Ping++">Ping++</el-checkbox>
+              <el-checkbox value="天猫">天猫</el-checkbox>
+              <el-checkbox value="抖店">抖店</el-checkbox>
+              <el-checkbox value="小红书">小红书</el-checkbox>
+              <el-checkbox id="paymentPlatformFilter" value="非电商平台的三方订单">非电商平台的三方订单</el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
+          <el-form-item label="订单号">
+            <el-input v-model="filters.orderId" clearable placeholder="请输入订单号" style="width: 420px">
+              <template #prepend>
+                <el-select v-model="filters.orderIdType" style="width: 130px">
+                  <el-option label="洋葱订单号" value="onion"></el-option>
+                  <el-option label="支付平台订单号" value="platform"></el-option>
+                </el-select>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <div class="om-search-form__actions">
+            <el-button type="primary" @click="applyFilters">查找订单</el-button>
+            <el-button @click="resetFilters">重置</el-button>
+          </div>
+          <el-text class="om-search-form__hint-block" type="danger" size="small">
+            如输入多组查询条件，则订单查询结果将返回交集
+          </el-text>
+        </el-form>
+      </el-card>
+
+      <el-card shadow="never">
+        <div class="page-heading" style="margin-top: 0">
+          <h1>查询结果</h1>
+          <span class="page-heading__hint">支付平台统一，具体渠道通过 shopid 区分</span>
+        </div>
+        <el-table
+          id="orderList"
+          v-loading="loading"
+          :data="visibleOrders"
+          class="om-el-table"
+          border
+          stripe
+          size="small"
+          empty-text="暂无符合条件的订单"
+          style="width: 100%"
+        >
+          <el-table-column label="订单商品" width="260" fixed="left">
+            <template #default="scope">
+              <div class="om-cell-order">
+                <div class="om-cell-goods--name">{{ scope.row.product }}</div>
+                <div class="om-cell-meta">
+                  <div class="om-meta-row">
+                    <span class="om-meta-label">订单创建时间</span>
+                    <span class="om-meta-value">{{ scope.row.createdAt }}</span>
+                  </div>
+                  <div class="om-meta-row">
+                    <span class="om-meta-label">洋葱订单号</span>
+                    <span class="om-meta-value om-meta-value--id" :title="onionOrderNo(scope.row)">{{ onionOrderNo(scope.row) }}</span>
+                  </div>
+                  <div class="om-meta-row">
+                    <span class="om-meta-label">支付平台订单号</span>
+                    <span class="om-meta-value om-meta-value--id" :title="scope.row.id">{{ scope.row.id }}</span>
+                  </div>
+                  <div class="om-meta-row">
+                    <span class="om-meta-label">支付平台</span>
+                    <span class="om-meta-value">非电商平台的三方订单</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="订单标记" width="120">
-          <template #default="scope">
-            <el-tag type="info" size="small">{{ scope.row.channelName }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="商品原价" width="120" align="right">
-          <template #default="scope">¥{{ money(scope.row.paid) }}</template>
-        </el-table-column>
-        <el-table-column label="订单总价" width="120" align="right">
-          <template #default="scope">¥{{ money(scope.row.paid) }}</template>
-        </el-table-column>
-        <el-table-column label="实付金额" width="120" align="right">
-          <template #default="scope">¥{{ money(scope.row.paid) }}</template>
-        </el-table-column>
-        <el-table-column label="洋葱ID" width="120" prop="accountId" show-overflow-tooltip></el-table-column>
-        <el-table-column label="用户ID" width="120">
-          <template #default="scope">{{ scope.row.phone.slice(-8) }}</template>
-        </el-table-column>
-        <el-table-column label="订单状态" width="120">
-          <template #default="scope">
-            <el-tag :type="statusType(scope.row.status)" size="small">{{ scope.row.status }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column width="100" align="center">
-          <template #header><span id="refundCountColumn">退款次数</span></template>
-          <template #default="scope">{{ scope.row.refundCount }}</template>
-        </el-table-column>
-        <el-table-column width="130" align="right">
-          <template #header><span id="refundAmountColumn">退款总金额</span></template>
-          <template #default="scope">¥{{ money(scope.row.refunded) }}</template>
-        </el-table-column>
-        <el-table-column label="权益是否收回" width="130" align="center">
-          <template #default="scope">{{ scope.row.rights === '权益已收回' ? '是' : '否' }}</template>
-        </el-table-column>
-        <el-table-column label="操作" width="230" fixed="right">
-          <template #default="scope">
-            <div class="operation-buttons">
-              <el-button link type="primary" @click="openDetail(scope.row)">查看详情</el-button>
-              <el-button link type="primary" @click="openLogistics(scope.row)">查看物流信息</el-button>
-              <el-button link type="primary" @click="showAfterSale(scope.row)">申请售后</el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+            </template>
+          </el-table-column>
+          <el-table-column label="订单标记" width="120" align="center">
+            <template #default="scope">
+              <el-tag v-if="scope.row.channelName" type="info" size="small">{{ scope.row.channelName }}</el-tag>
+              <span v-else class="om-cell-goods--muted">-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="商品原价" width="96" align="center">
+            <template #default="scope">
+              <span class="om-table__strike">￥{{ money(listPrice(scope.row)) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="订单总价(元)" width="100" align="center">
+            <template #default="scope">￥{{ money(scope.row.paid) }}</template>
+          </el-table-column>
+          <el-table-column label="实付金额(元)" width="100" align="center">
+            <template #default="scope">￥{{ money(scope.row.paid) }}</template>
+          </el-table-column>
+          <el-table-column label="洋葱ID" width="100" align="center">
+            <template #default="scope">
+              <span v-if="scope.row.accountId" class="om-cell-id">{{ scope.row.accountId }}</span>
+              <span v-else class="om-cell-goods--muted">-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="用户ID" width="120" align="center">
+            <template #default="scope">
+              <span v-if="scope.row.registered" class="om-cell-id">{{ userHexId(scope.row) }}</span>
+              <span v-else class="om-cell-goods--muted">-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="订单状态" width="140" align="center">
+            <template #default="scope">
+              <div>{{ scope.row.status }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column width="88" align="center">
+            <template #header><span id="refundCountColumn">退款次数</span></template>
+            <template #default="scope">{{ scope.row.refundCount }}</template>
+          </el-table-column>
+          <el-table-column width="100" align="center">
+            <template #header><span id="refundAmountColumn">退款总金额</span></template>
+            <template #default="scope">￥{{ money(scope.row.refunded) }}</template>
+          </el-table-column>
+          <el-table-column label="权益是否收回" width="120" align="center">
+            <template #default="scope">{{ scope.row.rights === '权益已收回' ? '是' : '否' }}</template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="scope">
+              <div class="om-table__action-row">
+                <el-button link type="primary" @click="openDetail(scope.row)">查看详情</el-button>
+              </div>
+              <div class="om-table__action-row">
+                <el-button link type="primary" @click="openLogistics(scope.row)">查看物流信息</el-button>
+              </div>
+              <div class="om-table__action-row">
+                <el-button link type="primary" @click="showAfterSale(scope.row)">申请售后</el-button>
+              </div>
+              <div v-if="scope.row.status !== '退款成功'" class="om-table__action-row">
+                <el-button link type="primary" @click="showRefund(scope.row)">申请退款</el-button>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-pagination
+          class="om-pagination"
+          layout="total, prev, pager, next"
+          :total="visibleOrders.length"
+          :page-size="20"
+        ></el-pagination>
+      </el-card>
 
       <el-dialog
         v-model="detailDialogVisible"
@@ -125,7 +248,8 @@
       >
         <section id="orderDetailDialog" data-diff-page="订单详情弹窗">
           <el-descriptions v-if="selectedOrder" id="orderDetailBody" :column="2" border>
-            <el-descriptions-item label="洋葱订单号">{{ selectedOrder.id }}</el-descriptions-item>
+            <el-descriptions-item label="洋葱订单号">{{ onionOrderNo(selectedOrder) }}</el-descriptions-item>
+            <el-descriptions-item label="支付平台订单号">{{ selectedOrder.id }}</el-descriptions-item>
             <el-descriptions-item label="支付平台">非电商平台的三方订单</el-descriptions-item>
             <el-descriptions-item label="渠道 / shopid">
               {{ selectedOrder.channelName }} / {{ selectedOrder.shopid }}
@@ -194,12 +318,25 @@
       }
 
       PrototypeApp.renderNav('orders')
+      const emptyFilters = function () {
+        return {
+          createdRange: '',
+          statusMode: 'all',
+          statuses: [],
+          productKeyword: '',
+          accountId: '',
+          platformMode: 'all',
+          platforms: [],
+          orderIdType: 'onion',
+          orderId: '',
+        }
+      }
       const orderApplication = Vue.createApp({
         data: function () {
           return {
             state: PrototypeApp.getState(),
-            filters: { orderId: '', platform: '', status: '' },
-            appliedFilters: { orderId: '', platform: '', status: '' },
+            filters: emptyFilters(),
+            appliedFilters: emptyFilters(),
             demoState: 'normal',
             loading: false,
             detailDialogVisible: false,
@@ -217,11 +354,19 @@
               orders = orders.filter((item) => item.status === '退款成功')
             }
             if (this.demoState === 'empty') return []
-            const filters = this.appliedFilters
+            const f = this.appliedFilters
+            const self = this
+            // 与线上一致：多组查询条件取交集
             return orders.filter(function (item) {
-              return (!filters.orderId || item.id.includes(filters.orderId)) &&
-                (!filters.platform || filters.platform === '非电商平台的三方订单') &&
-                (!filters.status || item.status === filters.status)
+              if (f.statusMode === 'pick' && f.statuses.length && !f.statuses.includes(item.status)) return false
+              if (f.platformMode === 'pick' && f.platforms.length && !f.platforms.includes('非电商平台的三方订单')) return false
+              if (f.productKeyword && !(item.comboId || '').includes(f.productKeyword) && !item.product.includes(f.productKeyword)) return false
+              if (f.accountId && !(item.accountId || '').includes(f.accountId)) return false
+              if (f.orderId) {
+                const target = f.orderIdType === 'platform' ? item.id : self.onionOrderNo(item)
+                if (!target.includes(f.orderId)) return false
+              }
+              return true
             })
           },
         },
@@ -243,16 +388,45 @@
             if (status === '部分退款') return 'warning'
             return 'success'
           },
+          listPrice: function (row) {
+            return row.listPrice || row.paid
+          },
+          // 洋葱订单号：由三方订单 id 生成稳定的 24 位十六进制串（原型演示用，格式对齐线上）
+          onionOrderNo: function (row) {
+            let hash = 0
+            for (let i = 0; i < row.id.length; i += 1) {
+              hash = (hash * 31 + row.id.charCodeAt(i)) >>> 0
+            }
+            const seed = hash.toString(16).padStart(8, '0')
+            return ('6a74' + seed + seed + seed).slice(0, 24)
+          },
+          userHexId: function (row) {
+            let hash = 7
+            for (let i = 0; i < row.phone.length; i += 1) {
+              hash = (hash * 33 + row.phone.charCodeAt(i)) >>> 0
+            }
+            const seed = hash.toString(16).padStart(8, '0')
+            return ('5f' + seed + seed + seed).slice(0, 24)
+          },
           applyFilters: function () {
             this.loading = true
             setTimeout(() => {
-              this.appliedFilters = { ...this.filters }
+              this.appliedFilters = JSON.parse(JSON.stringify(this.filters))
               this.loading = false
             }, 260)
           },
           resetFilters: function () {
-            this.filters = { orderId: '', platform: '', status: '' }
-            this.appliedFilters = { orderId: '', platform: '', status: '' }
+            this.filters = emptyFilters()
+            this.appliedFilters = emptyFilters()
+          },
+          notifyStub: function (message) {
+            ElementPlus.ElMessage({ type: 'info', message: message })
+          },
+          showRefund: function (order) {
+            ElementPlus.ElMessage({
+              type: 'info',
+              message: `已打开订单 ${order.id} 的退款入口，原型不提交真实申请`,
+            })
           },
           openDetail: function (order) {
             this.selectedOrder = order
@@ -327,8 +501,8 @@
           before: '支付平台筛选无非电商三方订单',
           after: '新增“非电商平台的三方订单”筛选值',
           examples: [
-            { case: '新平台', input: '支付平台=非电商平台的三方订单', result: '展示三个渠道订单' },
-            { case: '指定订单', input: '订单号=xiaobaobaba20260731101', result: '只展示对应订单' }
+            { case: '新平台', input: '支付平台→筛选支付平台→勾选“非电商平台的三方订单”', result: '展示三个渠道订单' },
+            { case: '指定订单', input: '订单号切“支付平台订单号”=xiaobaobaba20260731101', result: '只展示对应订单' }
           ],
           sdd: { section: 'FR-4 洋葱订单同步与权益', blockId: 'doxcnBpsxepBxtMmueScIckHusc' }
         },
