@@ -25,20 +25,25 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 }
 button:active { transform: translateY(1px); }
 
+/* 顶栏固定于视口：页面横向滚动时不随内容位移，杜绝宽页面上的“断口” */
+#prototypeNav { height: 50px; }
 .prototype-nav {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 800;
-  min-width: 1280px;
   height: 50px;
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 0 20px;
+  overflow-x: auto;
   color: #cfd7e6;
   background: #182235;
   border-bottom: 1px solid rgba(255, 255, 255, .08);
 }
+.prototype-nav a { flex: 0 0 auto; white-space: nowrap; }
 .prototype-nav__brand {
   margin-right: 10px;
   color: #fff;
@@ -208,7 +213,6 @@ button:active { transform: translateY(1px); }
 .stat-item strong { margin-left: 6px; font-size: 18px; font-variant-numeric: tabular-nums; }
 
 .consumer-body { min-width: 390px; background: #edf1f7; }
-.consumer-body .prototype-nav { min-width: 1180px; }
 .phone-stage { width: 390px; min-height: 760px; margin: 24px auto 60px; background: #f4f6f9; box-shadow: 0 14px 36px rgba(31, 52, 85, .16); }
 .phone-header { position: sticky; top: 50px; z-index: 20; height: 52px; display: flex; align-items: center; justify-content: center; color: #17233d; background: rgba(255, 255, 255, .96); border-bottom: 1px solid #e9edf2; font-size: 17px; font-weight: 650; }
 .phone-tabs { display: grid; grid-template-columns: repeat(3, 1fr); background: #fff; }
@@ -368,30 +372,8 @@ button:active { transform: translateY(1px); }
 .template-link { margin-left: 8px; }
 .detail-errors { margin-top: 16px; }
 
-.orders-content { min-width: 1780px; }
-.order-product {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
-  gap: 10px;
-  line-height: 1.5;
-}
-.order-product__thumb {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  color: #7d8ba5;
-  border-radius: 3px;
-  background: #eef3fb;
-}
-.order-product__name { color: #303133; font-weight: 600; }
-.order-product__meta { margin-top: 4px; color: #909399; font-size: 12px; }
-.operation-buttons {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  white-space: nowrap;
-}
+/* 订单管理页：容器不强撑宽度，让 el-table 走内部横向滚动，fixed 左右列才能真正冻结（对齐线上 shadow-admin 实现） */
+.orders-content { max-width: 1720px; margin-left: auto; margin-right: auto; }
 
 .workbook-shell {
   min-width: 1500px;
