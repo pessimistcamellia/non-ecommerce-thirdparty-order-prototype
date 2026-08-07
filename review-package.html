@@ -450,19 +450,22 @@ document.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>{s.cl
 window.__SAVE__={url:"__SAVE_URL__",exp:"__SAVE_EXP__"};
 (function(){
 var FILE=location.pathname.split('/').pop()||'pkg';
-var OKEY='ed-'+FILE;
+var OKEY='ed2-'+FILE;
 var SKIP={SCRIPT:1,STYLE:1,LINK:1,META:1,INPUT:1,SELECT:1,TEXTAREA:1,BUTTON:1,IFRAME:1,IMG:1,SVG:1,CANVAS:1,BR:1,HR:1};
-/* 给"有直接文字"的最外层元素编号；同一算法既用于当前页面也用于发布前取回的原始页面，保证编号对得上 */
+/* 给"有直接文字"的最外层元素编号；同一算法既用于当前页面也用于发布前取回的原始页面，保证编号对得上。
+   列表（ul/ol）整体作为一个编辑单元，编辑态里回车即可新增一条、退格删空即可删除一条。 */
 function stamp(doc){
  var n=0,seen=[];
  [].forEach.call(doc.querySelectorAll('body *'),function(el){
   if(SKIP[el.tagName])return;
   if(el.closest('#dmRoot,#rvPanel,#rvFab,#edBar,nav,[data-noedit]'))return;
-  for(var i=0;i<seen.length;i++)if(seen[i].contains(el))return;
   var has=false,cs=el.childNodes;
   for(var j=0;j<cs.length;j++)if(cs[j].nodeType===3&&cs[j].textContent.trim()){has=true;break}
   if(!has)return;
-  el.setAttribute('data-eid',n++);seen.push(el);
+  var t=el,l=el.closest('ul,ol');
+  while(l){t=l;l=l.parentElement&&l.parentElement.closest('ul,ol')}
+  for(var i=0;i<seen.length;i++)if(seen[i]===t||seen[i].contains(t))return;
+  t.setAttribute('data-eid',n++);seen.push(t);
  });
 }
 var OV={};try{OV=JSON.parse(localStorage.getItem(OKEY))||{}}catch(e){}
@@ -475,7 +478,7 @@ var bar=document.createElement('div');bar.id='edBar';document.body.appendChild(b
 var editing=false;
 function draw(){
  if(!editing){bar.innerHTML='<button class="eb" id="ebOn" title="直接修改页面文字">✎ 编辑</button>';return}
- var tip='点击任意文字直接修改';
+ var tip='点击文字直接修改；列表内回车新增一条、退格删除';
  if(canPub())tip+='（在线发布至 '+new Date(expMs).toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'})+'）';
  bar.innerHTML='<span class="ed-tip">'+tip+'</span>'
   +(canPub()?'<button class="eb pri" id="ebPub">保存发布</button>':'')
