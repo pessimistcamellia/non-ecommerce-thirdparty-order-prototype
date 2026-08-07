@@ -63,6 +63,8 @@ button:active { transform: translateY(1px); }
 }
 .prototype-nav a:hover { color: #fff; background: rgba(255, 255, 255, .08); }
 .prototype-nav a.is-active { color: #fff; background: #3370ff; }
+.prototype-nav a.prototype-nav__external { color: #9fc3ff; font-size: 12px; }
+.prototype-nav a.prototype-nav__external:hover { color: #d0e2ff; }
 .prototype-nav__reset {
   height: 30px;
   margin-left: auto;

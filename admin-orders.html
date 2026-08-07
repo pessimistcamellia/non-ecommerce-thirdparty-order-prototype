@@ -132,7 +132,7 @@
       <el-card shadow="never">
         <div class="page-heading" style="margin-top: 0">
           <h1>查询结果</h1>
-          <span class="page-heading__hint">支付平台统一，具体渠道通过 shopid 区分</span>
+          <span class="page-heading__hint">支付平台统一，具体渠道以渠道名称区分（渠道注册表登记）</span>
         </div>
         <el-table
           id="orderList"
@@ -251,8 +251,8 @@
             <el-descriptions-item label="洋葱订单号">{{ onionOrderNo(selectedOrder) }}</el-descriptions-item>
             <el-descriptions-item label="支付平台订单号">{{ selectedOrder.id }}</el-descriptions-item>
             <el-descriptions-item label="支付平台">非电商平台的三方订单</el-descriptions-item>
-            <el-descriptions-item label="渠道 / shopid">
-              {{ selectedOrder.channelName }} / {{ selectedOrder.shopid }}
+            <el-descriptions-item label="渠道">
+              {{ selectedOrder.channelName }}
             </el-descriptions-item>
             <el-descriptions-item label="订单状态">
               <el-tag :type="statusType(selectedOrder.status)" size="small">{{ selectedOrder.status }}</el-tag>
@@ -497,8 +497,8 @@
           target: '#paymentPlatformFilter',
           type: 'enum',
           title: '新增统一支付平台筛选值',
-          desc: '非电商渠道订单统一使用同一支付平台值，具体渠道由 shopid 区分。',
-          before: '支付平台筛选无非电商三方订单',
+          desc: '非电商渠道订单统一使用同一支付平台值，具体渠道以渠道名称区分（渠道注册表登记渠道 id）。',
+          before: '线上支付平台筛选无非电商三方订单选项',
           after: '新增“非电商平台的三方订单”筛选值',
           examples: [
             { case: '新平台', input: '支付平台→筛选支付平台→勾选“非电商平台的三方订单”', result: '展示三个渠道订单' },
@@ -515,7 +515,7 @@
           type: 'new',
           title: '展示三方退款次数',
           desc: '退款订单可跨账期重复，按历史累计展示次数。',
-          before: '无三方订单退款次数',
+          before: '线上三方订单退款数据仅详情页展示，列表退款次数为 0',
           after: '新增退款次数列',
           examples: [
             { case: '部分退款', input: '订单=xiaobaobaba20260731101', result: '退款次数=2' },
@@ -532,7 +532,7 @@
           type: 'new',
           title: '展示累计退款总金额',
           desc: '按历史累计口径展示，反向同步不重复累加。',
-          before: '无三方订单退款总金额',
+          before: '线上三方订单退款数据仅详情页展示，列表退款总金额为 0',
           after: '新增退款总金额列',
           examples: [
             { case: '部分退款', input: '支付=600；累计退款=400', result: '剩余可退=200' },
@@ -597,7 +597,13 @@
   <script>
 /* ============ 原型变更标注引擎 proto-note（零依赖，可整段复用） ============
    布局参考：固定右侧深色批注栏 + 页面编号锚点 + canvas 连线（axure 批注风格）
-   规则：默认不显示任何标注；按模块勾选显示；只联动 SDD（不展示 PRD） */
+   规则：默认不显示任何标注；按模块勾选显示；只联动 SDD（不展示 PRD）
+   约定：
+   - change.target 为 null 的“页面不可见”变更（纯流程/链路），不画锚点不连线，
+     统一排在批注栏最后的「流程与链路」分节；数据数组中也应放在最后。
+   - target 在弹窗内的变更，点击批注卡片时由 DIFF_HOOKS.locate(pageId) 自动打开弹窗，
+     引擎轮询等待目标挂载后再滚动定位并连线。
+   - 浮层 z-index 必须压过 Element 弹窗（2000+），否则弹窗打开时锚点与连线被蒙层盖住。 */
 (function () {
   const CS = window.DIFF_CHANGESET;
   if (!CS || !CS.changes || !CS.changes.length) return;
@@ -608,6 +614,7 @@
   const PANEL_W = 360;
 
   CS.changes.forEach((c, i) => { c._no = String(i + 1).padStart(2, "0"); });
+  const targeted = c => !!c.target;
 
   /* ---------- 状态 ---------- */
   const moduleKeys = [];
@@ -618,7 +625,7 @@
     byModule[key].push(c);
   });
   const byTarget = {};
-  CS.changes.forEach(c => { (byTarget[c.target] = byTarget[c.target] || []).push(c); });
+  CS.changes.filter(targeted).forEach(c => { (byTarget[c.target] = byTarget[c.target] || []).push(c); });
   const keyOf = c => c.page + "::" + c.module;
 
   let state = { open: true, enabled: {}, demo: {} };
@@ -650,12 +657,12 @@
   body.da-open { padding-right:0 !important; overflow-x:visible !important; }
   .da-scroll-spacer { position:absolute; top:0; width:var(--da-panel-w); height:1px; pointer-events:none; visibility:hidden; }
 
-  .da-launch { position:fixed; top:14px; right:14px; z-index:1200; display:inline-flex; align-items:center; gap:8px;
+  .da-launch { position:fixed; top:14px; right:14px; z-index:9200; display:inline-flex; align-items:center; gap:8px;
     background:var(--da-navy); color:#fff; border:0; border-radius:999px; padding:9px 16px; font-size:13px; font-weight:600;
     cursor:pointer; box-shadow:0 6px 20px rgba(7,29,47,.28); }
   .da-launch .da-launch-n { color:var(--da-sky); font-weight:700; }
 
-  .da-panel { position:fixed; z-index:1100; top:0; right:0; bottom:0; width:var(--da-panel-w); overflow-y:auto;
+  .da-panel { position:fixed; z-index:9100; top:0; right:0; bottom:0; width:var(--da-panel-w); overflow-y:auto;
     color:rgba(255,255,255,.78); border-left:1px solid rgba(255,255,255,.08);
     background:radial-gradient(circle at 100% 0, rgba(44,147,232,.16), transparent 20rem), var(--da-navy);
     box-shadow:-18px 0 50px rgba(7,29,47,.12); font-size:12px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.2) transparent; }
@@ -706,6 +713,7 @@
     background:rgba(114,196,255,.32); transition:background .16s ease, box-shadow .16s ease; }
   .da-note::after { content:""; position:absolute; top:20px; left:-19px; width:7px; height:7px; border-radius:50%;
     border:1px solid rgba(114,196,255,.55); background:var(--da-navy); transition:background .16s ease, box-shadow .16s ease; }
+  .da-note.da-nowire::before, .da-note.da-nowire::after { display:none; }
   .da-note:hover, .da-note.da-active { border-color:rgba(114,196,255,.65); background:rgba(44,147,232,.13); transform:translateX(-3px); }
   .da-note.da-active::before { background:#72c4ff; box-shadow:0 0 12px rgba(44,147,232,.62); }
   .da-note.da-active::after { background:#72c4ff; box-shadow:0 0 0 4px rgba(44,147,232,.18); }
@@ -728,7 +736,7 @@
     font-weight:650; text-decoration:none; }
   .da-note-sdd:hover { text-decoration:underline; }
 
-  .da-anchors { position:absolute; left:0; top:0; width:0; height:0; z-index:1050; pointer-events:none; }
+  .da-anchors { position:absolute; left:0; top:0; width:0; height:0; z-index:9000; pointer-events:none; }
   .da-anchor { position:absolute; display:grid; width:22px; height:22px; place-items:center; border:1px solid rgba(20,121,209,.28);
     border-radius:50%; color:var(--da-blue); background:#eff8ff; font-size:9px; font-weight:800; cursor:pointer;
     pointer-events:auto; box-shadow:0 2px 8px rgba(7,29,47,.14); transition:transform .15s ease, background .15s ease; }
@@ -740,7 +748,7 @@
   @keyframes da-pulse { 0% { box-shadow:0 0 0 0 rgba(44,147,232,.4); } 100% { box-shadow:0 0 0 14px rgba(44,147,232,0); } }
   .da-pulsing { animation:da-pulse .9s ease-out 2; }
 
-  .da-wires { position:fixed; inset:0; z-index:1040; width:100vw; height:100vh; pointer-events:none; }
+  .da-wires { position:fixed; inset:0; z-index:8990; width:100vw; height:100vh; pointer-events:none; }
 
   @media print { .da-panel, .da-anchors, .da-wires, .da-launch, .da-scroll-spacer { display:none !important; }
     html.da-open { overflow-x:visible !important; } body.da-open { padding-right:0 !important; } }
@@ -789,6 +797,30 @@
     modsByPage[p].push(k);
   });
 
+  function noteCard(c) {
+    let html = '<article class="da-note' + (targeted(c) ? "" : " da-nowire") + '" id="da-note-' + c.id + '" data-chg="' + c.id + '">';
+    html += '<div class="da-note-head"><span class="da-no">' + c._no + '</span><span>' + c.title + '</span>';
+    html += '<span class="da-note-kind">' + (TYPE_LABEL[c.type] || "变更") + " · " + (LEVEL_LABEL[c.level] || "") + "</span></div>";
+    html += "<p>" + c.desc + "</p>";
+    if (c.before && c.after) html += '<div class="da-note-ba"><b>前</b>　' + c.before + '<br><b>后</b>　' + c.after + "</div>";
+    if (Array.isArray(c.examples) && c.examples.length) {
+      html += '<div class="da-examples">';
+      c.examples.forEach(example => {
+        html += '<div class="da-example"><span class="da-example-case">' + example.case + '</span>' +
+          '<code class="da-example-input">' + example.input + '</code>' +
+          '<span class="da-example-result">' + example.result + "</span></div>";
+      });
+      html += "</div>";
+    }
+    if (c.sdd && CS.meta.sddUrl && c.sdd.blockId) {
+      html += '<a class="da-note-sdd" target="_blank" href="' + CS.meta.sddUrl + "#" + c.sdd.blockId + '">SDD · ' + c.sdd.section + " ↗</a>";
+    } else if (c.sdd && c.sdd.section) {
+      html += '<span class="da-note-sdd" style="color:rgba(255,255,255,.4)">SDD · ' + c.sdd.section + "</span>";
+    }
+    html += "</article>";
+    return html;
+  }
+
   function renderPanel() {
     let html = '<div class="da-panel-inner">';
     html += '<div class="da-top"><h2>变更导览<small>' + CS.changes.length + "</small></h2><div class=\"da-top-actions\">";
@@ -827,33 +859,19 @@
       html += '<div class="da-empty">勾选模块后展示对应标注与连线</div>';
     } else {
       pages.forEach(p => {
-        const list = CS.changes.filter(c => c.page === p && isOn(c));
+        const list = CS.changes.filter(c => c.page === p && isOn(c) && targeted(c));
         if (!list.length) return;
         html += '<section class="da-note-section"><h3 class="da-note-heading">' + pageName(p) + "</h3>";
-        list.forEach(c => {
-          html += '<article class="da-note" id="da-note-' + c.id + '" data-chg="' + c.id + '">';
-          html += '<div class="da-note-head"><span class="da-no">' + c._no + '</span><span>' + c.title + '</span>';
-          html += '<span class="da-note-kind">' + (TYPE_LABEL[c.type] || "变更") + " · " + (LEVEL_LABEL[c.level] || "") + "</span></div>";
-          html += "<p>" + c.desc + "</p>";
-          if (c.before && c.after) html += '<div class="da-note-ba"><b>前</b>　' + c.before + '<br><b>后</b>　' + c.after + "</div>";
-          if (Array.isArray(c.examples) && c.examples.length) {
-            html += '<div class="da-examples">';
-            c.examples.forEach(example => {
-              html += '<div class="da-example"><span class="da-example-case">' + example.case + '</span>' +
-                '<code class="da-example-input">' + example.input + '</code>' +
-                '<span class="da-example-result">' + example.result + "</span></div>";
-            });
-            html += "</div>";
-          }
-          if (c.sdd && CS.meta.sddUrl && c.sdd.blockId) {
-            html += '<a class="da-note-sdd" target="_blank" href="' + CS.meta.sddUrl + "#" + c.sdd.blockId + '">SDD · ' + c.sdd.section + " ↗</a>";
-          } else if (c.sdd && c.sdd.section) {
-            html += '<span class="da-note-sdd" style="color:rgba(255,255,255,.4)">SDD · ' + c.sdd.section + "</span>";
-          }
-          html += "</article>";
-        });
+        list.forEach(c => { html += noteCard(c); });
         html += "</section>";
       });
+      // 页面不可见的流程/链路变更统一放在最后，不连线
+      const flowList = CS.changes.filter(c => isOn(c) && !targeted(c));
+      if (flowList.length) {
+        html += '<section class="da-note-section"><h3 class="da-note-heading">流程与链路 · 页面不可见</h3>';
+        flowList.forEach(c => { html += noteCard(c); });
+        html += "</section>";
+      }
     }
     html += "</div>";
     panel.innerHTML = html;
@@ -909,9 +927,9 @@
     panel.addEventListener("scroll", scheduleUpdate, { passive: true });
   }
 
-  /* ---------- 锚点浮层 ---------- */
+  /* ---------- 锚点浮层（仅针对有 target 的变更） ---------- */
   const anchorEls = {};   // change.id -> { el, last:{x,y,shown} }
-  CS.changes.forEach(c => {
+  CS.changes.filter(targeted).forEach(c => {
     const a = document.createElement("button");
     a.className = "da-anchor";
     a.setAttribute("data-da", "1");
@@ -933,18 +951,20 @@
   function targetVisible(el, rect) {
     if (!el.getClientRects().length) return false;
     // 遮挡检测（仅当取样点在视口内才有意义）：取样点若不属于目标元素（如被弹窗蒙层盖住），视为不可见。
-    // 目标滚出视口时不做钳制、不强行隐藏——锚点随文档自然滚出即可。
+    // 引擎自身的浮层（锚点/连线，[data-da]）不算遮挡。目标滚出视口时不做钳制——锚点随文档自然滚出即可。
     const inViewport = (x, y) => x >= 0 && x <= innerWidth && y >= 0 && y <= innerHeight;
+    const hit = (x, y) => {
+      const top = document.elementFromPoint(x, y);
+      if (!top) return false;
+      if (top.closest && top.closest("[data-da]")) return true;
+      return el === top || el.contains(top) || top.contains(el);
+    };
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     if (inViewport(cx, cy)) {
-      const top = document.elementFromPoint(cx, cy);
-      if (top && (el === top || el.contains(top) || top.contains(el))) return true;
+      if (hit(cx, cy)) return true;
       const sx = rect.left + 10, sy = rect.top + 10;
-      if (inViewport(sx, sy)) {
-        const top2 = document.elementFromPoint(sx, sy);
-        return !!(top2 && (el === top2 || el.contains(top2) || top2.contains(el)));
-      }
+      if (inViewport(sx, sy)) return hit(sx, sy);
       return false;
     }
     return true;
@@ -1024,9 +1044,9 @@
     const id = pinnedId || activeId;
     if (!id) return;
     const c = CS.changes.find(x => x.id === id);
-    if (!c || !isOn(c)) return;
+    if (!c || !isOn(c) || !targeted(c)) return;
     const rec = anchorEls[id];
-    if (!rec.last.shown) return;
+    if (!rec || !rec.last.shown) return;
     // 起点取锚点实时视口坐标（锚点在文档流中，滚动时坐标必须现算，不能用缓存）
     const ar = rec.el.getBoundingClientRect();
     if (ar.bottom < 0 || ar.top > innerHeight) return; // 锚点滚出视口则不画线
@@ -1042,7 +1062,8 @@
     // 固定态优先：钉住某编号后，悬停其他锚点不改变高亮与连线
     const id = pinnedId || activeId;
     CS.changes.forEach(c => {
-      anchorEls[c.id].el.classList.toggle("da-active", c.id === id);
+      const rec = anchorEls[c.id];
+      if (rec) rec.el.classList.toggle("da-active", c.id === id);
       const card = document.getElementById("da-note-" + c.id);
       if (card) card.classList.toggle("da-active", c.id === id);
     });
@@ -1057,16 +1078,24 @@
 
   /* ---------- 定位 ---------- */
   function locateChange(c) {
+    // 先执行页面钩子（可能需要打开弹窗），再轮询等待目标挂载/弹窗动画结束后定位。
     if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.locate === "function") window.DIFF_HOOKS.locate(c.page);
     else if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.showPage === "function") window.DIFF_HOOKS.showPage(c.page);
-    setTimeout(() => {
+    if (!targeted(c)) { scheduleUpdate(); return; }
+    let tries = 0;
+    const attempt = () => {
       const el = document.querySelector(c.target);
-      if (!el) return;
+      if (!el || !el.getClientRects().length) {
+        if (++tries < 12) { setTimeout(attempt, 130); }
+        return;
+      }
       el.scrollIntoView({ block: "center", behavior: "smooth" });
       el.classList.remove("da-pulsing"); void el.offsetWidth; el.classList.add("da-pulsing");
       setTimeout(() => el.classList.remove("da-pulsing"), 2000);
       scheduleUpdate();
-    }, 160);
+      setTimeout(scheduleUpdate, 360); // 弹窗打开动画结束后再校准一次锚点与连线
+    };
+    setTimeout(attempt, 160);
   }
   function locateModule(key) { locateChange(byModule[key][0]); }
 
@@ -1074,10 +1103,13 @@
   function syncScrollSpace() {
     if (!state.open) return;
     // 先移除自身对 scrollWidth 的贡献，测出业务页面原始宽度，再补 PANEL_W。
+    // 测量瞬间 scrollWidth 收缩会让浏览器钳制 scrollLeft（横向滚动位置被弹回），测完必须立即还原。
+    const sx = window.scrollX, sy = window.scrollY;
     scrollSpacer.style.display = "none";
     const contentWidth = Math.max(document.documentElement.clientWidth, document.documentElement.scrollWidth);
     scrollSpacer.style.left = contentWidth + "px";
     scrollSpacer.style.display = "block";
+    if (window.scrollX !== sx || window.scrollY !== sy) window.scrollTo(sx, sy);
   }
 
   /* ---------- 开关 ---------- */

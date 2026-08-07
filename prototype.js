@@ -5,9 +5,14 @@
   const PAGE_LINKS = [
     { id: 'upload', label: '运营后台 · 三方数据管理', href: 'admin-upload.html' },
     { id: 'orders', label: '运营后台 · 订单管理', href: 'admin-orders.html' },
-    { id: 'preview', label: '数据链路 · 三表预览', href: 'data-preview.html' },
     { id: 'consumer', label: 'C 端 · 我的购买', href: 'consumer.html' },
-    { id: 'feishu', label: '飞书协作 · 渠道与未注册跟踪', href: 'feishu.html' },
+  ]
+
+  // 实际交付物为数据表的内容不做原型页面，直接链接真实多维表格
+  const BASE_LINKS = [
+    { label: '财务三表 Base', href: 'https://guanghe.feishu.cn/base/HTx5bBzkna9kOsse2stc8Zdrnqe' },
+    { label: '渠道注册 Base', href: 'https://guanghe.feishu.cn/base/F0I2bV6KnaVBRzsLpwWcDa2Qnxh' },
+    { label: '未注册跟踪 Base', href: 'https://guanghe.feishu.cn/base/UbRfb8m5Ua962tsiILEcvQJgn8b?table=tblW8EMJ8S8mK16U&view=vewMrq51ZI' },
   ]
 
   const FILE_TYPES_BY_PLATFORM = {
@@ -35,7 +40,7 @@
       order: {
         id: 'xiaobaobaba20260804001',
         channelName: '小宝爸爸',
-        shopid: 'xiaobaobaba',
+        channelId: 'xiaobaobaba',
         phone: '13800138006',
         registered: false,
         accountId: '',
@@ -76,12 +81,12 @@
       frontendError: '支付成功订单表第 2 行：订单实付金额须大于 0，商品数量必须为 1',
     },
     channel: {
-      label: '渠道关系错误',
-      fileName: '小宝爸爸_davdian_关系错误.xlsx',
-      frontendError: 'Excel 渠道“小宝爸爸 / davdian”与渠道注册表不符',
+      label: '渠道未登记',
+      fileName: '渠道未登记_小宝爸爸优选.xlsx',
+      frontendError: 'Excel 渠道“小宝爸爸优选”未在渠道注册表登记生效',
     },
     multiFrontend: {
-      label: '7 类聚合错误',
+      label: '聚合错误',
       fileName: '全量前端校验错误.xlsx',
       frontendErrors: [
         {
@@ -123,14 +128,8 @@
         {
           sheet: '支付成功订单表',
           row: '第 7 行',
-          field: '订单 ID',
-          reason: '订单 ID 应以本行 shopid“xiaobaobaba”开头',
-        },
-        {
-          sheet: '支付成功订单表',
-          row: '第 8 行',
-          field: '渠道名称 / shopid',
-          reason: '小宝爸爸 / davdian 与渠道注册表不匹配',
+          field: '渠道名称',
+          reason: '渠道“小宝爸爸优选”未在渠道注册表登记生效',
         },
       ],
     },
@@ -155,7 +154,7 @@
     channels: [
       {
         channelName: '小宝爸爸',
-        shopid: 'xiaobaobaba',
+        channelId: 'xiaobaobaba',
         prepaid: true,
         commissionRule: '',
         commissionRate: null,
@@ -164,7 +163,7 @@
       },
       {
         channelName: '大V店',
-        shopid: 'davdian',
+        channelId: 'davdian',
         prepaid: false,
         commissionRule: '',
         commissionRate: null,
@@ -173,7 +172,7 @@
       },
       {
         channelName: '万物心选',
-        shopid: 'wanwuxinxuan',
+        channelId: 'wanwuxinxuan',
         prepaid: false,
         commissionRule: '',
         commissionRate: null,
@@ -251,7 +250,7 @@
       {
         id: 'xiaobaobaba20260731101',
         channelName: '小宝爸爸',
-        shopid: 'xiaobaobaba',
+        channelId: 'xiaobaobaba',
         phone: '13800138001',
         registered: true,
         accountId: 'YC138001',
@@ -278,7 +277,7 @@
       {
         id: 'davdian20260731102',
         channelName: '大V店',
-        shopid: 'davdian',
+        channelId: 'davdian',
         phone: '13800138002',
         registered: true,
         accountId: 'YC138002',
@@ -305,7 +304,7 @@
       {
         id: 'wanwuxinxuan20260731103',
         channelName: '万物心选',
-        shopid: 'wanwuxinxuan',
+        channelId: 'wanwuxinxuan',
         phone: '13800138003',
         registered: false,
         accountId: '',
@@ -332,7 +331,7 @@
       {
         id: 'xiaobaobaba20260730100',
         channelName: '小宝爸爸',
-        shopid: 'xiaobaobaba',
+        channelId: 'xiaobaobaba',
         phone: '13800138005',
         registered: true,
         accountId: 'YC138005',
@@ -359,7 +358,7 @@
       {
         id: 'wanwuxinxuan20260729099',
         channelName: '万物心选',
-        shopid: 'wanwuxinxuan',
+        channelId: 'wanwuxinxuan',
         phone: '13800138007',
         registered: false,
         accountId: '',
@@ -389,7 +388,7 @@
         id: 'track-001',
         orderId: 'wanwuxinxuan20260731103',
         channelName: '万物心选',
-        shopid: 'wanwuxinxuan',
+        channelId: 'wanwuxinxuan',
         phone: '13800138003',
         product: '洋葱数学思维进阶课',
         orderTime: '2026-07-30 18:42:05',
@@ -402,7 +401,7 @@
         id: 'track-002',
         orderId: 'wanwuxinxuan20260729099',
         channelName: '万物心选',
-        shopid: 'wanwuxinxuan',
+        channelId: 'wanwuxinxuan',
         phone: '13800138007',
         product: '洋葱物理启蒙课',
         orderTime: '2026-07-29 14:20:00',
@@ -458,7 +457,7 @@
         commissionRate: null,
         status: '已生效',
         noticeStatus: '已周知',
-        ...(fixture.channels.find((channel) => channel.shopid === item.shopid) || {}),
+        ...(fixture.channels.find((channel) => channel.channelId === item.channelId) || {}),
         ...item,
       })),
     }
@@ -523,6 +522,10 @@
         (page) =>
           `<a class="${activePage === page.id ? 'is-active' : ''}" href="${page.href}">${page.label}</a>`,
       ).join('')}
+      ${BASE_LINKS.map(
+        (item) =>
+          `<a class="prototype-nav__external" href="${item.href}" target="_blank" rel="noopener">${item.label} ↗</a>`,
+      ).join('')}
       <button class="prototype-nav__reset" type="button">重置演示数据</button>
     </nav>`
     mount.querySelector('button').addEventListener('click', resetState)
@@ -550,7 +553,7 @@
         id: `track-${order.id}`,
         orderId: order.id,
         channelName: order.channelName,
-        shopid: order.shopid,
+        channelId: order.channelId,
         phone: order.phone,
         product: order.product,
         orderTime: order.createdAt,

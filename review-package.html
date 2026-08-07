@@ -134,7 +134,7 @@
   .compact-list li{margin:4px 0}
   .ctrl input[type=number],.ctrl select{width:142px}
   .rule-tables{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
-  /* 粗粒度流程示意：主链（运营与用户视角）+ 分支（财务与数仓视角） */
+  /* 流程示意：主链（运营与用户视角）+ 分支（财务与数仓视角） */
   .flow{max-width:980px}
   .flow-head,.flow-row,.flow-arrow{display:grid;grid-template-columns:minmax(0,1fr) 44px 300px;align-items:center}
   .flow-head{margin-bottom:10px}
@@ -221,17 +221,17 @@
     <div class="card">
       <h3>背景与问题</h3>
       <p style="font-size:13px;margin-bottom:10px">
-        新媒体私域渠道（社群、公众号、小程序）收单平台分散、难以逐一系统对接，课程交付长期依赖「兑换码 + 人工」：
+        新媒体私域渠道（社群、公众号、小程序）收单平台分散、难以逐一系统对接，课程交付长期依赖「兑换码 + 人工发提醒激活短信」：
         渠道预付采购兑换码自行下发，或运营通过极速发货平台向用户发送兑换码短信。
         订单量正在快速上涨——仅小宝爸爸就从 5 月 855 单涨到 6 月 4,086 单、7 月半月已达 2,485 单，
         叠加万物心选、大 V 店累计超 1,200 单，人工链路已无法稳定支撑。
       </p>
       <ul class="compact-list">
-        <li><b>交付链路（兑换码 + 人工）：</b>码的发放、使用、剩余状态无实时追踪，5—6 月核查出风险兑换码 9 例、涉及 16,482 元（重复给码、错给码、漏交单）；渠道预付不及时造成垫资与对账缺口；短信触达率 91%、用户查阅率仅 20%，「未收到短信」类售后高发。</li>
-        <li><b>授权与退款：</b>订单与课程授权之间没有稳定的交易关联，退款后靠人工核销，存在漏核销与资产损失风险。</li>
-        <li><b>运营后台 · 三方数据管理页：</b>平台选项没有非电商渠道，文件类型筛选传参失效；上传为异步处理但结果不可感知，运营不知道哪些行失败、如何一次性修正。</li>
-        <li><b>运营后台 · 订单列表页与三方订单系统：</b>三方订单退款数据在列表显示为 0；三方订单系统还存在全额退款判定、反向同步重复累计两个存量计算缺陷。</li>
-        <li><b>C 端与财务数仓：</b>这类订单进不了订单系统，用户在 App 看不到购买记录、物流与售后；非电商渠道也没有财务订单表、退款表、结算表的统一生成与推送链路。</li>
+        <li><b>权益交付链路低效且资损风险高：</b>这类订单与课程授权之间没有稳定的交易关联，码的发放、使用、剩余状态无实时追踪，5—6 月核查出风险兑换码 9 例、涉及 16,482 元（重复给码、错给码、漏交单）；短信触达率 91%、用户查阅率仅 20%，「未收到短信」类售后高发。</li>
+        <li><b>财务数仓数据链路缺失：</b>这类非电商渠道订单没有财务订单表、退款表、结算表的统一生成与推送链路，全部数据依赖人工线下传导，数据的准确性、及时性不高，人效依赖度高。</li>
+        <li><b>C 端体验损失：</b>这类订单进不了订单系统，用户在 App 看不到购买记录、物流与售后，用户体验较差。</li>
+        <li><b>运营后台 · 三方数据管理页异步校验结果不可知：</b>平台选项没有非电商渠道，文件类型筛选传参失效；上传为异步处理但结果不可感知，运营不知道哪些行失败、如何一次性修正。</li>
+        <li><b>运营后台 · 订单列表页与三方订单系统退款数据问题：</b>三方订单退款数据在列表显示为 0；三方订单系统还存在全额退款判定、反向同步重复累计两个存量计算缺陷。</li>
       </ul>
     </div>
     <div class="card">
@@ -239,7 +239,7 @@
       <ol class="compact-list">
         <li>统一使用 Excel 导入支付与退款数据，并对完整工作簿执行全表校验。</li>
         <li>校验通过后自动生成三方订单、洋葱订单，并完成权益发放或仓储发货。</li>
-        <li>跟踪未注册用户，打通注册后绑定、财务三表和数仓同步。</li>
+        <li>跟踪未注册用户，打通注册后绑定、财务订单表生成和数仓三表链路。</li>
         <li>修复全平台三方退款展示、全额判定和重复累计缺陷。</li>
       </ol>
     </div>
@@ -251,7 +251,7 @@
         <li>三方数据管理页平台与文件类型、完整工作簿实时校验、异步全表校验及结果反馈。</li>
         <li>订单与退款落库、洋葱订单同步、权益开通、仓储发货和退款联动。</li>
         <li>C 端订单展示、渠道注册 Base、未注册跟踪 Base、飞书个人通知。</li>
-        <li>财务订单表、退款表、结算表生成与数仓同步。</li>
+        <li>财务订单表生成（含订单支付时间 = 数据成功导入时间）并推送数仓；退款表与结算表由数仓基于订单表生成。</li>
         <li>修复三方退款列表展示、全额退款 <code>&gt;=</code> 判定、反向同步重复累计三个存量 bug。</li>
       </ul>
     </div>
@@ -261,14 +261,13 @@
         <li>部分退款不自动回收权益，也不自动改变发货状态。</li>
         <li>不删除历史订单、退款流水或导入任务记录。</li>
         <li>不清洗存量重复退款脏数据，只修复后续增量。</li>
-        <li>达人佣金规则未确认前保持为空，不使用默认佣金比例。</li>
       </ul>
     </div>
   </div>
   <div class="card" style="padding:12px 16px;font-size:13px">
     <div class="doc-links">
-      <span>相关文档：<a href="https://guanghe.feishu.cn/docx/XPRbdiMtVoRtgZxRUCpcP4Qqncu" target="_blank" rel="noopener">MRD</a> · <a href="https://guanghe.feishu.cn/docx/UYHRdsljPovrstxS8WjcWXHfnue" target="_blank" rel="noopener">PRD</a> · <a href="https://guanghe.feishu.cn/docx/Cw69djCbsosrPGxKlURcM3ZAn6m" target="_blank" rel="noopener">SDD</a> · <a href="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/" target="_blank" rel="noopener">高保真标注原型</a></span>
-      <span>协作数据：<a href="https://guanghe.feishu.cn/base/F0I2bV6KnaVBRzsLpwWcDa2Qnxh" target="_blank" rel="noopener">渠道注册 Base</a> · <a href="https://guanghe.feishu.cn/base/UbRfb8m5Ua962tsiILEcvQJgn8b?table=tblW8EMJ8S8mK16U&view=vewMrq51ZI" target="_blank" rel="noopener">专用未注册 Base</a> · <a href="https://guanghe.feishu.cn/base/EyzObSOcKa5Q2mszgOHcmkv6nig?table=tbl91TAYFzbi39EJ&view=vewUcMTdzh" target="_blank" rel="noopener">天猫参考 Base</a></span>
+      <span>相关文档：<a href="https://guanghe.feishu.cn/docx/XPRbdiMtVoRtgZxRUCpcP4Qqncu" target="_blank" rel="noopener">MRD</a> · <a href="https://guanghe.feishu.cn/docx/Cw69djCbsosrPGxKlURcM3ZAn6m" target="_blank" rel="noopener">SDD</a> · <a href="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/" target="_blank" rel="noopener">高保真标注原型</a></span>
+      <span>协作数据：<a href="https://guanghe.feishu.cn/base/HTx5bBzkna9kOsse2stc8Zdrnqe" target="_blank" rel="noopener">财务三表 Base</a> · <a href="https://guanghe.feishu.cn/base/F0I2bV6KnaVBRzsLpwWcDa2Qnxh" target="_blank" rel="noopener">渠道注册 Base</a> · <a href="https://guanghe.feishu.cn/base/UbRfb8m5Ua962tsiILEcvQJgn8b?table=tblW8EMJ8S8mK16U&view=vewMrq51ZI" target="_blank" rel="noopener">专用未注册 Base</a> · <a href="https://guanghe.feishu.cn/base/EyzObSOcKa5Q2mszgOHcmkv6nig?table=tbl91TAYFzbi39EJ&view=vewUcMTdzh" target="_blank" rel="noopener">天猫参考 Base</a></span>
     </div>
   </div>
 </section>
@@ -280,7 +279,7 @@
     <tr>
       <td>运营后台 · 渠道投放 · 三方数据管理页</td>
       <td>
-        ①【新增】平台选项「非电商平台的三方订单」，选中后文件类型仅保留「导入订单」；渠道不做页面枚举，渠道名称与 shopid 从 Excel 读取、与渠道注册 Base 精确比对。<br>
+        ①【新增】平台选项「非电商平台的三方订单」，选中后文件类型仅保留「导入订单」；渠道不做页面枚举，渠道名称从 Excel 读取、与渠道注册 Base 比对（注册表登记渠道名称与渠道 id）。<br>
         ②【变更】文件类型筛选现状传参失效，修复后列表筛选生效。<br>
         ③【新增】上传弹窗前端实时校验：一次扫描完整工作簿、聚合全部错误，按 sheet、行号、字段展示，Toast 只报总数（现状逐项中断反馈，需多次修改重传）。<br>
         ④【新增】列表增加「上传用户」「上传结果」列；记录立即进入处理中，完成后飞书个人消息通知上传人，失败可下载带原因的回执（现状异步结果不可感知）。
@@ -311,30 +310,30 @@
       <td>【新增】非电商渠道订单与其他订单一致展示订单、物流与售后信息（现状 C 端不可见）。</td>
     </tr>
     <tr>
-      <td>服务端 · 三方/洋葱订单系统 · 数仓推送</td>
-      <td>【新增】财务退款表、结算表由三方订单数据生成并推数仓；财务订单表由洋葱订单数据生成并推数仓（现状无统一链路）。</td>
+      <td>服务端 · 洋葱订单系统与数仓 · 财务三表</td>
+      <td>【新增】财务订单表由洋葱订单数据生成并推送数仓，新增「订单支付时间」字段（= 数据成功导入时间）；退款表与结算表由数仓基于订单表生成，业务侧不再单独生成（现状无统一链路）。</td>
     </tr>
   </table>
   <h3 style="margin:26px 0 12px">数据变更</h3>
   <table>
     <tr><th style="width:220px">对象</th><th>变更</th><th>用途</th></tr>
     <tr><td><code>import_record</code></td><td>补充上传人、任务状态、成功/失败行数、原始文件与结果文件。</td><td>展示处理中/完成结果，支持审计和失败回执下载。</td></tr>
-    <tr><td>非电商三方订单新表</td><td>新增订单 ID、渠道、收件信息、商品、金额、累计退款、状态、绑定状态等字段。</td><td>承载独立订单域数据并追溯导入批次。</td></tr>
+    <tr><td>非电商三方订单新表</td><td>新增订单 ID、渠道、收件信息、商品、金额、累计退款、状态、绑定状态、订单支付时间（= 数据成功导入时间）等字段。</td><td>承载独立订单域数据并追溯导入批次。</td></tr>
     <tr><td>退款流水</td><td>按退款行记录订单 ID、金额、原因、导入任务和时间。</td><td>支持全局累计、剩余可退与订单状态重算。</td></tr>
     <tr><td>支付平台枚举</td><td>新增「非电商平台的三方订单」。</td><td>创建、筛选和查询洋葱订单。</td></tr>
     <tr><td>洋葱订单退款展示字段</td><td>列表退款次数、退款总金额兼容三方退款数据。</td><td>让列表与详情页展示一致。</td></tr>
-    <tr><td>渠道注册 Base</td><td>维护渠道名称、shopid、负责人、登记时间、启停状态和备注。</td><td>作为前后端渠道关系校验字典。</td></tr>
+    <tr><td>渠道注册 Base</td><td>维护渠道名称、渠道 id、负责人、登记时间、启停状态和备注。</td><td>作为前后端渠道关系校验字典。</td></tr>
     <tr><td>未注册跟踪 Base</td><td>新增手机号、订单 ID、渠道、商品、注册状态、账号 ID、订单状态和处理结果。</td><td>支撑 30 分钟提醒及注册/退款后的闭环。</td></tr>
-    <tr><td>财务订单表</td><td>第一列固定订单 ID；包含渠道、收件、商品、实付和支付时间。</td><td>由洋葱订单数据生成并推送数仓。</td></tr>
-    <tr><td>财务退款表</td><td>第一列固定订单 ID；包含增量退款、累计退款、原因、状态与入库时间。</td><td>由三方订单数据生成并推送数仓。</td></tr>
-    <tr><td>财务结算表</td><td>第一列固定订单 ID；包含结算/激活/支付时间、渠道、洋葱 ID、实付、佣金和结算金额。</td><td>由三方订单数据生成并推送数仓。</td></tr>
+    <tr><td>财务订单表</td><td>第一列固定订单 ID；包含渠道、收件、商品、实付和订单支付时间（= 数据成功导入时间）。</td><td>由洋葱订单数据生成并推送数仓。</td></tr>
+    <tr><td>财务退款表</td><td>第一列固定订单 ID；包含增量退款、累计退款、原因、状态与入库时间。</td><td>由数仓基于订单表生成。</td></tr>
+    <tr><td>财务结算表</td><td>第一列固定订单 ID；包含结算/激活/支付时间、渠道、洋葱 ID、实付、佣金和结算金额。</td><td>由数仓基于订单表生成。</td></tr>
   </table>
   <div class="note">字段名与实际实现以研发核对为准。</div>
 </section>
 
 <section class="tab" id="t2">
   <div class="card">
-    <h3>整体数据流程（粗粒度）</h3>
+    <h3>整体数据流程</h3>
     <div class="flow">
       <div class="flow-head">
         <span class="flow-lane lane-main">运营与用户视角 · 业务主链</span>
@@ -346,19 +345,17 @@
       </div>
       <div class="flow-arrow"><i>↓</i></div>
       <div class="flow-row">
-        <div class="fl-box"><b>② 系统校验</b><span>前端实时 RT-1～8 聚合反馈 → 异步全表 AS-1～9；任一失败整批拦截并生成回执，飞书通知上传人</span></div>
+        <div class="fl-box"><b>② 系统校验</b><span>前端实时 RT-1～7 聚合反馈 → 异步全表 AS-1～8；任一失败整批拦截并生成回执，飞书通知上传人</span></div>
       </div>
       <div class="flow-arrow"><i>↓</i></div>
       <div class="flow-row">
         <div class="fl-box"><b>③ 校验通过数据写入三方订单表</b><span>支付订单 + 退款流水整批入库，按累计退款重算订单状态</span></div>
-        <div class="fl-link">┈┈▶</div>
-        <div class="fl-branch"><b>财务退款表 · 财务结算表</b><span>由三方订单数据生成 → 推送数仓</span></div>
       </div>
       <div class="flow-arrow"><i>↓</i></div>
       <div class="flow-row">
         <div class="fl-box"><b>④ 同步至洋葱订单表</b><span>绑定用户后发放权益；含实物创建仓储发货单；未注册用户进入跟踪提醒</span></div>
         <div class="fl-link">┈┈▶</div>
-        <div class="fl-branch"><b>财务订单表</b><span>由洋葱订单数据生成 → 推送数仓</span></div>
+        <div class="fl-branch"><b>财务订单表 → 数仓</b><span>由洋葱订单数据生成（含订单支付时间 = 导入成功时间）；数仓基于订单表生成退款表与结算表</span></div>
       </div>
       <div class="flow-arrow"><i>↓</i></div>
       <div class="flow-row">
@@ -404,13 +401,9 @@
 </section>
 
 <section class="tab" id="t4">
-  <div class="iframe-toolbar">
-    <span></span>
-    <a class="btn" href="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/" target="_blank" rel="noopener">新窗口打开高保真标注原型</a>
-  </div>
   <div class="frame-shell">
     <iframe id="prototypeFrame" title="非电商平台三方订单高保真标注原型" src="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/" loading="lazy"></iframe>
-    <div id="frameStatus" class="frame-status" data-noedit>正在加载高保真标注原型；如预览失败，请使用上方按钮在新窗口打开。</div>
+    <div id="frameStatus" class="frame-status" data-noedit>正在加载高保真标注原型；如预览失败，请使用简介页「高保真标注原型」链接在新窗口打开。</div>
   </div>
 </section>
 
@@ -551,19 +544,17 @@ const RULES={
     {id:'RT-4',name:'金额',rule:'实付与退款金额必须为大于 0 的数字'},
     {id:'RT-5',name:'数量',rule:'商品数量必须等于 1'},
     {id:'RT-6',name:'手机号',rule:'电话号码必须为 11 位手机号'},
-    {id:'RT-7',name:'订单 ID 前缀',rule:'订单 ID 必须以本行 shopid 开头'},
-    {id:'RT-8',name:'渠道注册关系',rule:'渠道名称 + shopid 与已生效注册记录精确一致'}
+    {id:'RT-7',name:'渠道注册关系',rule:'渠道名称已在渠道注册表登记且生效'}
   ],
   async:[
-    {id:'AS-1',name:'渠道后端复核',rule:'渠道名称 + shopid 已登记且生效'},
-    {id:'AS-2',name:'历史渠道一致',rule:'同一 shopid 与历史渠道名称一致'},
-    {id:'AS-3',name:'组合商品存在',rule:'组合商品 ID 存在'},
-    {id:'AS-4',name:'组合商品上架',rule:'组合商品当前已上架'},
-    {id:'AS-5',name:'金额不超正价',rule:'订单实付金额不大于商品正价'},
-    {id:'AS-6',name:'实物库存',rule:'含实物 SKU 时库存充足'},
-    {id:'AS-7',name:'历史支付订单 ID 唯一',rule:'订单 ID 未在历史支付记录出现'},
-    {id:'AS-8',name:'退款有支付记录',rule:'本批或历史存在对应支付记录'},
-    {id:'AS-9',name:'退款不超剩余可退',rule:'退款金额不大于实付减历史与本批更早退款'}
+    {id:'AS-1',name:'渠道后端复核',rule:'渠道名称在渠道注册表已登记且生效，按渠道名称取渠道 id'},
+    {id:'AS-2',name:'组合商品存在',rule:'组合商品 ID 存在（已配置）'},
+    {id:'AS-3',name:'组合商品上架',rule:'组合商品当前已上架'},
+    {id:'AS-4',name:'金额不超正价',rule:'订单实付金额不大于商品正价'},
+    {id:'AS-5',name:'实物库存',rule:'含实物 SKU 时库存充足'},
+    {id:'AS-6',name:'历史支付订单 ID 唯一',rule:'订单 ID 未在历史支付记录出现'},
+    {id:'AS-7',name:'退款有支付记录',rule:'本批或历史存在对应支付记录'},
+    {id:'AS-8',name:'退款不超剩余可退',rule:'退款金额不大于实付减历史与本批更早退款'}
   ],
   channels:{
     '小宝爸爸':{prepaid:true},
@@ -610,9 +601,9 @@ const RULES={
     settlementAmount:function(paid,refund){return Math.max(0,paid-RULES.refund.capped(paid,refund))},
     settlementTime:function(i){return RULES.channels[i.channel].prepaid?'= 订单支付时间':'空'},
     paths:[
-      '财务订单表：洋葱订单数据生成 → 推送数仓',
-      '财务退款表：三方订单数据生成 → 推送数仓',
-      '财务结算表：三方订单数据生成 → 推送数仓'
+      '财务订单表：洋葱订单数据生成（含订单支付时间 = 导入成功时间）→ 推送数仓',
+      '财务退款表：数仓基于订单表生成',
+      '财务结算表：数仓基于订单表生成'
     ]
   },
   evaluate:function(i){
@@ -651,8 +642,8 @@ const STORIES=[
    inputs:{paid:600,refund:0,registered:true,physical:false,shipped:false,channel:'小宝爸爸',frontErrors:8,asyncErrors:0},
    timeline:[
      ['09:00','运营','选择非电商平台并上传完整工作簿'],
-     ['09:00','前端','一次扫描两个 Sheet，发现 8 条错误，覆盖 Sheet/表头、必填、表内重复、金额、数量、手机号、订单前缀 7 类规则'],
-     ['09:00','前端','集中展示 8 条明细，Toast 仅提示“发现 8 条错误”'],
+     ['09:00','前端','一次扫描两个 Sheet，发现 7 条错误，覆盖 Sheet/表头、必填、表内重复、金额、数量、手机号、渠道注册 7 类命中'],
+     ['09:00','前端','集中展示 7 条明细，Toast 仅提示“发现 7 条错误”'],
      ['09:00','系统','拦截上传，不调用上传接口，不创建导入任务']
    ]},
   {group:'A 导入校验',id:'A2',name:'异步商品失败',badge:'0 行入库',tone:'no',
@@ -667,7 +658,7 @@ const STORIES=[
    inputs:{paid:600,refund:0,registered:true,physical:false,shipped:false,channel:'万物心选',frontErrors:0,asyncErrors:0},
    timeline:[
      ['09:00','前端','实时校验 0 错误，创建导入任务'],
-     ['09:01','系统','AS-1～AS-9 全表校验通过'],
+     ['09:01','系统','AS-1～AS-8 全表校验通过'],
      ['09:02','系统','先写支付订单，再写退款流水，生成三方订单数据'],
      ['09:03','数据链路','生成财务订单/退款/结算数据并按各自路径推送']
    ]},
@@ -824,12 +815,12 @@ loadStory(0);
 var prototypeFrame=document.getElementById('prototypeFrame');
 var frameStatus=document.getElementById('frameStatus');
 var frameTimer=setTimeout(function(){
-  frameStatus.textContent='预览可能被网络或浏览器安全策略拦截，请使用上方按钮在新窗口打开高保真标注原型。';
+  frameStatus.textContent='预览可能被网络或浏览器安全策略拦截，请使用简介页「高保真标注原型」链接打开。';
   frameStatus.classList.add('fail');
 },12000);
 prototypeFrame.addEventListener('load',function(){
   clearTimeout(frameTimer);
-  frameStatus.textContent='高保真标注原型已加载；如内容显示异常，请使用上方按钮在新窗口打开。';
+  frameStatus.textContent='高保真标注原型已加载；如内容显示异常，请使用简介页「高保真标注原型」链接打开。';
   frameStatus.classList.remove('fail');
 });
 </script>
