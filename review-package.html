@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%237c3aed'/%3E%3C/svg%3E">
+<title>非电商平台三方订单导入与直充 · 评审包</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --ink:#1f2329; --ink2:#51565d; --ink3:#8f959e;
+    --line:#e3e5e8; --accent:#7c3aed; --blue:#3370ff; --green:#2ea44f; --red:#d03050; --amber:#b8860b;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.65}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 80px}
+  header{padding:26px 0 16px}
+  header h1{font-size:22px;font-weight:700}
+  header .sub{color:var(--ink2);margin-top:6px}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .chip{display:inline-block;padding:2px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink2);font-size:12px}
+  nav{display:flex;gap:4px;border-bottom:2px solid var(--line);margin:14px 0 22px;flex-wrap:wrap;position:sticky;top:0;background:var(--bg);z-index:9;padding-top:8px}
+  nav button{border:none;background:none;padding:10px 14px;font-size:14px;color:var(--ink2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:500}
+  nav button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+  section.tab{display:none} section.tab.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:16px}
+  .card h3{font-size:15px;margin-bottom:10px}
+  .card h3 .tag{font-size:11px;font-weight:500;color:#fff;background:var(--accent);border-radius:4px;padding:1px 7px;margin-left:8px;vertical-align:2px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:880px){.grid2{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{background:#fafbfc;font-weight:600;color:var(--ink2)}
+  .note{color:var(--ink3);font-size:12px;margin-top:8px}
+  .btn{display:inline-block;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:14px;cursor:pointer;font-weight:500;text-decoration:none}
+  .btn.ghost{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+  .btn.sm{padding:4px 12px;font-size:12px}
+  .btn:active{opacity:.85}
+  .ok{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--amber)}.info{color:var(--blue)}
+  .sw{position:relative;width:38px;height:22px;background:#c8ccd2;border-radius:999px;cursor:pointer;transition:.2s;flex-shrink:0;display:inline-block;vertical-align:middle}
+  .sw.on{background:var(--green)}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+  .sw.on::after{left:18px}
+  .ctrl{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .ctrl:last-child{border-bottom:none}
+  .ctrl label,.ctrl .ctrl-label{flex:1;font-size:13px}
+  select,input[type=number],input[type=text]{padding:4px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:#fff}
+  /* 用户故事结果区 = 固定维度清单：左列模块名固定不变（视觉锚点），右列是该场景取值（相对弱化） */
+  .rs{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .rs-row{display:flex;border-bottom:1px solid var(--line)}
+  .rs-row:last-child{border-bottom:none}
+  .rs-k{width:132px;flex:none;background:#fafbfc;padding:10px 12px;font-weight:600;font-size:12.5px;color:var(--ink2);border-right:1px solid var(--line);display:flex;align-items:flex-start}
+  .rs-v{flex:1;padding:10px 12px;font-size:13px;min-width:0}
+  .rs-main{font-weight:500}
+  .rs-sub{display:block;color:var(--ink3);font-size:12px;margin-top:2px}
+  .rs-line{padding:2px 0;border-bottom:1px dashed #eef0f3}
+  .rs-line:last-child{border-bottom:none}
+  .phone{width:300px;border:1px solid var(--line);border-radius:22px;background:#fff;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .phone .ph-head{background:#7c3aed;color:#fff;padding:14px 16px;font-weight:700;font-size:15px}
+  .phone .ph-body{padding:10px 12px;min-height:200px}
+  .phone .ph-item{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px}
+  .phone .ph-empty{color:var(--ink3);text-align:center;padding:56px 10px;font-size:13px}
+  .phone .ph-btn{display:block;background:#7c3aed;color:#fff;border-radius:8px;text-align:center;padding:9px;margin:6px 12px 6px;font-size:13px;font-weight:600}
+  .phone .ph-btn.gray{background:#eef0f3;color:#51565d;font-weight:500}
+  .phone .ph-modal{margin:14px 10px;border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.10);padding:16px 14px 8px;text-align:center}
+  .phone .ph-modal .mt{font-size:13.5px;font-weight:600;line-height:1.6}
+  /* 场景列表（用户故事预置场景用，不要做成一排散乱按钮） */
+  .sc-group{font-size:12px;font-weight:600;color:var(--ink3);margin:10px 0 4px}
+  .sc-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;background:#fff;font-size:13px}
+  .sc-item:hover{border-color:var(--accent)}
+  .sc-item.on{border-color:var(--accent);background:#f6f0ff}
+  .sc-item .sc-no{width:22px;height:22px;border-radius:50%;background:#f0f1f3;color:var(--ink2);font-size:12px;display:flex;align-items:center;justify-content:center;flex:none;font-weight:600}
+  .sc-item.on .sc-no{background:var(--accent);color:#fff}
+  .sc-item .sc-t{flex:1}
+  .sc-badge{font-size:11px;border-radius:4px;padding:1px 7px;flex:none}
+  .sc-badge.b-no{background:#ffeef0;color:var(--red)}
+  .sc-badge.b-ok{background:#eaf7ea;color:var(--green)}
+  .sc-badge.b-warn{background:#fff3e6;color:#b45309}
+  /* 决策事项 */
+  .dm{max-width:880px}
+  .dm-h{font-size:15px;font-weight:700;margin:26px 0 8px}
+  .dm .dm-h:first-child{margin-top:4px}
+  .dm-row{display:flex;align-items:flex-start;gap:10px;padding:9px 8px;border-bottom:1px solid #e8ebf0}
+  .dm-row.done .dm-txt{text-decoration:line-through;color:#9aa3af}
+  .dm-ck{width:17px;height:17px;border:1.5px solid #b6bdc9;border-radius:4px;cursor:pointer;flex:none;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;user-select:none}
+  .dm-row.done .dm-ck{background:#1a56db;border-color:#1a56db}
+  .dm-txt{flex:1;font-size:13.5px;line-height:1.65;outline:none;border-radius:4px}
+  .dm-txt:focus{background:#f0f5ff}
+  .dm-meta{font-size:11.5px;color:#9aa3af;margin-top:3px}
+  .dm-tag{display:inline-block;font-size:11px;background:#eef3ff;color:#1a56db;border-radius:4px;padding:0 6px;margin-right:6px;vertical-align:1px}
+  .dm-x{color:#c9ced6;cursor:pointer;font-size:14px;flex:none;visibility:hidden;padding:2px}
+  .dm-row:hover .dm-x{visibility:visible}
+  .dm-e{color:#c9ced6;cursor:pointer;font-size:13px;flex:none;visibility:hidden;padding:2px}
+  .dm-row:hover .dm-e{visibility:visible}
+  .dm-e:hover{color:#1a56db}
+  .dm-x:hover{color:#d03050}
+  .dm-add{display:flex;gap:8px;margin-top:12px}
+  .dm-add input{flex:1;border:1px solid #d7dce3;border-radius:6px;padding:8px 11px;font-size:13px;font-family:inherit;outline:none;background:#fff}
+  .dm-add input:focus{border-color:#1a56db}
+  .dm-add .dm-by{flex:none;width:96px}
+  .dm-add button{border:none;background:#1a56db;color:#fff;border-radius:6px;padding:8px 18px;font-size:13px;cursor:pointer;font-family:inherit}
+  .dm-add button:hover{background:#1e429f}
+  /* 行内操作：贴图（决策共识） */
+  .dm-p{color:#c9ced6;cursor:pointer;font-size:12px;flex:none;visibility:hidden;padding:2px;user-select:none;white-space:nowrap}
+  .dm-row:hover .dm-p{visibility:visible}
+  .dm-p:hover{color:#1a56db}
+  /* 决策共识贴图缩略图 */
+  .dm-thumbs{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+  .dm-thumb{position:relative;display:inline-block}
+  .dm-thumb img{height:56px;border-radius:6px;border:1px solid var(--line);cursor:zoom-in;display:block}
+  .dm-timg-x{position:absolute;top:-6px;right:-6px;background:#8f959e;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;line-height:16px;text-align:center;cursor:pointer;display:none}
+  .dm-thumb:hover .dm-timg-x{display:block}
+  .dm-toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:#1f2329;color:#fff;font-size:13px;border-radius:8px;padding:9px 18px;opacity:0;pointer-events:none;transition:.25s;z-index:130}
+  .dm-toast.on{opacity:.95}
+  .dm-lb{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:125;cursor:zoom-out}
+  .dm-lb img{max-width:92vw;max-height:92vh;border-radius:8px}
+  /* 在线编辑 */
+  #edBar{position:fixed;right:24px;top:14px;z-index:110;display:flex;gap:8px;align-items:center}
+  #edBar .eb{background:#fff;border:1px solid var(--line);color:var(--ink3);border-radius:999px;padding:5px 14px;font-size:12px;cursor:pointer;font-family:inherit}
+  #edBar .eb:hover{color:var(--ink2);border-color:#c9ced6}
+  #edBar .eb.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+  #edBar .ed-tip{font-size:12px;color:var(--ink3);background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 10px}
+  body.editing [data-eid]{outline:1px dashed #ddd0f5;outline-offset:2px;border-radius:3px}
+  body.editing [data-eid]:hover{outline-color:var(--accent)}
+  body.editing [data-eid]:focus{outline:2px solid var(--accent);background:#faf7ff}
+  /* 分页评审意见悬浮面板 */
+  #rvFab{position:fixed;right:24px;bottom:24px;background:#1a56db;color:#fff;border-radius:999px;padding:9px 18px;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(26,86,219,.35);z-index:99;user-select:none}
+  #rvPanel{position:fixed;right:24px;bottom:74px;width:360px;max-height:55vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.14);z-index:99;display:none}
+  #rvPanel .rv-t{font-size:13px;font-weight:700;margin-bottom:6px}
+
+  /* 本评审包的行为原型 */
+  a{color:var(--blue)}
+  .compact-list{padding-left:18px;font-size:13px}
+  .compact-list li{margin:4px 0}
+  .ctrl input[type=number],.ctrl select{width:142px}
+  .rule-tables{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  /* 粗粒度流程示意：主链（运营与用户视角）+ 分支（财务与数仓视角） */
+  .flow{max-width:980px}
+  .flow-head,.flow-row,.flow-arrow{display:grid;grid-template-columns:minmax(0,1fr) 44px 300px;align-items:center}
+  .flow-head{margin-bottom:10px}
+  .flow-lane{font-size:12px;font-weight:700;letter-spacing:.02em;padding:4px 10px;border-radius:6px;display:inline-block;justify-self:start}
+  .flow-lane.lane-main{color:var(--accent);background:#f6f0ff}
+  .flow-lane.lane-fin{color:#b45309;background:#fff7ec;grid-column:3;justify-self:start}
+  .fl-box{border:1px solid #cdb6f2;background:#fbf9ff;border-radius:10px;padding:10px 14px}
+  .fl-box b{display:block;font-size:13.5px}
+  .fl-box span{display:block;font-size:12px;color:var(--ink2);margin-top:2px}
+  .fl-link{color:#c9861f;text-align:center;font-size:13px;user-select:none}
+  .fl-branch{border:1px dashed #e0b36a;background:#fffaf1;border-radius:10px;padding:9px 12px}
+  .fl-branch b{display:block;font-size:12.5px;color:#8a5a10}
+  .fl-branch span{display:block;font-size:12px;color:var(--ink2);margin-top:2px}
+  .flow-arrow{padding:2px 0}
+  .flow-arrow i{grid-column:1;justify-self:center;font-style:normal;color:var(--ink3);font-size:14px;line-height:1.2}
+  .rule-code{font-family:var(--mono);font-size:11px;color:var(--ink3);white-space:nowrap}
+  .story-layout{display:grid;grid-template-columns:minmax(360px,.8fr) minmax(0,1.5fr);gap:18px;align-items:start}
+  .story-input-column,.story-output-column{display:flex;flex-direction:column;gap:16px;min-width:0}
+  .story-input-column>.card,.story-output-column>.card{margin-bottom:0}
+  .story-list{max-height:340px;overflow:auto;padding-right:4px}
+  .story-controls{position:static}
+  .story-current{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+  .story-current .story-name{font-size:15px;font-weight:700}
+  .story-current .story-hint{color:var(--ink3);font-size:12px}
+  .timeline{position:relative;padding-left:24px}
+  .timeline::before{content:"";position:absolute;top:8px;bottom:8px;left:7px;width:1px;background:var(--line)}
+  .tl-step{position:relative;padding:0 0 18px}
+  .tl-step::before{content:"";position:absolute;left:-21px;top:6px;width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid var(--blue)}
+  .tl-head{display:flex;gap:8px;align-items:center;margin-bottom:3px}
+  .tl-time{font:12px var(--mono);color:var(--ink3)}
+  .tl-role{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 6px;color:var(--ink2)}
+  .tl-text{font-size:13px}
+  .story-final{margin-top:0}
+  .iframe-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .frame-shell{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .frame-shell iframe{display:block;width:100%;height:760px;border:0;background:#fff}
+  .frame-status{padding:9px 12px;border-top:1px solid var(--line);font-size:12px;color:var(--ink3)}
+  .frame-status.fail{color:var(--red);background:#fffafa}
+  .doc-links{display:flex;gap:14px;flex-wrap:wrap}
+  @media(max-width:1000px){
+    .story-layout{grid-template-columns:1fr}
+    .story-controls{position:static}
+    .rule-tables{grid-template-columns:1fr}
+    .flow-head,.flow-row,.flow-arrow{grid-template-columns:1fr}
+    .flow-lane.lane-fin{grid-column:1;margin-top:6px}
+    .fl-link{display:none}
+    .fl-branch{margin-top:6px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>非电商平台三方订单导入与直充 · 评审包</h1>
+  <div class="sub">本包由整体流程与校验规则、关键用户故事和现有高保真标注原型组成，评审重点是导入、履约、退款与财务数据的最终行为。</div>
+  <div class="meta">
+    <span class="chip">界面 + 流程 + 规则</span>
+    <span class="chip">三方订单</span>
+    <span class="chip">Excel导入</span>
+    <span class="chip">实时校验</span>
+    <span class="chip">异步校验</span>
+    <span class="chip">订单退款</span>
+    <span class="chip">权益发放</span>
+    <span class="chip">仓储发货</span>
+    <span class="chip">财务三表</span>
+    <span class="chip">数仓同步</span>
+    <span class="chip">飞书通知</span>
+    <span class="chip">渠道注册</span>
+    <span class="chip">运营后台</span>
+  </div>
+</header>
+
+<nav id="nav">
+  <button data-t="t0" class="on">① 简介</button>
+  <button data-t="t1">② 变更清单</button>
+  <button data-t="t2">③ 规则与状态</button>
+  <button data-t="t3">④ 用户故事</button>
+  <button data-t="t4">⑤ 高保真交互原型</button>
+  <button data-t="t9">⑥ 决策事项</button>
+</nav>
+
+<section class="tab on" id="t0">
+  <div class="grid2">
+    <div class="card">
+      <h3>背景与问题</h3>
+      <p style="font-size:13px;margin-bottom:10px">
+        新媒体私域渠道（社群、公众号、小程序）收单平台分散、难以逐一系统对接，课程交付长期依赖「兑换码 + 人工」：
+        渠道预付采购兑换码自行下发，或运营通过极速发货平台向用户发送兑换码短信。
+        订单量正在快速上涨——仅小宝爸爸就从 5 月 855 单涨到 6 月 4,086 单、7 月半月已达 2,485 单，
+        叠加万物心选、大 V 店累计超 1,200 单，人工链路已无法稳定支撑。
+      </p>
+      <ul class="compact-list">
+        <li><b>交付链路（兑换码 + 人工）：</b>码的发放、使用、剩余状态无实时追踪，5—6 月核查出风险兑换码 9 例、涉及 16,482 元（重复给码、错给码、漏交单）；渠道预付不及时造成垫资与对账缺口；短信触达率 91%、用户查阅率仅 20%，「未收到短信」类售后高发。</li>
+        <li><b>授权与退款：</b>订单与课程授权之间没有稳定的交易关联，退款后靠人工核销，存在漏核销与资产损失风险。</li>
+        <li><b>运营后台 · 三方数据管理页：</b>平台选项没有非电商渠道，文件类型筛选传参失效；上传为异步处理但结果不可感知，运营不知道哪些行失败、如何一次性修正。</li>
+        <li><b>运营后台 · 订单列表页与三方订单系统：</b>三方订单退款数据在列表显示为 0；三方订单系统还存在全额退款判定、反向同步重复累计两个存量计算缺陷。</li>
+        <li><b>C 端与财务数仓：</b>这类订单进不了订单系统，用户在 App 看不到购买记录、物流与售后；非电商渠道也没有财务订单表、退款表、结算表的统一生成与推送链路。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>目标</h3>
+      <ol class="compact-list">
+        <li>统一使用 Excel 导入支付与退款数据，并对完整工作簿执行全表校验。</li>
+        <li>校验通过后自动生成三方订单、洋葱订单，并完成权益发放或仓储发货。</li>
+        <li>跟踪未注册用户，打通注册后绑定、财务三表和数仓同步。</li>
+        <li>修复全平台三方退款展示、全额判定和重复累计缺陷。</li>
+      </ol>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>范围 · 要做什么</h3>
+      <ul class="compact-list">
+        <li>三方数据管理页平台与文件类型、完整工作簿实时校验、异步全表校验及结果反馈。</li>
+        <li>订单与退款落库、洋葱订单同步、权益开通、仓储发货和退款联动。</li>
+        <li>C 端订单展示、渠道注册 Base、未注册跟踪 Base、飞书个人通知。</li>
+        <li>财务订单表、退款表、结算表生成与数仓同步。</li>
+        <li>修复三方退款列表展示、全额退款 <code>&gt;=</code> 判定、反向同步重复累计三个存量 bug。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>范围 · 不做什么（边界）</h3>
+      <ul class="compact-list">
+        <li>部分退款不自动回收权益，也不自动改变发货状态。</li>
+        <li>不删除历史订单、退款流水或导入任务记录。</li>
+        <li>不清洗存量重复退款脏数据，只修复后续增量。</li>
+        <li>达人佣金规则未确认前保持为空，不使用默认佣金比例。</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="padding:12px 16px;font-size:13px">
+    <div class="doc-links">
+      <span>相关文档：<a href="https://guanghe.feishu.cn/docx/XPRbdiMtVoRtgZxRUCpcP4Qqncu" target="_blank" rel="noopener">MRD</a> · <a href="https://guanghe.feishu.cn/docx/UYHRdsljPovrstxS8WjcWXHfnue" target="_blank" rel="noopener">PRD</a> · <a href="https://guanghe.feishu.cn/docx/Cw69djCbsosrPGxKlURcM3ZAn6m" target="_blank" rel="noopener">SDD</a> · <a href="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/" target="_blank" rel="noopener">高保真标注原型</a></span>
+      <span>协作数据：<a href="https://guanghe.feishu.cn/base/F0I2bV6KnaVBRzsLpwWcDa2Qnxh" target="_blank" rel="noopener">渠道注册 Base</a> · <a href="https://guanghe.feishu.cn/base/UbRfb8m5Ua962tsiILEcvQJgn8b?table=tblW8EMJ8S8mK16U&view=vewMrq51ZI" target="_blank" rel="noopener">专用未注册 Base</a> · <a href="https://guanghe.feishu.cn/base/EyzObSOcKa5Q2mszgOHcmkv6nig?table=tbl91TAYFzbi39EJ&view=vewUcMTdzh" target="_blank" rel="noopener">天猫参考 Base</a></span>
+    </div>
+  </div>
+</section>
+
+<section class="tab" id="t1">
+  <h3 style="margin:0 0 12px">行为变更</h3>
+  <table>
+    <tr><th style="width:210px">位置（端 · 平台 · 页面/系统）</th><th>变更内容（【新增】/【变更】，现状与目标已并入说明）</th></tr>
+    <tr>
+      <td>运营后台 · 渠道投放 · 三方数据管理页</td>
+      <td>
+        ①【新增】平台选项「非电商平台的三方订单」，选中后文件类型仅保留「导入订单」；渠道不做页面枚举，渠道名称与 shopid 从 Excel 读取、与渠道注册 Base 精确比对。<br>
+        ②【变更】文件类型筛选现状传参失效，修复后列表筛选生效。<br>
+        ③【新增】上传弹窗前端实时校验：一次扫描完整工作簿、聚合全部错误，按 sheet、行号、字段展示，Toast 只报总数（现状逐项中断反馈，需多次修改重传）。<br>
+        ④【新增】列表增加「上传用户」「上传结果」列；记录立即进入处理中，完成后飞书个人消息通知上传人，失败可下载带原因的回执（现状异步结果不可感知）。
+      </td>
+    </tr>
+    <tr>
+      <td>服务端 · 三方订单系统 · 导入与履约</td>
+      <td>
+        ①【新增】异步全表校验：支付与退款两张表全部校验，任一失败整批 0 行入库并生成失败回执。<br>
+        ②【新增】订单落库后创建洋葱无主订单，绑定用户自动发权益，含实物创建仓储发货单（现状人工发兑换码）。<br>
+        ③【新增】未注册用户写入跟踪 Base、每 30 分钟提醒；注册后自动绑定并发权益，退款成功停止提醒且不发权益。<br>
+        ④【新增】退款按累计口径重算状态：累计退款小于实付为部分退款，大于等于实付为退款成功。
+      </td>
+    </tr>
+    <tr>
+      <td>服务端 · 三方订单系统 · 存量缺陷修复（全平台）</td>
+      <td>
+        ①【变更】全额退款判定由「退款金额等于订单金额」改为「累计退款 <code>&gt;=</code> 实付金额」。<br>
+        ②【变更】洋葱退款反向同步现状会重复累加三方侧金额，改为只同步状态与洋葱侧退款额。
+      </td>
+    </tr>
+    <tr>
+      <td>运营后台 · 订单中心 · 订单列表页</td>
+      <td>【变更】三方订单退款次数、退款总金额现状在列表显示为 0，改为与详情页口径一致展示。</td>
+    </tr>
+    <tr>
+      <td>C 端 · 洋葱 App · 我的购买页</td>
+      <td>【新增】非电商渠道订单与其他订单一致展示订单、物流与售后信息（现状 C 端不可见）。</td>
+    </tr>
+    <tr>
+      <td>服务端 · 三方/洋葱订单系统 · 数仓推送</td>
+      <td>【新增】财务退款表、结算表由三方订单数据生成并推数仓；财务订单表由洋葱订单数据生成并推数仓（现状无统一链路）。</td>
+    </tr>
+  </table>
+  <h3 style="margin:26px 0 12px">数据变更</h3>
+  <table>
+    <tr><th style="width:220px">对象</th><th>变更</th><th>用途</th></tr>
+    <tr><td><code>import_record</code></td><td>补充上传人、任务状态、成功/失败行数、原始文件与结果文件。</td><td>展示处理中/完成结果，支持审计和失败回执下载。</td></tr>
+    <tr><td>非电商三方订单新表</td><td>新增订单 ID、渠道、收件信息、商品、金额、累计退款、状态、绑定状态等字段。</td><td>承载独立订单域数据并追溯导入批次。</td></tr>
+    <tr><td>退款流水</td><td>按退款行记录订单 ID、金额、原因、导入任务和时间。</td><td>支持全局累计、剩余可退与订单状态重算。</td></tr>
+    <tr><td>支付平台枚举</td><td>新增「非电商平台的三方订单」。</td><td>创建、筛选和查询洋葱订单。</td></tr>
+    <tr><td>洋葱订单退款展示字段</td><td>列表退款次数、退款总金额兼容三方退款数据。</td><td>让列表与详情页展示一致。</td></tr>
+    <tr><td>渠道注册 Base</td><td>维护渠道名称、shopid、负责人、登记时间、启停状态和备注。</td><td>作为前后端渠道关系校验字典。</td></tr>
+    <tr><td>未注册跟踪 Base</td><td>新增手机号、订单 ID、渠道、商品、注册状态、账号 ID、订单状态和处理结果。</td><td>支撑 30 分钟提醒及注册/退款后的闭环。</td></tr>
+    <tr><td>财务订单表</td><td>第一列固定订单 ID；包含渠道、收件、商品、实付和支付时间。</td><td>由洋葱订单数据生成并推送数仓。</td></tr>
+    <tr><td>财务退款表</td><td>第一列固定订单 ID；包含增量退款、累计退款、原因、状态与入库时间。</td><td>由三方订单数据生成并推送数仓。</td></tr>
+    <tr><td>财务结算表</td><td>第一列固定订单 ID；包含结算/激活/支付时间、渠道、洋葱 ID、实付、佣金和结算金额。</td><td>由三方订单数据生成并推送数仓。</td></tr>
+  </table>
+  <div class="note">字段名与实际实现以研发核对为准。</div>
+</section>
+
+<section class="tab" id="t2">
+  <div class="card">
+    <h3>整体数据流程（粗粒度）</h3>
+    <div class="flow">
+      <div class="flow-head">
+        <span class="flow-lane lane-main">运营与用户视角 · 业务主链</span>
+        <span></span>
+        <span class="flow-lane lane-fin">财务与数仓视角 · 数据分支</span>
+      </div>
+      <div class="flow-row">
+        <div class="fl-box"><b>① 运营上传导入数据</b><span>Excel 工作簿：支付 Sheet + 退款 Sheet，一个账期一单一行</span></div>
+      </div>
+      <div class="flow-arrow"><i>↓</i></div>
+      <div class="flow-row">
+        <div class="fl-box"><b>② 系统校验</b><span>前端实时 RT-1～8 聚合反馈 → 异步全表 AS-1～9；任一失败整批拦截并生成回执，飞书通知上传人</span></div>
+      </div>
+      <div class="flow-arrow"><i>↓</i></div>
+      <div class="flow-row">
+        <div class="fl-box"><b>③ 校验通过数据写入三方订单表</b><span>支付订单 + 退款流水整批入库，按累计退款重算订单状态</span></div>
+        <div class="fl-link">┈┈▶</div>
+        <div class="fl-branch"><b>财务退款表 · 财务结算表</b><span>由三方订单数据生成 → 推送数仓</span></div>
+      </div>
+      <div class="flow-arrow"><i>↓</i></div>
+      <div class="flow-row">
+        <div class="fl-box"><b>④ 同步至洋葱订单表</b><span>绑定用户后发放权益；含实物创建仓储发货单；未注册用户进入跟踪提醒</span></div>
+        <div class="fl-link">┈┈▶</div>
+        <div class="fl-branch"><b>财务订单表</b><span>由洋葱订单数据生成 → 推送数仓</span></div>
+      </div>
+      <div class="flow-arrow"><i>↓</i></div>
+      <div class="flow-row">
+        <div class="fl-box"><b>⑤ 订单同步展示</b><span>运营后台订单管理 + C 端「我的购买」，可查物流与售后</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="rule-tables">
+    <div class="card">
+      <h3>前端实时校验</h3>
+      <table id="realtimeRules" data-noedit></table>
+    </div>
+    <div class="card">
+      <h3>异步全表校验</h3>
+      <table id="asyncRules" data-noedit></table>
+    </div>
+  </div>
+</section>
+
+<section class="tab" id="t3">
+  <div class="story-layout">
+    <div class="story-input-column">
+      <div class="card">
+        <h3>1. 选择业务场景</h3>
+        <div class="story-list" id="storyList" data-noedit></div>
+      </div>
+      <div class="card story-controls">
+        <h3>2. 调整场景输入</h3>
+        <div id="storyControls" data-noedit></div>
+      </div>
+    </div>
+    <div class="story-output-column">
+      <div class="card">
+        <h3>3. 查看系统最终结果</h3>
+        <div id="storyFinal" class="story-final" data-noedit></div>
+      </div>
+      <div class="card">
+        <h3>系统处理过程</h3>
+        <div id="storyTimeline" data-noedit></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tab" id="t4">
+  <div class="iframe-toolbar">
+    <span></span>
+    <a class="btn" href="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/" target="_blank" rel="noopener">新窗口打开高保真标注原型</a>
+  </div>
+  <div class="frame-shell">
+    <iframe id="prototypeFrame" title="非电商平台三方订单高保真标注原型" src="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/" loading="lazy"></iframe>
+    <div id="frameStatus" class="frame-status" data-noedit>正在加载高保真标注原型；如预览失败，请使用上方按钮在新窗口打开。</div>
+  </div>
+</section>
+
+<section class="tab" id="t9">
+  <div id="dmRoot"></div>
+</section>
+
+</div>
+
+<!-- 分页评审意见悬浮面板（决策事项页签自动隐藏） -->
+<div id="rvPanel">
+  <div class="rv-t">本页评审意见 · <span id="rvTab"></span></div>
+  <div id="rvList"></div>
+  <div class="dm-add"><input id="rvT" placeholder="记录评审意见"><input id="rvB" class="dm-by" placeholder="撰写人"><button id="rvAdd">添加</button></div>
+</div>
+<div id="rvFab">评审意见<span id="rvN"></span></div>
+
+<script>
+/* 页签切换 */
+document.getElementById('nav').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('section.tab').forEach(s=>s.classList.remove('on'));
+  e.target.classList.add('on');document.getElementById(e.target.dataset.t).classList.add('on');
+});
+document.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>{s.classList.toggle('on');if(typeof calc==='function')calc();}));
+</script>
+
+<script>
+/* ===== 在线编辑：页面文字可点击直接修改，改完一键发布 =====
+   铁律：
+   1. 本脚本必须位于所有会改写 DOM 的模块脚本之前（模块脚本一律放在它后面）。
+   2. 任何由脚本写入内容的容器必须加 data-noedit（判定输出区、手机预览区等；#dmRoot/#rvPanel 已内置排除）。
+   3. 部署时把下一行的两个占位符（SAVE_URL / SAVE_EXP，前后双下划线）替换为该文件自身的
+      预签名 PUT 地址与到期时间戳（毫秒），顺序必须是"先预签名 → 注入 → 上传"；
+      未注入时页面自动只提供"导出 HTML"。 */
+window.__SAVE__={url:"__SAVE_URL__",exp:"__SAVE_EXP__"};
+(function(){
+var FILE=location.pathname.split('/').pop()||'pkg';
+var OKEY='ed-'+FILE;
+var SKIP={SCRIPT:1,STYLE:1,LINK:1,META:1,INPUT:1,SELECT:1,TEXTAREA:1,BUTTON:1,IFRAME:1,IMG:1,SVG:1,CANVAS:1,BR:1,HR:1};
+/* 给"有直接文字"的最外层元素编号；同一算法既用于当前页面也用于发布前取回的原始页面，保证编号对得上 */
+function stamp(doc){
+ var n=0,seen=[];
+ [].forEach.call(doc.querySelectorAll('body *'),function(el){
+  if(SKIP[el.tagName])return;
+  if(el.closest('#dmRoot,#rvPanel,#rvFab,#edBar,nav,[data-noedit]'))return;
+  for(var i=0;i<seen.length;i++)if(seen[i].contains(el))return;
+  var has=false,cs=el.childNodes;
+  for(var j=0;j<cs.length;j++)if(cs[j].nodeType===3&&cs[j].textContent.trim()){has=true;break}
+  if(!has)return;
+  el.setAttribute('data-eid',n++);seen.push(el);
+ });
+}
+var OV={};try{OV=JSON.parse(localStorage.getItem(OKEY))||{}}catch(e){}
+stamp(document);
+Object.keys(OV).forEach(function(k){var el=document.querySelector('[data-eid="'+k+'"]');if(el)el.innerHTML=OV[k]});
+function saveDraft(){try{localStorage.setItem(OKEY,JSON.stringify(OV))}catch(e){}}
+var expMs=+window.__SAVE__.exp;
+function canPub(){return /^http/.test(window.__SAVE__.url)&&expMs>Date.now()}
+var bar=document.createElement('div');bar.id='edBar';document.body.appendChild(bar);
+var editing=false;
+function draw(){
+ if(!editing){bar.innerHTML='<button class="eb" id="ebOn" title="直接修改页面文字">✎ 编辑</button>';return}
+ var tip='点击任意文字直接修改';
+ if(canPub())tip+='（在线发布至 '+new Date(expMs).toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'})+'）';
+ bar.innerHTML='<span class="ed-tip">'+tip+'</span>'
+  +(canPub()?'<button class="eb pri" id="ebPub">保存发布</button>':'')
+  +'<button class="eb" id="ebExp">导出 HTML</button><button class="eb" id="ebOff">退出</button>';
+}
+function setMode(on){
+ editing=on;document.body.classList.toggle('editing',on);
+ [].forEach.call(document.querySelectorAll('[data-eid]'),function(el){
+  if(on)el.setAttribute('contenteditable','true');else el.removeAttribute('contenteditable');
+ });
+ draw();
+}
+document.addEventListener('input',function(e){
+ if(!editing)return;
+ var el=e.target&&e.target.closest?e.target.closest('[data-eid]'):null;
+ if(el){OV[el.getAttribute('data-eid')]=el.innerHTML;saveDraft();}
+});
+/* 编辑态里点链接不跳转 */
+document.addEventListener('click',function(e){
+ if(editing){var a=e.target.closest&&e.target.closest('a');if(a&&a.closest('[data-eid]'))e.preventDefault();}
+},true);
+/* 取回线上原始页面，套上本地改动，得到干净的完整 HTML（不带运行时注入的内容） */
+function merged(cb){
+ fetch(location.href.split('#')[0],{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
+  var doc=new DOMParser().parseFromString(t,'text/html');
+  stamp(doc);
+  Object.keys(OV).forEach(function(k){var el=doc.querySelector('[data-eid="'+k+'"]');if(el)el.innerHTML=OV[k]});
+  [].forEach.call(doc.querySelectorAll('[data-eid]'),function(el){el.removeAttribute('data-eid');el.removeAttribute('contenteditable')});
+  cb('<!DOCTYPE html>\n'+doc.documentElement.outerHTML);
+ }).catch(function(){cb(null)});
+}
+var tEl=null,tTm=null;
+function tip(m){
+ if(!tEl){tEl=document.createElement('div');tEl.className='dm-toast';document.body.appendChild(tEl)}
+ tEl.textContent=m;tEl.classList.add('on');clearTimeout(tTm);tTm=setTimeout(function(){tEl.classList.remove('on')},3200);
+}
+bar.addEventListener('click',function(e){
+ var id=e.target.id;
+ if(id==='ebOn')setMode(true);
+ else if(id==='ebOff')setMode(false);
+ else if(id==='ebExp'){
+  merged(function(html){
+   if(!html){tip('导出失败：本页需在线打开才能导出');return}
+   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+   a.download=FILE.replace(/\.html?$/,'')+'-edited.html';a.click();
+   tip('已导出，把文件发给 AI 即可重新发布');
+  });
+ }
+ else if(id==='ebPub'){
+  if(!canPub()){tip('在线发布已过期，请导出 HTML 后找 AI 重新发布');draw();return}
+  merged(function(html){
+   if(!html){tip('读取页面失败，请稍后重试');return}
+   fetch(window.__SAVE__.url,{method:'PUT',headers:{'Content-Type':'text/html'},body:html}).then(function(r){
+    if(r.ok){OV={};try{localStorage.removeItem(OKEY)}catch(e){};tip('已发布，其他人刷新页面即可看到最新版');}
+    else tip('发布失败（'+r.status+'），可先导出 HTML 找 AI 重新发布');
+   }).catch(function(){tip('发布失败：网络不通，可先导出 HTML 找 AI 重新发布')});
+  });
+ }
+});
+draw();
+})();
+</script>
+
+<script>
+const RULES={
+  realtime:[
+    {id:'RT-1',name:'Sheet 与表头',rule:'两个 Sheet 名称精确匹配，必填表头完整'},
+    {id:'RT-2',name:'必填',rule:'必填列和必填单元格均不可为空'},
+    {id:'RT-3',name:'表内订单 ID 重复',rule:'支付 Sheet 内订单 ID 不可重复'},
+    {id:'RT-4',name:'金额',rule:'实付与退款金额必须为大于 0 的数字'},
+    {id:'RT-5',name:'数量',rule:'商品数量必须等于 1'},
+    {id:'RT-6',name:'手机号',rule:'电话号码必须为 11 位手机号'},
+    {id:'RT-7',name:'订单 ID 前缀',rule:'订单 ID 必须以本行 shopid 开头'},
+    {id:'RT-8',name:'渠道注册关系',rule:'渠道名称 + shopid 与已生效注册记录精确一致'}
+  ],
+  async:[
+    {id:'AS-1',name:'渠道后端复核',rule:'渠道名称 + shopid 已登记且生效'},
+    {id:'AS-2',name:'历史渠道一致',rule:'同一 shopid 与历史渠道名称一致'},
+    {id:'AS-3',name:'组合商品存在',rule:'组合商品 ID 存在'},
+    {id:'AS-4',name:'组合商品上架',rule:'组合商品当前已上架'},
+    {id:'AS-5',name:'金额不超正价',rule:'订单实付金额不大于商品正价'},
+    {id:'AS-6',name:'实物库存',rule:'含实物 SKU 时库存充足'},
+    {id:'AS-7',name:'历史支付订单 ID 唯一',rule:'订单 ID 未在历史支付记录出现'},
+    {id:'AS-8',name:'退款有支付记录',rule:'本批或历史存在对应支付记录'},
+    {id:'AS-9',name:'退款不超剩余可退',rule:'退款金额不大于实付减历史与本批更早退款'}
+  ],
+  channels:{
+    '小宝爸爸':{prepaid:true},
+    '大V店':{prepaid:false},
+    '万物心选':{prepaid:false}
+  },
+  import:{
+    canCreate:function(i){return i.frontErrors===0},
+    canPersist:function(i){return i.frontErrors===0&&i.asyncErrors===0}
+  },
+  refund:{
+    status:function(paid,refund){
+      if(refund<=0)return '支付成功';
+      return refund<paid?'部分退款':'退款成功';
+    },
+    capped:function(paid,refund){return Math.min(Math.max(refund,0),Math.max(paid,0))}
+  },
+  unregistered:{
+    interval:'每 30 分钟',
+    reminder:function(i,status){
+      if(i.registered)return '无需提醒';
+      if(status==='退款成功')return '停止提醒，跟踪记录置已完成';
+      return '每 30 分钟提醒，等待注册';
+    },
+    rights:function(i,status){
+      if(status==='退款成功')return i.registered?'回收已发权益':'不发权益';
+      if(i.registered)return '绑定洋葱订单并发放权益';
+      return '等待注册，不发权益';
+    }
+  },
+  shipment:{
+    action:function(i,status){
+      if(!i.physical)return '无需创建发货单';
+      if(!i.registered)return status==='退款成功'?'未绑定，保持不发货':'注册并绑定后创建发货单';
+      if(status==='退款成功')return i.shipped?'已发货，进入现有售后':'发货前全退，取消发货单';
+      if(status==='部分退款')return i.shipped?'保持已发货，不自动处理':'保留发货单，不自动取消';
+      return i.shipped?'保持已发货':'创建发货单';
+    }
+  },
+  finance:{
+    firstColumn:'订单 ID',
+    paymentTime:'成功入库时间',
+    activationTime:'用户绑定并发放权益成功时间',
+    settlementAmount:function(paid,refund){return Math.max(0,paid-RULES.refund.capped(paid,refund))},
+    settlementTime:function(i){return RULES.channels[i.channel].prepaid?'= 订单支付时间':'空'},
+    paths:[
+      '财务订单表：洋葱订单数据生成 → 推送数仓',
+      '财务退款表：三方订单数据生成 → 推送数仓',
+      '财务结算表：三方订单数据生成 → 推送数仓'
+    ]
+  },
+  evaluate:function(i){
+    var status=RULES.refund.status(i.paid,i.refund);
+    var canCreate=RULES.import.canCreate(i);
+    var persisted=RULES.import.canPersist(i);
+    return{
+      canCreate:canCreate?'可以创建导入任务':'不创建任务',
+      canCreateOk:canCreate,
+      persist:persisted?'整批入库':'0 行入库',
+      persistOk:persisted,
+      status:status,
+      reminder:RULES.unregistered.reminder(i,status),
+      rights:RULES.unregistered.rights(i,status),
+      shipment:RULES.shipment.action(i,status),
+      settlement:'¥'+RULES.finance.settlementAmount(i.paid,i.refund).toFixed(2),
+      settlementTime:RULES.finance.settlementTime(i),
+      paths:RULES.finance.paths
+    };
+  }
+};
+
+const CONTROL_SCHEMA=[
+  {key:'paid',label:'实付金额（元）',type:'number',min:0,step:0.01},
+  {key:'refund',label:'累计退款（元）',type:'number',min:0,step:0.01},
+  {key:'registered',label:'用户已注册',type:'switch'},
+  {key:'physical',label:'组合商品含实物',type:'switch'},
+  {key:'shipped',label:'已经发货',type:'switch'},
+  {key:'channel',label:'渠道',type:'select',options:['小宝爸爸','大V店','万物心选']},
+  {key:'frontErrors',label:'前端错误数量',type:'number',min:0,step:1},
+  {key:'asyncErrors',label:'异步错误数量',type:'number',min:0,step:1}
+];
+
+const STORIES=[
+  {group:'A 导入校验',id:'A1',name:'全量实时错误',badge:'不创建任务',tone:'no',
+   inputs:{paid:600,refund:0,registered:true,physical:false,shipped:false,channel:'小宝爸爸',frontErrors:8,asyncErrors:0},
+   timeline:[
+     ['09:00','运营','选择非电商平台并上传完整工作簿'],
+     ['09:00','前端','一次扫描两个 Sheet，发现 8 条错误，覆盖 Sheet/表头、必填、表内重复、金额、数量、手机号、订单前缀 7 类规则'],
+     ['09:00','前端','集中展示 8 条明细，Toast 仅提示“发现 8 条错误”'],
+     ['09:00','系统','拦截上传，不调用上传接口，不创建导入任务']
+   ]},
+  {group:'A 导入校验',id:'A2',name:'异步商品失败',badge:'0 行入库',tone:'no',
+   inputs:{paid:600,refund:0,registered:true,physical:false,shipped:false,channel:'大V店',frontErrors:0,asyncErrors:1},
+   timeline:[
+     ['09:00','前端','实时校验通过，创建导入任务并提示结果将由飞书通知'],
+     ['09:01','系统','异步全表校验发现组合商品未上架'],
+     ['09:01','系统','任务置为校验失败，整批 0 行入库并生成回执'],
+     ['09:02','飞书','向上传人发送个人消息，附校验结果下载入口']
+   ]},
+  {group:'A 导入校验',id:'A3',name:'全表通过',badge:'整批入库',tone:'ok',
+   inputs:{paid:600,refund:0,registered:true,physical:false,shipped:false,channel:'万物心选',frontErrors:0,asyncErrors:0},
+   timeline:[
+     ['09:00','前端','实时校验 0 错误，创建导入任务'],
+     ['09:01','系统','AS-1～AS-9 全表校验通过'],
+     ['09:02','系统','先写支付订单，再写退款流水，生成三方订单数据'],
+     ['09:03','数据链路','生成财务订单/退款/结算数据并按各自路径推送']
+   ]},
+  {group:'B 用户履约',id:'B1',name:'已注册虚拟商品',badge:'自动发权益',tone:'ok',
+   inputs:{paid:600,refund:0,registered:true,physical:false,shipped:false,channel:'小宝爸爸',frontErrors:0,asyncErrors:0},
+   timeline:[
+     ['10:00','系统','创建三方订单和洋葱无主订单'],
+     ['10:00','用户服务','手机号命中已注册洋葱用户'],
+     ['10:01','系统','自动绑定洋葱订单'],
+     ['10:01','权益服务','开通组合商品对应课程权益']
+   ]},
+  {group:'B 用户履约',id:'B2',name:'未注册用户',badge:'注册后开通',tone:'warn',
+   inputs:{paid:600,refund:0,registered:false,physical:false,shipped:false,channel:'大V店',frontErrors:0,asyncErrors:0},
+   timeline:[
+     ['10:00','系统','创建洋葱无主订单，手机号未匹配用户'],
+     ['10:01','飞书 Base','写入专用未注册用户跟踪记录'],
+     ['10:30','飞书','每 30 分钟提醒运营引导注册'],
+     ['11:05','注册事件','用户注册后自动绑定订单并发放权益，跟踪记录置已完成']
+   ]},
+  {group:'B 用户履约',id:'B3',name:'未注册先退款',badge:'停止提醒',tone:'ok',
+   inputs:{paid:600,refund:600,registered:false,physical:false,shipped:false,channel:'大V店',frontErrors:0,asyncErrors:0},
+   timeline:[
+     ['10:00','系统','未注册订单写入跟踪 Base 并开始提醒'],
+     ['10:20','退款任务','累计退款达到实付金额，订单置退款成功'],
+     ['10:20','系统','停止注册监听与 30 分钟提醒'],
+     ['10:21','飞书 Base','处理结果置已完成，不绑定用户、不发权益']
+   ]},
+  {group:'B 用户履约',id:'B4',name:'实物发货前全退',badge:'取消发货',tone:'ok',
+   inputs:{paid:600,refund:600,registered:true,physical:true,shipped:false,channel:'万物心选',frontErrors:0,asyncErrors:0},
+   timeline:[
+     ['10:00','系统','用户绑定后创建实物发货单'],
+     ['10:10','退款任务','发货前累计退款达到实付金额'],
+     ['10:10','系统','订单置退款成功并回收已发权益'],
+     ['10:11','仓储','自动取消尚未发出的发货单']
+   ]},
+  {group:'B 用户履约',id:'B5',name:'部分退款',badge:'履约不变',tone:'warn',
+   inputs:{paid:600,refund:200,registered:true,physical:true,shipped:true,channel:'万物心选',frontErrors:0,asyncErrors:0},
+   timeline:[
+     ['10:00','系统','用户已绑定，权益已发放，实物已发货'],
+     ['12:00','退款任务','新增退款 200 元，累计退款小于实付金额'],
+     ['12:00','系统','订单置部分退款并记录退款原因'],
+     ['12:01','履约链路','不自动回收权益，不改变发货状态']
+   ]},
+  {group:'C 资金与数据',id:'C1',name:'累计退款 400',badge:'剩余 200',tone:'warn',
+   inputs:{paid:600,refund:400,registered:true,physical:false,shipped:false,channel:'大V店',frontErrors:0,asyncErrors:0},
+   timeline:[
+     ['13:00','订单系统','订单实付 600 元'],
+     ['13:10','退款任务','累计退款更新为 400 元'],
+     ['13:10','状态计算','订单状态为部分退款，剩余可退 200 元'],
+     ['13:11','结算表','订单结算金额实时计算为 200 元']
+   ]},
+  {group:'C 资金与数据',id:'C2',name:'翌日再退 200',badge:'退款成功',tone:'ok',
+   inputs:{paid:600,refund:600,registered:true,physical:false,shipped:false,channel:'大V店',frontErrors:0,asyncErrors:0},
+   timeline:[
+     ['次日 09:00','退款任务','在历史累计 400 元基础上再导入 200 元'],
+     ['次日 09:01','状态计算','累计退款达到实付 600 元'],
+     ['次日 09:01','订单系统','订单置退款成功，累计退款按 600 元封顶'],
+     ['次日 09:02','结算表','订单结算金额更新为 0 元']
+   ]},
+  {group:'C 资金与数据',id:'C3',name:'小宝爸爸结算',badge:'支付即结算',tone:'ok',
+   inputs:{paid:600,refund:0,registered:true,physical:false,shipped:false,channel:'小宝爸爸',frontErrors:0,asyncErrors:0},
+   timeline:[
+     ['14:00','订单系统','全表校验通过并成功入库，记录支付时间'],
+     ['14:01','权益服务','完成用户绑定与权益发放，记录激活时间'],
+     ['14:02','结算规则','小宝爸爸为预充值渠道，结算时间取支付时间'],
+     ['14:02','结算规则','切换为其他渠道时，结算时间保持为空']
+   ]},
+  {group:'C 资金与数据',id:'C4',name:'洋葱退款反向同步',badge:'不二次累加',tone:'ok',
+   inputs:{paid:600,refund:200,registered:true,physical:false,shipped:false,channel:'万物心选',frontErrors:0,asyncErrors:0},
+   timeline:[
+     ['15:00','三方订单','本地退款流水已累计 200 元'],
+     ['15:01','洋葱订单','退款成功状态反向同步三方订单'],
+     ['15:01','同步接口','只同步状态与洋葱侧退款额，不执行加法'],
+     ['15:02','三方订单','累计退款仍为 200 元，不变成 400 元']
+   ]}
+];
+
+var storyState={};
+var activeStory=0;
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+function renderControls(targetId,state,prefix,onChange){
+  var root=document.getElementById(targetId);
+  root.innerHTML=CONTROL_SCHEMA.map(function(c){
+    var id=prefix+c.key;
+    if(c.type==='switch')return '<div class="ctrl"><span class="ctrl-label">'+c.label+'</span><span role="switch" aria-label="'+c.label+'" aria-checked="'+!!state[c.key]+'" tabindex="0" id="'+id+'" data-key="'+c.key+'" class="sw'+(state[c.key]?' on':'')+'"></span></div>';
+    if(c.type==='select')return '<div class="ctrl"><label for="'+id+'">'+c.label+'</label><select id="'+id+'" data-key="'+c.key+'">'+c.options.map(function(o){return '<option'+(state[c.key]===o?' selected':'')+'>'+o+'</option>'}).join('')+'</select></div>';
+    return '<div class="ctrl"><label for="'+id+'">'+c.label+'</label><input id="'+id+'" data-key="'+c.key+'" type="number" min="'+c.min+'" step="'+c.step+'" value="'+state[c.key]+'"></div>';
+  }).join('');
+  root.oninput=function(e){
+    var key=e.target.dataset.key;if(!key)return;
+    state[key]=e.target.type==='number'?Math.max(0,Number(e.target.value)||0):e.target.value;
+    onChange();
+  };
+  root.onclick=function(e){
+    if(!e.target.classList.contains('sw'))return;
+    var key=e.target.dataset.key;state[key]=!state[key];e.target.classList.toggle('on',state[key]);e.target.setAttribute('aria-checked',state[key]);onChange();
+  };
+  root.onkeydown=function(e){
+    if(e.target.classList.contains('sw')&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.target.click();}
+  };
+}
+/* 结果区 = 固定维度清单：所有场景渲染同一组维度、同一顺序，只有取值随场景变 */
+function rsRow(key,main,sub,tone){
+  return '<div class="rs-row"><div class="rs-k">'+escHtml(key)+'</div><div class="rs-v"><span class="rs-main'+(tone?' '+tone:'')+'">'+escHtml(main)+'</span>'+(sub?'<span class="rs-sub">'+escHtml(sub)+'</span>':'')+'</div></div>';
+}
+function rsHtml(o){
+  var pathLines=o.paths.map(function(p){return '<div class="rs-line">'+escHtml(p)+'</div>'}).join('');
+  return '<div class="rs">'
+    +rsRow('导入任务',o.canCreate,o.canCreateOk?'前端完整扫描无错误':'前端存在错误，直接拦截',o.canCreateOk?'ok':'bad')
+    +rsRow('数据入库',o.persist,o.persistOk?'实时与异步校验全部通过':'任一阶段存在错误，整批不入库',o.persistOk?'ok':'bad')
+    +rsRow('订单状态',o.status,'按累计退款与实付金额比较',o.status==='退款成功'?'bad':(o.status==='部分退款'?'warn':'ok'))
+    +rsRow('提醒状态',o.reminder,'注册或退款成功后停止',o.reminder.indexOf('每 30')>=0?'warn':'')
+    +rsRow('权益动作',o.rights,'部分退款不自动回收','')
+    +rsRow('发货动作',o.shipment,'含实物且绑定后进入仓储链路','')
+    +rsRow('结算金额',o.settlement,'实付金额减封顶后的累计退款','')
+    +rsRow('结算时间',o.settlementTime,'小宝爸爸取支付时间，其他渠道为空','')
+    +'<div class="rs-row"><div class="rs-k">财务三表推送</div><div class="rs-v">'+pathLines+'<span class="rs-sub">三张表第一列均为订单 ID</span></div></div>'
+    +'</div>';
+}
+function renderRuleTables(){
+  function rows(items){return '<tr><th>编号</th><th>规则</th></tr>'+items.map(function(r){return '<tr><td><span class="rule-code">'+r.id+'</span><br>'+r.name+'</td><td>'+r.rule+'</td></tr>'}).join('')}
+  document.getElementById('realtimeRules').innerHTML=rows(RULES.realtime);
+  document.getElementById('asyncRules').innerHTML=rows(RULES.async);
+}
+function renderStoryList(){
+  var root=document.getElementById('storyList'),group='';
+  root.innerHTML=STORIES.map(function(s,i){
+    var gh=s.group!==group?'<div class="sc-group">'+s.group+'</div>':'';group=s.group;
+    return gh+'<div class="sc-item'+(i===activeStory?' on':'')+'" data-story="'+i+'"><span class="sc-no">'+s.id+'</span><span class="sc-t">'+s.name+'</span><span class="sc-badge b-'+s.tone+'">'+s.badge+'</span></div>';
+  }).join('');
+}
+function renderStory(){
+  var s=STORIES[activeStory],o=RULES.evaluate(storyState);
+  document.getElementById('storyTimeline').innerHTML='<div class="timeline">'+s.timeline.map(function(step){
+    return '<div class="tl-step"><div class="tl-head"><span class="tl-time">'+escHtml(step[0])+'</span><span class="tl-role">'+escHtml(step[1])+'</span></div><div class="tl-text">'+escHtml(step[2])+'</div></div>';
+  }).join('')+'</div>';
+  document.getElementById('storyFinal').innerHTML='<div class="story-current"><span class="story-name">'+escHtml(s.id+' · '+s.name)+'</span></div>'+rsHtml(o);
+}
+function loadStory(index){
+  activeStory=index;
+  storyState=Object.assign({},STORIES[index].inputs);
+  renderStoryList();
+  renderControls('storyControls',storyState,'story-',renderStory);
+  renderStory();
+}
+
+renderRuleTables();
+document.getElementById('storyList').addEventListener('click',function(e){
+  var item=e.target.closest('.sc-item');if(item)loadStory(+item.dataset.story);
+});
+loadStory(0);
+
+var prototypeFrame=document.getElementById('prototypeFrame');
+var frameStatus=document.getElementById('frameStatus');
+var frameTimer=setTimeout(function(){
+  frameStatus.textContent='预览可能被网络或浏览器安全策略拦截，请使用上方按钮在新窗口打开高保真标注原型。';
+  frameStatus.classList.add('fail');
+},12000);
+prototypeFrame.addEventListener('load',function(){
+  clearTimeout(frameTimer);
+  frameStatus.textContent='高保真标注原型已加载；如内容显示异常，请使用上方按钮在新窗口打开。';
+  frameStatus.classList.remove('fail');
+});
+</script>
+
+<script>
+/* ===== 决策事项 + 分页评审意见（现成实现，勿重写；只改 SEEDS） =====
+   SEEDS = 待定事项：只放做包前已与用户确认过要放的问题（需求文档自带的待确认事项可直接放入）。
+   留空数组时列表为空，但标题和新增入口仍然常驻，不可隐藏。 */
+(function(){
+var SEEDS=['达人佣金的具体计算公式、配置来源、精度与生效时间尚未确定；未配置前结算表佣金保持为空，禁止使用默认比例。'];
+var KEY='dm-'+(location.pathname.split('/').pop()||'pkg').replace(/-v\d+.*$/,'');
+var IMG_MAX=5,IMG_MB=5;
+var D=null;try{D=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!D||!Array.isArray(D.pend)){D={pend:SEEDS.map(function(t){return{t:t,done:false}}),op:[],dec:[]};}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}}
+var root=document.getElementById('dmRoot');
+if(!root)return;
+var KS=['pend','op','dec'];
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+function tabName(btn){return btn.textContent.trim().replace(/^[\u2460-\u2473]\s*/,'')}
+function curTab(){var b=document.querySelector('#nav button.on');return b?tabName(b):''}
+var DM_TAB=tabName([].slice.call(document.querySelectorAll('#nav button')).pop());
+function buildRoot(){
+ root.innerHTML='<div class="dm">'
+  +'<div class="dm-h">待定事项</div><div id="dmL0"></div><div class="dm-add"><input id="dmI0" placeholder="新增待定事项"><button data-a="0">添加</button></div>'
+  +'<div class="dm-h">评审意见</div><div id="dmL1"></div><div class="dm-add"><input id="dmI1" placeholder="记录评审意见"><input id="dmB1" class="dm-by" placeholder="撰写人"><button data-a="1">添加</button></div>'
+  +'<div class="dm-h">决策共识</div><div id="dmL2"></div><div class="dm-add"><input id="dmI2" placeholder="新增共识"><button data-a="2">添加</button></div>'
+  +'</div>';
+}
+function rowHtml(k,ki,it,i){
+ var meta='';
+ if(k==='op'){
+  var tag=it.mod?'<span class="dm-tag">'+esc(it.mod)+'</span>':'';
+  var ba=esc(it.by||'')+(it.by&&it.at?' · ':'')+esc(it.at||'');
+  if(tag||ba)meta='<div class="dm-meta">'+tag+ba+'</div>';
+ }else if(it.at){meta='<div class="dm-meta">'+esc(it.at)+'</div>';}
+ var thumbs='';
+ if(k==='dec'&&it.imgs&&it.imgs.length){
+  thumbs='<div class="dm-thumbs">'+it.imgs.map(function(id){
+   return '<span class="dm-thumb"><img data-img="'+id+'"><span class="dm-timg-x" data-k="'+ki+'" data-i="'+i+'" data-id="'+id+'">✕</span></span>';
+  }).join('')+'</div>';
+ }
+ var ext=(k==='dec')?'<span class="dm-p" data-k="'+ki+'" data-i="'+i+'" title="贴图 · 最多'+IMG_MAX+'张 · 每张不超过'+IMG_MB+'MB">图</span>':'';
+ var ck=(k!=='dec')?'<span class="dm-ck" data-k="'+ki+'" data-i="'+i+'">'+(it.done?'✓':'')+'</span>':'';
+ return '<div class="dm-row'+(it.done?' done':'')+'">'+ck
+  +'<div style="flex:1;min-width:0"><div class="dm-txt" contenteditable data-k="'+ki+'" data-i="'+i+'">'+esc(it.t)+'</div>'+meta+thumbs+'</div>'
+  +ext
+  +'<span class="dm-e" data-k="'+ki+'" data-i="'+i+'" title="编辑">✎</span><span class="dm-x" data-k="'+ki+'" data-i="'+i+'">✕</span></div>';
+}
+function render(){
+ buildRoot();
+ KS.forEach(function(k,ki){
+  var el=document.getElementById('dmL'+ki);
+  if(el)el.innerHTML=D[k].map(function(it,i){return rowHtml(k,ki,it,i)}).join('');
+ });
+ rvRender();
+ hydrate();
+}
+root.addEventListener('click',function(e){
+ var t=e.target;
+ if(t.classList.contains('dm-ck')){var it=D[KS[+t.dataset.k]][+t.dataset.i];it.done=!it.done;save();render();}
+ else if(t.classList.contains('dm-e')){var tx=t.closest('.dm-row').querySelector('.dm-txt');if(tx){tx.focus();var r=document.createRange();r.selectNodeContents(tx);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}}
+ else if(t.classList.contains('dm-x')){var itx=D[KS[+t.dataset.k]][+t.dataset.i];if(itx&&itx.imgs)itx.imgs.forEach(idbDel);D[KS[+t.dataset.k]].splice(+t.dataset.i,1);save();render();}
+ else if(t.classList.contains('dm-p')){imgTarget=D.dec[+t.dataset.i];fInp.click();}
+ else if(t.classList.contains('dm-timg-x')){var it2=D.dec[+t.dataset.i];it2.imgs=(it2.imgs||[]).filter(function(x){return x!==+t.dataset.id});idbDel(+t.dataset.id);save();render();}
+ else if(t.tagName==='IMG'&&t.dataset.img&&t.src){lightbox(t.src);}
+ else if(t.tagName==='BUTTON'&&t.dataset.a!==undefined){
+  var a=t.dataset.a,inp=document.getElementById('dmI'+a);if(!inp||!inp.value.trim())return;
+  var it={t:inp.value.trim(),done:false,at:now()};
+  if(a==='1'){var by=document.getElementById('dmB1');it.by=by.value.trim();it.mod='';}
+  D[KS[+a]].push(it);inp.value='';save();render();
+ }
+});
+/* 决策共识：粘贴图片（截图直接 Ctrl/Cmd+V 到文字上） */
+root.addEventListener('paste',function(e){
+ var t=e.target&&e.target.closest?e.target.closest('.dm-txt'):null;
+ if(!t||KS[+t.dataset.k]!=='dec')return;
+ var files=[].slice.call((e.clipboardData||{}).items||[]).filter(function(x){return x.kind==='file'&&/^image\//.test(x.type)}).map(function(x){return x.getAsFile()});
+ if(files.length){e.preventDefault();t.blur();addImgs(D.dec[+t.dataset.i],files);}
+});
+root.addEventListener('keydown',function(e){
+ if(e.key==='Enter'&&e.target.tagName==='INPUT'){var a=e.target.id.replace(/\D/g,'');var b=root.querySelector('button[data-a="'+a+'"]');if(b)b.click();e.preventDefault();}
+ if(e.key==='Enter'&&e.target.classList&&e.target.classList.contains('dm-txt')){e.preventDefault();e.target.blur();}
+});
+root.addEventListener('blur',function(e){
+ var t=e.target;
+ if(t.classList&&t.classList.contains('dm-txt')){var v=t.innerText.trim();if(v)D[KS[+t.dataset.k]][+t.dataset.i].t=v;save();}
+},true);
+function now(){return new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}
+/* ---- 决策共识贴图：图片存 IndexedDB（localStorage 装不下），条目里只记图片 id ---- */
+var idb=null;
+function idbOpen(cb){
+ if(idb)return cb(idb);
+ try{
+  var q=indexedDB.open(KEY+'-imgs',1);
+  q.onupgradeneeded=function(){q.result.createObjectStore('imgs',{autoIncrement:true})};
+  q.onsuccess=function(){idb=q.result;cb(idb)};
+  q.onerror=function(){cb(null)};
+ }catch(e){cb(null)}
+}
+function idbPut(blob,cb){idbOpen(function(db){if(!db)return cb(null);var rq=db.transaction('imgs','readwrite').objectStore('imgs').add(blob);rq.onsuccess=function(){cb(rq.result)};rq.onerror=function(){cb(null)}})}
+function idbGet(id,cb){idbOpen(function(db){if(!db)return cb(null);var rq=db.transaction('imgs').objectStore('imgs').get(id);rq.onsuccess=function(){cb(rq.result||null)};rq.onerror=function(){cb(null)}})}
+function idbDel(id){idbOpen(function(db){if(db)db.transaction('imgs','readwrite').objectStore('imgs').delete(id)})}
+var imgURL={};
+function hydrate(){
+ [].forEach.call(root.querySelectorAll('img[data-img]'),function(im){
+  var id=+im.dataset.img;
+  if(imgURL[id]){im.src=imgURL[id];return}
+  idbGet(id,function(b){if(b){imgURL[id]=URL.createObjectURL(b);im.src=imgURL[id]}else if(im.parentNode){im.parentNode.style.display='none'}});
+ });
+}
+var fInp=document.createElement('input');fInp.type='file';fInp.accept='image/*';fInp.multiple=true;fInp.style.display='none';document.body.appendChild(fInp);
+var imgTarget=null;
+fInp.addEventListener('change',function(){if(imgTarget)addImgs(imgTarget,fInp.files);fInp.value='';});
+function addImgs(item,files){
+ var list=[].slice.call(files).filter(function(f){return f&&/^image\//.test(f.type)});
+ if(!list.length)return;
+ item.imgs=item.imgs||[];
+ var room=IMG_MAX-item.imgs.length;
+ if(room<=0){toast('一条决策最多贴 '+IMG_MAX+' 张图');return}
+ if(list.length>room){toast('最多还能贴 '+room+' 张，多余的已忽略');list=list.slice(0,room)}
+ var pending=0;
+ list.forEach(function(f){
+  if(f.size>IMG_MB*1024*1024){toast('图片超过 '+IMG_MB+'MB，已跳过');return}
+  pending++;
+  idbPut(f,function(id){pending--;if(id!=null)item.imgs.push(id);if(!pending){save();render()}});
+ });
+ if(!pending){save();render()}
+}
+var toastEl=null,toastTm=null;
+function toast(m){
+ if(!toastEl){toastEl=document.createElement('div');toastEl.className='dm-toast';document.body.appendChild(toastEl)}
+ toastEl.textContent=m;toastEl.classList.add('on');
+ clearTimeout(toastTm);toastTm=setTimeout(function(){toastEl.classList.remove('on')},2600);
+}
+var lb=null;
+function lightbox(src){
+ if(!lb){lb=document.createElement('div');lb.className='dm-lb';lb.addEventListener('click',function(){lb.style.display='none'});document.body.appendChild(lb)}
+ lb.innerHTML='<img src="'+src+'">';lb.style.display='flex';
+}
+/* ---- 分页评审意见面板 ---- */
+var fab=document.getElementById('rvFab'),panel=document.getElementById('rvPanel');
+function rvRender(){
+ var tab=curTab();
+ var onDM=(tab===DM_TAB);
+ fab.style.display=onDM?'none':'block';
+ if(onDM)panel.style.display='none';
+ document.getElementById('rvTab').textContent=tab;
+ var items=D.op.map(function(it,i){return{it:it,i:i}}).filter(function(x){return x.it.mod===tab});
+ document.getElementById('rvN').textContent=items.length?' · '+items.length:'';
+ document.getElementById('rvList').innerHTML=items.length?items.map(function(x){
+  return '<div class="dm-row'+(x.it.done?' done':'')+'"><span class="dm-ck" data-rv="'+x.i+'">'+(x.it.done?'✓':'')+'</span><div style="flex:1;min-width:0"><div class="dm-txt" contenteditable data-rvi="'+x.i+'">'+esc(x.it.t)+'</div><div class="dm-meta">'+esc(x.it.by||'')+(x.it.by&&x.it.at?' · ':'')+esc(x.it.at||'')+'</div></div><span class="dm-e" data-rve="'+x.i+'" title="编辑">✎</span><span class="dm-x" data-rvx="'+x.i+'">✕</span></div>';
+ }).join(''):'<div class="note" style="margin:4px 0 8px">本页暂无评审意见</div>';
+}
+fab.addEventListener('click',function(){panel.style.display=panel.style.display==='none'||!panel.style.display?'block':'none';rvRender();});
+panel.addEventListener('click',function(e){
+ var t=e.target;
+ if(t.dataset.rv!==undefined){var it=D.op[+t.dataset.rv];it.done=!it.done;save();render();}
+ else if(t.dataset.rve!==undefined){var tx=t.closest('.dm-row').querySelector('.dm-txt');if(tx){tx.focus();var r=document.createRange();r.selectNodeContents(tx);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}}
+ else if(t.dataset.rvx!==undefined){D.op.splice(+t.dataset.rvx,1);save();render();}
+ else if(t.id==='rvAdd'){
+  var inp=document.getElementById('rvT');if(!inp.value.trim())return;
+  D.op.push({t:inp.value.trim(),by:document.getElementById('rvB').value.trim(),at:now(),mod:curTab(),done:false});
+  inp.value='';save();render();
+ }
+});
+panel.addEventListener('keydown',function(e){
+ if(e.key==='Enter'&&e.target.id==='rvT'){document.getElementById('rvAdd').click();e.preventDefault();}
+ if(e.key==='Enter'&&e.target.classList&&e.target.classList.contains('dm-txt')){e.preventDefault();e.target.blur();}
+});
+panel.addEventListener('blur',function(e){
+ var t=e.target;
+ if(t.classList&&t.classList.contains('dm-txt')&&t.dataset.rvi!==undefined){var v=t.innerText.trim();if(v)D.op[+t.dataset.rvi].t=v;save();render();}
+},true);
+document.getElementById('nav').addEventListener('click',function(){rvRender()});
+render();
+})();
+</script>
+
+</body>
+</html>
