@@ -180,7 +180,7 @@
               <el-button type="text" @click="validationRulesVisible = true">
                 查看实时校验规则
               </el-button>
-              <div class="dialog-subtext">Excel 包含“支付成功订单表”和“退款订单表”两个 sheet。</div>
+              <div class="dialog-subtext">Excel 包含“支付成功订单表”和“退款订单表”两个 sheet；同一文件只能包含一个渠道，不同渠道请分文件上传。</div>
             </el-form-item>
             <el-form-item
               id="uploadFileField"
@@ -413,6 +413,11 @@
                 input: '渠道名称=小宝爸爸优选（注册表无此渠道）',
                 result: '提示渠道未在渠道注册表登记生效，立即拦截',
               },
+              {
+                caseName: '多渠道混传',
+                input: '同一文件同时出现小宝爸爸、万物心选两个渠道',
+                result: '提示一次上传仅允许一个渠道，需分渠道拆分文件后上传',
+              },
             ],
           }
         },
@@ -522,6 +527,7 @@
               duplicate: { sheet: '支付成功订单表', row: '第 2、3 行', field: '订单 ID' },
               amount: { sheet: '支付成功订单表', row: '第 2 行', field: '实付金额 / 商品数量' },
               channel: { sheet: '支付成功订单表', row: '第 2 行', field: '渠道名称' },
+              multiChannel: { sheet: '工作簿', row: '—', field: '渠道名称' },
             }
             return [{
               ...(locations[this.scenarioKey] || {
@@ -676,6 +682,7 @@
           options: [
             { value: 'multiFrontend', label: '聚合错误（默认）' },
             { value: 'normal', label: '正常' },
+            { value: 'multiChannel', label: '多渠道混传' },
             { value: 'asyncProduct', label: '商品异步' },
             { value: 'asyncRefund', label: '退款异步' }
           ]
@@ -759,7 +766,8 @@
             { case: '必填缺失', input: '支付表商品名称为空.xlsx', result: '立即提示，不生成上传记录' },
             { case: '订单ID重复', input: '同文件订单ID重复.xlsx', result: '立即提示，不生成上传记录' },
             { case: '金额/数量', input: '金额数量错误.xlsx', result: '金额≤0或数量≠1时立即提示' },
-            { case: '渠道未登记', input: '渠道未登记_小宝爸爸优选.xlsx', result: '渠道不在注册表，立即提示' }
+            { case: '渠道未登记', input: '渠道未登记_小宝爸爸优选.xlsx', result: '渠道不在注册表，立即提示' },
+            { case: '多渠道混传', input: '混传_小宝爸爸+万物.xlsx', result: '一次上传仅允许一个渠道，立即提示分文件上传' }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
         },
@@ -773,13 +781,14 @@
           title: '逐项展示实时校验失败 case',
           desc: '校验规则弹窗给出可复现输入、前端反馈和“不创建上传记录”的处理结果。',
           before: '线上无前端内容校验，自然没有校验规则说明',
-          after: '新增规则弹窗，运营可查看六类实时校验 case 及错误反馈',
+          after: '新增规则弹窗，运营可查看七类实时校验 case 及错误反馈',
           examples: [
             { case: '必填缺失', input: '第 2 行商品名称为空', result: '立即提示，不创建上传记录' },
             { case: '订单ID重复', input: '第 2、3 行订单ID相同', result: '标记两个重复行号' },
             { case: '金额/数量', input: '实付金额≤0或商品数量≠1', result: '立即拦截' },
             { case: '渠道未登记', input: '渠道名称=小宝爸爸优选', result: '不在渠道注册表，立即拦截' },
-            { case: '聚合错误', input: '全量前端校验错误.xlsx', result: '一次返回 7 条错误，覆盖全部 6 类实时规则' }
+            { case: '多渠道混传', input: '同文件出现两个渠道', result: '仅允许一个渠道，提示分文件上传' },
+            { case: '聚合错误', input: '全量前端校验错误.xlsx', result: '一次返回 8 条错误，覆盖全部 7 类实时规则' }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
         },
@@ -798,7 +807,7 @@
             {
               case: '多项命中',
               input: '全量前端校验错误.xlsx',
-              result: '一次展示 7 条错误，覆盖 6 类实时规则，且不创建上传记录'
+              result: '一次展示 8 条错误，覆盖 7 类实时规则，且不创建上传记录'
             }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
