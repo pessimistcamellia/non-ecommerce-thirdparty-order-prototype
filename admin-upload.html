@@ -163,6 +163,17 @@
                 <el-option label="示例旗舰店" value="demo-shop"></el-option>
               </el-select>
             </el-form-item>
+            <el-form-item id="channelField" label="渠道" prop="channel" v-if="showChannelField">
+              <el-select v-model="uploadForm.channel" placeholder="请选择渠道" style="width: 100%">
+                <el-option
+                  v-for="ch in registeredChannels"
+                  :key="ch.channelId"
+                  :label="ch.channelName"
+                  :value="ch.channelName"
+                ></el-option>
+              </el-select>
+              <div class="dialog-subtext">渠道枚举与渠道注册 Base 同步；渠道新增/停用时需研发同步更新此枚举。</div>
+            </el-form-item>
             <el-form-item id="fileTypeField" label="文件类型" prop="fileType">
               <el-select v-model="uploadForm.fileType" style="width: 100%">
                 <el-option
@@ -180,7 +191,7 @@
               <el-button type="text" @click="validationRulesVisible = true">
                 查看实时校验规则
               </el-button>
-              <div class="dialog-subtext">Excel 包含“支付成功订单表”和“退款订单表”两个 sheet；同一文件只能包含一个渠道，不同渠道请分文件上传。</div>
+              <div class="dialog-subtext">Excel 包含“支付成功订单表”和“退款订单表”两个 sheet；渠道由上方下拉选择，Excel 不再填写渠道名称。</div>
             </el-form-item>
             <el-form-item
               id="uploadFileField"
@@ -374,11 +385,20 @@
             uploadForm: {
               platform: '非电商平台的三方订单',
               shop: '',
+              channel: '',
               fileType: '导入订单',
               fileName: '',
             },
             uploadRules: {
               platform: [{ required: true, message: '请选择平台', trigger: 'change' }],
+              channel: [{
+                validator: (rule, value, callback) => {
+                  if (this.uploadForm && this.uploadForm.platform === '非电商平台的三方订单' && !value) {
+                    callback(new Error('请选择渠道'))
+                  } else callback()
+                },
+                trigger: 'change',
+              }],
               fileType: [{ required: true, message: '请选择文件类型', trigger: 'change' }],
               fileName: [{ required: true, message: '请选择 Excel 文件', trigger: 'change' }],
             },
@@ -407,16 +427,6 @@
                 caseName: '手机号格式错误',
                 input: '电话号码不是 11 位手机号',
                 result: '提示“电话号码格式错误”',
-              },
-              {
-                caseName: '渠道未登记',
-                input: '渠道名称=小宝爸爸优选（注册表无此渠道）',
-                result: '提示渠道未在渠道注册表登记生效，立即拦截',
-              },
-              {
-                caseName: '多渠道混传',
-                input: '同一文件同时出现小宝爸爸、万物心选两个渠道',
-                result: '提示一次上传仅允许一个渠道，需分渠道拆分文件后上传',
               },
             ],
           }
@@ -453,6 +463,14 @@
             return ['天猫', '京东', '微店', 'PDD', '抖店', '有赞'].includes(
               this.uploadForm.platform,
             )
+          },
+          showChannelField: function () {
+            return this.uploadForm.platform === '非电商平台的三方订单'
+          },
+          registeredChannels: function () {
+            return (this.state.channels || []).filter(function (ch) {
+              return ch.status === '已生效'
+            })
           },
           detailTagType: function () {
             if (!this.selectedUpload) return 'info'
@@ -505,6 +523,7 @@
             this.uploadForm = {
               platform: '非电商平台的三方订单',
               shop: '',
+              channel: '',
               fileType: '导入订单',
               fileName: '',
             }
@@ -513,6 +532,7 @@
           handleUploadPlatformChange: function (platform) {
             this.uploadForm.fileType =
               (PrototypeApp.FILE_TYPES_BY_PLATFORM[platform] || [])[0] || ''
+            this.uploadForm.channel = ''
           },
           selectFixtureFile: function () {
             this.fileValidationError = ''
@@ -526,8 +546,6 @@
               required: { sheet: '支付成功订单表', row: '第 2 行', field: '商品名称' },
               duplicate: { sheet: '支付成功订单表', row: '第 2、3 行', field: '订单 ID' },
               amount: { sheet: '支付成功订单表', row: '第 2 行', field: '实付金额 / 商品数量' },
-              channel: { sheet: '支付成功订单表', row: '第 2 行', field: '渠道名称' },
-              multiChannel: { sheet: '工作簿', row: '—', field: '渠道名称' },
             }
             return [{
               ...(locations[this.scenarioKey] || {
@@ -618,7 +636,7 @@
           downloadTemplate: function () {
             PrototypeApp.downloadCsv(
               '非电商三方订单导入模板.csv',
-              '支付成功订单表：渠道名称,订单ID,收件人姓名,电话号码,收货省,收货市,收货区,详细地址,商品名称,商品数量,组合商品ID,订单实付金额\n退款订单表：订单ID,本账期退款金额,退款原因描述',
+              '支付成功订单表：订单ID,收件人姓名,电话号码,收货省,收货市,收货区,详细地址,商品名称,商品数量,组合商品ID,订单实付金额\n退款订单表：订单ID,本账期退款金额,退款原因描述',
             )
           },
           downloadResult: function (upload) {
@@ -630,7 +648,7 @@
           downloadSource: function (upload) {
             PrototypeApp.downloadCsv(
               upload.file.replace('.xlsx', '.csv'),
-              '渠道名称,订单ID,商品名称,商品数量,订单实付金额\n小宝爸爸,xiaobaobaba20260804001,洋葱英语年度课程,1,899',
+              '订单ID,商品名称,商品数量,订单实付金额\nxiaobaobaba20260804001,洋葱英语年度课程,1,899',
             )
           },
         },
@@ -659,7 +677,7 @@
         },
         setDemoState: function (controlId, value) {
           if (controlId !== 'uploadScenarioV2') return
-          const legacySingleCases = ['required', 'duplicate', 'amount', 'channel']
+          const legacySingleCases = ['required', 'duplicate', 'amount', 'channel', 'multiChannel']
           app.scenarioKey = legacySingleCases.includes(value) ? 'multiFrontend' : value
           app.fileValidationError = ''
           app.frontendErrorRows = []
@@ -682,7 +700,6 @@
           options: [
             { value: 'multiFrontend', label: '聚合错误（默认）' },
             { value: 'normal', label: '正常' },
-            { value: 'multiChannel', label: '多渠道混传' },
             { value: 'asyncProduct', label: '商品异步' },
             { value: 'asyncRefund', label: '退款异步' }
           ]
@@ -738,6 +755,23 @@
           sdd: { section: 'FR-1 上传入口', blockId: 'doxcn3Ht0Dk0NxezDMN13zOoHff' }
         },
         {
+          id: 'chg-upload-channel',
+          level: 'field',
+          page: 'uploadDialogPageMeta',
+          module: '渠道下拉',
+          target: '#channelField',
+          type: 'new',
+          title: '新增渠道下拉（仅非电商平台）',
+          desc: '平台选择“非电商平台的三方订单”时展示渠道下拉，整个文件按所选渠道入库，Excel 模板不再填写渠道名称。枚举与渠道注册 Base 同步，渠道新增/停用需研发同步更新枚举。',
+          before: '线上仅电商平台展示“店铺”下拉，无渠道字段；渠道信息只能写在 Excel 里',
+          after: '新增渠道下拉，必选；仅登记且已生效的渠道可选',
+          examples: [
+            { case: '选定渠道', input: '渠道=小宝爸爸', result: '本文件全部订单按“小宝爸爸”入库' },
+            { case: '未选渠道', input: '直接点确定', result: '表单校验提示“请选择渠道”' }
+          ],
+          sdd: { section: 'FR-1 上传入口', blockId: 'doxcn3Ht0Dk0NxezDMN13zOoHff' }
+        },
+        {
           id: 'chg-upload-template-download',
           level: 'field',
           page: 'uploadDialogPageMeta',
@@ -758,16 +792,14 @@
           target: '#uploadFileField',
           type: 'new',
           title: '选择文件即实时校验',
-          desc: '渠道名称从 Excel 读取后与渠道注册表比对，前端校验失败不生成上传记录。',
+          desc: '渠道由弹窗下拉选定，Excel 不含渠道列；前端读取文件并实时校验，失败不生成上传记录。',
           before: '线上上传弹窗只选平台与文件类型，文件内容在提交前不做任何校验',
           after: '选择文件后前端同步读取 Excel 并执行实时校验',
           examples: [
             { case: '正常', input: '小宝爸爸_202608新增订单.xlsx', result: '进入异步校验并生成上传记录' },
             { case: '必填缺失', input: '支付表商品名称为空.xlsx', result: '立即提示，不生成上传记录' },
             { case: '订单ID重复', input: '同文件订单ID重复.xlsx', result: '立即提示，不生成上传记录' },
-            { case: '金额/数量', input: '金额数量错误.xlsx', result: '金额≤0或数量≠1时立即提示' },
-            { case: '渠道未登记', input: '渠道未登记_小宝爸爸优选.xlsx', result: '渠道不在注册表，立即提示' },
-            { case: '多渠道混传', input: '混传_小宝爸爸+万物.xlsx', result: '一次上传仅允许一个渠道，立即提示分文件上传' }
+            { case: '金额/数量', input: '金额数量错误.xlsx', result: '金额≤0或数量≠1时立即提示' }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
         },
@@ -781,14 +813,12 @@
           title: '逐项展示实时校验失败 case',
           desc: '校验规则弹窗给出可复现输入、前端反馈和“不创建上传记录”的处理结果。',
           before: '线上无前端内容校验，自然没有校验规则说明',
-          after: '新增规则弹窗，运营可查看七类实时校验 case 及错误反馈',
+          after: '新增规则弹窗，运营可查看五类实时校验 case 及错误反馈',
           examples: [
             { case: '必填缺失', input: '第 2 行商品名称为空', result: '立即提示，不创建上传记录' },
             { case: '订单ID重复', input: '第 2、3 行订单ID相同', result: '标记两个重复行号' },
             { case: '金额/数量', input: '实付金额≤0或商品数量≠1', result: '立即拦截' },
-            { case: '渠道未登记', input: '渠道名称=小宝爸爸优选', result: '不在渠道注册表，立即拦截' },
-            { case: '多渠道混传', input: '同文件出现两个渠道', result: '仅允许一个渠道，提示分文件上传' },
-            { case: '聚合错误', input: '全量前端校验错误.xlsx', result: '一次返回 8 条错误，覆盖全部 7 类实时规则' }
+            { case: '聚合错误', input: '全量前端校验错误.xlsx', result: '一次返回 6 条错误，覆盖全部 6 类实时规则' }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
         },
@@ -807,7 +837,7 @@
             {
               case: '多项命中',
               input: '全量前端校验错误.xlsx',
-              result: '一次展示 8 条错误，覆盖 7 类实时规则，且不创建上传记录'
+              result: '一次展示 6 条错误，覆盖 6 类实时规则，且不创建上传记录'
             }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
@@ -924,6 +954,8 @@
   :root { --da-navy:#071d2f; --da-blue:#1479d1; --da-blue-soft:#2c93e8; --da-sky:#72c4ff; --da-panel-w:${PANEL_W}px; }
   html.da-open { overflow-x:auto !important; }
   body.da-open { padding-right:0 !important; overflow-x:visible !important; }
+  /* 弹窗打开时锁死底层横滚：Element 只锁 body，html.da-open 的 overflow-x:auto 会让横向滚动漏到底层页面 */
+  html.da-open.da-modal-lock { overflow-x:hidden !important; }
   .da-scroll-spacer { position:absolute; top:0; width:var(--da-panel-w); height:1px; pointer-events:none; visibility:hidden; }
 
   .da-launch { position:fixed; top:14px; right:14px; z-index:9200; display:inline-flex; align-items:center; gap:8px;
@@ -1250,6 +1282,8 @@
   }
 
   function updateOverlay() {
+    // 弹窗可见时锁住底层页面横滚（弹窗开合触发 MutationObserver → 本函数，随动即可）
+    document.documentElement.classList.toggle("da-modal-lock", state.open && modalVisible());
     // 锚点钉在目标左上角，使用文档坐标（以锚点层自身为基准），随页面原生滚动——
     // 杜绝 fixed 浮层"滚动事件追帧"造成的抖动漂移，也不做视口钳制（滚出即自然滚出）
     const layerRect = anchorLayer.getBoundingClientRect();
@@ -1371,14 +1405,27 @@
   /* ---------- 内容视口 ---------- */
   function syncScrollSpace() {
     if (!state.open) return;
-    // 先移除自身对 scrollWidth 的贡献，测出业务页面原始宽度，再补 PANEL_W。
-    // 测量瞬间 scrollWidth 收缩会让浏览器钳制 scrollLeft（横向滚动位置被弹回），测完必须立即还原。
-    const sx = window.scrollX, sy = window.scrollY;
-    scrollSpacer.style.display = "none";
-    const contentWidth = Math.max(document.documentElement.clientWidth, document.documentElement.scrollWidth);
-    scrollSpacer.style.left = contentWidth + "px";
+    // 业务内容宽度用 document.body.scrollWidth 测：spacer 是 body 下的 absolute 子元素，
+    // 它贡献的是 html 的滚动区而非 body.scrollWidth，所以测量全程不需要隐藏/移动 spacer——
+    // scrollWidth 不会瞬间收缩，浏览器也就不会钳制 scrollLeft。
+    // （旧实现先 display:none 再测量，页面若设了 scroll-behavior:smooth，恢复滚动是异步动画，
+    //   会和用户正在进行的横向拖拽打架，表现为"一拽就弹回"。）
+    const contentWidth = Math.max(document.documentElement.clientWidth, document.body.scrollWidth);
+    const next = contentWidth + "px";
     scrollSpacer.style.display = "block";
-    if (window.scrollX !== sx || window.scrollY !== sy) window.scrollTo(sx, sy);
+    if (scrollSpacer.style.left !== next) {
+      const sx = window.scrollX, sy = window.scrollY;
+      scrollSpacer.style.left = next;
+      // 内容变窄仍可能钳制一次，必须用 instant 立即恢复，绝不能吃页面的 scroll-behavior:smooth
+      if (window.scrollX !== sx || window.scrollY !== sy) window.scrollTo({ left: sx, top: sy, behavior: "instant" });
+    }
+  }
+
+  /* ---------- 弹窗横滚锁 ---------- */
+  function modalVisible() {
+    const els = document.querySelectorAll(".el-dialog__wrapper, .el-overlay");
+    for (const el of els) if (el.offsetWidth || el.offsetHeight || el.getClientRects().length) return true;
+    return false;
   }
 
   /* ---------- 开关 ---------- */

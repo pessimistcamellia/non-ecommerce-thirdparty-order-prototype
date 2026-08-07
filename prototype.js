@@ -80,16 +80,6 @@
       fileName: '金额数量错误.xlsx',
       frontendError: '支付成功订单表第 2 行：订单实付金额须大于 0，商品数量必须为 1',
     },
-    channel: {
-      label: '渠道未登记',
-      fileName: '渠道未登记_小宝爸爸优选.xlsx',
-      frontendError: 'Excel 渠道“小宝爸爸优选”未在渠道注册表登记生效',
-    },
-    multiChannel: {
-      label: '多渠道混传',
-      fileName: '混传_小宝爸爸+万物.xlsx',
-      frontendError: '同一文件出现 2 个渠道（小宝爸爸、万物心选），一次上传仅允许一个渠道，请分渠道拆分文件后上传',
-    },
     multiFrontend: {
       label: '聚合错误',
       fileName: '全量前端校验错误.xlsx',
@@ -129,18 +119,6 @@
           row: '第 6 行',
           field: '电话号码',
           reason: '电话号码格式错误，必须为 11 位手机号',
-        },
-        {
-          sheet: '支付成功订单表',
-          row: '第 7 行',
-          field: '渠道名称',
-          reason: '渠道“小宝爸爸优选”未在渠道注册表登记生效',
-        },
-        {
-          sheet: '工作簿',
-          row: '—',
-          field: '渠道名称',
-          reason: '同一文件出现 2 个渠道（小宝爸爸、万物心选），一次上传仅允许一个渠道，请分文件上传',
         },
       ],
     },

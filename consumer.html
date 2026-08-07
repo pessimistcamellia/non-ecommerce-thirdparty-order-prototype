@@ -323,6 +323,8 @@
   :root { --da-navy:#071d2f; --da-blue:#1479d1; --da-blue-soft:#2c93e8; --da-sky:#72c4ff; --da-panel-w:${PANEL_W}px; }
   html.da-open { overflow-x:auto !important; }
   body.da-open { padding-right:0 !important; overflow-x:visible !important; }
+  /* 弹窗打开时锁死底层横滚：Element 只锁 body，html.da-open 的 overflow-x:auto 会让横向滚动漏到底层页面 */
+  html.da-open.da-modal-lock { overflow-x:hidden !important; }
   .da-scroll-spacer { position:absolute; top:0; width:var(--da-panel-w); height:1px; pointer-events:none; visibility:hidden; }
 
   .da-launch { position:fixed; top:14px; right:14px; z-index:9200; display:inline-flex; align-items:center; gap:8px;
@@ -649,6 +651,8 @@
   }
 
   function updateOverlay() {
+    // 弹窗可见时锁住底层页面横滚（弹窗开合触发 MutationObserver → 本函数，随动即可）
+    document.documentElement.classList.toggle("da-modal-lock", state.open && modalVisible());
     // 锚点钉在目标左上角，使用文档坐标（以锚点层自身为基准），随页面原生滚动——
     // 杜绝 fixed 浮层"滚动事件追帧"造成的抖动漂移，也不做视口钳制（滚出即自然滚出）
     const layerRect = anchorLayer.getBoundingClientRect();
@@ -770,14 +774,27 @@
   /* ---------- 内容视口 ---------- */
   function syncScrollSpace() {
     if (!state.open) return;
-    // 先移除自身对 scrollWidth 的贡献，测出业务页面原始宽度，再补 PANEL_W。
-    // 测量瞬间 scrollWidth 收缩会让浏览器钳制 scrollLeft（横向滚动位置被弹回），测完必须立即还原。
-    const sx = window.scrollX, sy = window.scrollY;
-    scrollSpacer.style.display = "none";
-    const contentWidth = Math.max(document.documentElement.clientWidth, document.documentElement.scrollWidth);
-    scrollSpacer.style.left = contentWidth + "px";
+    // 业务内容宽度用 document.body.scrollWidth 测：spacer 是 body 下的 absolute 子元素，
+    // 它贡献的是 html 的滚动区而非 body.scrollWidth，所以测量全程不需要隐藏/移动 spacer——
+    // scrollWidth 不会瞬间收缩，浏览器也就不会钳制 scrollLeft。
+    // （旧实现先 display:none 再测量，页面若设了 scroll-behavior:smooth，恢复滚动是异步动画，
+    //   会和用户正在进行的横向拖拽打架，表现为"一拽就弹回"。）
+    const contentWidth = Math.max(document.documentElement.clientWidth, document.body.scrollWidth);
+    const next = contentWidth + "px";
     scrollSpacer.style.display = "block";
-    if (window.scrollX !== sx || window.scrollY !== sy) window.scrollTo(sx, sy);
+    if (scrollSpacer.style.left !== next) {
+      const sx = window.scrollX, sy = window.scrollY;
+      scrollSpacer.style.left = next;
+      // 内容变窄仍可能钳制一次，必须用 instant 立即恢复，绝不能吃页面的 scroll-behavior:smooth
+      if (window.scrollX !== sx || window.scrollY !== sy) window.scrollTo({ left: sx, top: sy, behavior: "instant" });
+    }
+  }
+
+  /* ---------- 弹窗横滚锁 ---------- */
+  function modalVisible() {
+    const els = document.querySelectorAll(".el-dialog__wrapper, .el-overlay");
+    for (const el of els) if (el.offsetWidth || el.offsetHeight || el.getClientRects().length) return true;
+    return false;
   }
 
   /* ---------- 开关 ---------- */
