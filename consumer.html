@@ -300,7 +300,11 @@
   try { state = Object.assign(state, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); } catch (e) {}
   state.enabled = state.enabled || {};
   state.demo = state.demo || {};
-  moduleKeys.forEach(k => { if (!(k in state.enabled)) state.enabled[k] = false; });
+  // 新版本新增的模块必须继承"全部显示"状态：老访客的 localStorage 里没有新模块的 key，
+  // 若一律默认 false，新增的变更卡在"全部显示"下会凭空消失（严重漏标错觉）。
+  const knownKeys = Object.keys(state.enabled);
+  const inheritOn = knownKeys.length > 0 && knownKeys.every(k => state.enabled[k]);
+  moduleKeys.forEach(k => { if (!(k in state.enabled)) state.enabled[k] = inheritOn; });
   const demoControls = Array.isArray(CS.meta.demoControls) ? CS.meta.demoControls : [];
   demoControls.forEach(control => {
     if (!(control.id in state.demo)) {
@@ -323,8 +327,6 @@
   :root { --da-navy:#071d2f; --da-blue:#1479d1; --da-blue-soft:#2c93e8; --da-sky:#72c4ff; --da-panel-w:${PANEL_W}px; }
   html.da-open { overflow-x:auto !important; }
   body.da-open { padding-right:0 !important; overflow-x:visible !important; }
-  /* 弹窗打开时锁死底层横滚：Element 只锁 body，html.da-open 的 overflow-x:auto 会让横向滚动漏到底层页面 */
-  html.da-open.da-modal-lock { overflow-x:hidden !important; }
   .da-scroll-spacer { position:absolute; top:0; width:var(--da-panel-w); height:1px; pointer-events:none; visibility:hidden; }
 
   .da-launch { position:fixed; top:14px; right:14px; z-index:9200; display:inline-flex; align-items:center; gap:8px;
@@ -651,8 +653,8 @@
   }
 
   function updateOverlay() {
-    // 弹窗可见时锁住底层页面横滚（弹窗开合触发 MutationObserver → 本函数，随动即可）
-    document.documentElement.classList.toggle("da-modal-lock", state.open && modalVisible());
+    // 弹窗跟随页面横滚（滚动/弹窗开合都会触发本函数，随动即可）
+    syncDialogFollow();
     // 锚点钉在目标左上角，使用文档坐标（以锚点层自身为基准），随页面原生滚动——
     // 杜绝 fixed 浮层"滚动事件追帧"造成的抖动漂移，也不做视口钳制（滚出即自然滚出）
     const layerRect = anchorLayer.getBoundingClientRect();
@@ -790,11 +792,17 @@
     }
   }
 
-  /* ---------- 弹窗横滚锁 ---------- */
-  function modalVisible() {
-    const els = document.querySelectorAll(".el-dialog__wrapper, .el-overlay");
-    for (const el of els) if (el.offsetWidth || el.offsetHeight || el.getClientRects().length) return true;
-    return false;
+  /* ---------- 弹窗跟随横滚 ----------
+     Element 弹窗容器是 position:fixed，不随文档横向滚动；批注栏开着时页面可横滚，
+     弹窗若不跟随会与底层页面错位、且被批注栏遮住的部分永远拖不出来。
+     做法：把弹窗容器（不含蒙层）按 -scrollX 平移，弹窗与底层页面同步滑动。 */
+  function syncDialogFollow() {
+    const sx = window.scrollX;
+    document.querySelectorAll(".el-dialog__wrapper, .el-overlay-dialog").forEach(w => {
+      if (!(w.offsetWidth || w.offsetHeight)) return;
+      const tf = sx ? "translateX(" + (-sx) + "px)" : "";
+      if (w.style.transform !== tf) w.style.transform = tf;
+    });
   }
 
   /* ---------- 开关 ---------- */

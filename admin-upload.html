@@ -634,10 +634,7 @@
             this.detailDialogVisible = true
           },
           downloadTemplate: function () {
-            PrototypeApp.downloadCsv(
-              '非电商三方订单导入模板.csv',
-              '支付成功订单表：订单ID,收件人姓名,电话号码,收货省,收货市,收货区,详细地址,商品名称,商品数量,组合商品ID,订单实付金额\n退款订单表：订单ID,本账期退款金额,退款原因描述',
-            )
+            PrototypeApp.downloadXlsxTemplate('非电商三方订单导入模板.xlsx')
           },
           downloadResult: function (upload) {
             PrototypeApp.downloadCsv(
@@ -646,10 +643,7 @@
             )
           },
           downloadSource: function (upload) {
-            PrototypeApp.downloadCsv(
-              upload.file.replace('.xlsx', '.csv'),
-              '订单ID,商品名称,商品数量,订单实付金额\nxiaobaobaba20260804001,洋葱英语年度课程,1,899',
-            )
+            PrototypeApp.downloadXlsxTemplate(upload.file)
           },
         },
       })
@@ -779,9 +773,9 @@
           target: '#excelTemplateField',
           type: 'new',
           title: '新增导入模板下载',
-          desc: '上传弹窗提供导入模板下载与实时校验规则说明入口，模板含支付、退款两个 sheet。',
+          desc: '上传弹窗提供「非电商三方订单导入模板.xlsx」下载（真实 .xlsx，含“支付成功订单表”与“退款订单表”两个 sheet，各带表头与一行示例，字段与实时校验规则一致）及“查看实时校验规则”入口。',
           before: '线上上传弹窗无模板下载，也无格式说明',
-          after: '新增模板下载与“查看实时校验规则”入口',
+          after: '新增双 sheet Excel 模板下载与“查看实时校验规则”入口',
           sdd: { section: 'FR-1 上传入口', blockId: 'doxcn3Ht0Dk0NxezDMN13zOoHff' }
         },
         {
@@ -931,7 +925,11 @@
   try { state = Object.assign(state, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); } catch (e) {}
   state.enabled = state.enabled || {};
   state.demo = state.demo || {};
-  moduleKeys.forEach(k => { if (!(k in state.enabled)) state.enabled[k] = false; });
+  // 新版本新增的模块必须继承"全部显示"状态：老访客的 localStorage 里没有新模块的 key，
+  // 若一律默认 false，新增的变更卡在"全部显示"下会凭空消失（严重漏标错觉）。
+  const knownKeys = Object.keys(state.enabled);
+  const inheritOn = knownKeys.length > 0 && knownKeys.every(k => state.enabled[k]);
+  moduleKeys.forEach(k => { if (!(k in state.enabled)) state.enabled[k] = inheritOn; });
   const demoControls = Array.isArray(CS.meta.demoControls) ? CS.meta.demoControls : [];
   demoControls.forEach(control => {
     if (!(control.id in state.demo)) {
@@ -954,8 +952,6 @@
   :root { --da-navy:#071d2f; --da-blue:#1479d1; --da-blue-soft:#2c93e8; --da-sky:#72c4ff; --da-panel-w:${PANEL_W}px; }
   html.da-open { overflow-x:auto !important; }
   body.da-open { padding-right:0 !important; overflow-x:visible !important; }
-  /* 弹窗打开时锁死底层横滚：Element 只锁 body，html.da-open 的 overflow-x:auto 会让横向滚动漏到底层页面 */
-  html.da-open.da-modal-lock { overflow-x:hidden !important; }
   .da-scroll-spacer { position:absolute; top:0; width:var(--da-panel-w); height:1px; pointer-events:none; visibility:hidden; }
 
   .da-launch { position:fixed; top:14px; right:14px; z-index:9200; display:inline-flex; align-items:center; gap:8px;
@@ -1282,8 +1278,8 @@
   }
 
   function updateOverlay() {
-    // 弹窗可见时锁住底层页面横滚（弹窗开合触发 MutationObserver → 本函数，随动即可）
-    document.documentElement.classList.toggle("da-modal-lock", state.open && modalVisible());
+    // 弹窗跟随页面横滚（滚动/弹窗开合都会触发本函数，随动即可）
+    syncDialogFollow();
     // 锚点钉在目标左上角，使用文档坐标（以锚点层自身为基准），随页面原生滚动——
     // 杜绝 fixed 浮层"滚动事件追帧"造成的抖动漂移，也不做视口钳制（滚出即自然滚出）
     const layerRect = anchorLayer.getBoundingClientRect();
@@ -1421,11 +1417,17 @@
     }
   }
 
-  /* ---------- 弹窗横滚锁 ---------- */
-  function modalVisible() {
-    const els = document.querySelectorAll(".el-dialog__wrapper, .el-overlay");
-    for (const el of els) if (el.offsetWidth || el.offsetHeight || el.getClientRects().length) return true;
-    return false;
+  /* ---------- 弹窗跟随横滚 ----------
+     Element 弹窗容器是 position:fixed，不随文档横向滚动；批注栏开着时页面可横滚，
+     弹窗若不跟随会与底层页面错位、且被批注栏遮住的部分永远拖不出来。
+     做法：把弹窗容器（不含蒙层）按 -scrollX 平移，弹窗与底层页面同步滑动。 */
+  function syncDialogFollow() {
+    const sx = window.scrollX;
+    document.querySelectorAll(".el-dialog__wrapper, .el-overlay-dialog").forEach(w => {
+      if (!(w.offsetWidth || w.offsetHeight)) return;
+      const tf = sx ? "translateX(" + (-sx) + "px)" : "";
+      if (w.style.transform !== tf) w.style.transform = tf;
+    });
   }
 
   /* ---------- 开关 ---------- */

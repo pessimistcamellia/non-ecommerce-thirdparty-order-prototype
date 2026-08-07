@@ -567,6 +567,24 @@
   const maskPhone = (phone) =>
     String(phone || '').replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2')
 
+  // 非电商三方订单导入模板（真实 .xlsx，双 sheet：支付成功订单表 + 退款订单表，各含一行示例）
+  const TEMPLATE_XLSX_B64 =
+    'UEsDBBQAAAAIADGaB10gOnD8BAEAALUCAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbLWSzU7DMBCEX8XytYqd9oAQStIDP0fgUB5gcTaJFf/J65b07XHSigMqICQ4reyZ2W9kudpO1rADRtLe1XwtSs7QKd9q19f8ZfdQXHNGCVwLxjus+RGJb5tqdwxILGcd1XxIKdxISWpACyR8QJeVzkcLKR9jLwOoEXqUm7K8ksq7hC4Vad7Bm+oOO9ibxO6nfH3qEdEQZ7cn48yqOYRgtIKUdXlw7SdKcSaInFw8NOhAq2zg8iJhVr4GnHNP+WGibpE9Q0yPYLNLTka++Ti+ej+K75dcaOm7TitsvdrbHBEUIkJLA2KyRixTWNBu9TN/MZNcxvqPi3zs/2WPzX/3kMu3a94BUEsDBBQAAAAIADGaB12Y2uuLrgAAACcBAAALAAAAX3JlbHMvLnJlbHONz8EOgjAMBuBXWXqXgQdjDIOLMeFq8AHmVgYB1mWbCm/vjmI8eGz69/vTsl7miT3Rh4GsgCLLgaFVpAdrBNzay+4ILERptZzIooAVA9RVecVJxnQS+sEFlgwbBPQxuhPnQfU4y5CRQ5s2HflZxjR6w51UozTI93l+4P7TgK3JGi3AN7oA1q4O/7Gp6waFZ1KPGW38UfGVSLL0BqOAZeIv8uOdaMwSCrwq+ebB6g1QSwMEFAAAAAgAMZoHXR5ub/TzAAAAYQEAAA8AAAB4bC93b3JrYm9vay54bWyNkM9KA0EMxl9lyN3Odg8iy+72IoXe9QHGnWx36M5kmYz/bj2KIHhQ8CZ68iD6AIJPY5f6Fk5tCwoePCUh+X1fknx0Zltxgp4NuQKGgwQEuoq0cdMCDg/GO3sgOCinVUsOCzhHhlGZn5KfHRHNRMQdF9CE0GVSctWgVTygDl3s1OStCrH0U8mdR6W5QQy2lWmS7EqrjIO1Qub/o0F1bSrcp+rYogtrEY+tCnF5bkzHUObfDryJwikbl+5vXj/e7vqL68Xl/fLlcXF1u3x4inetRiY6ng3CZyYmfqKHIH/Dn/N5//z+F5b+wNIVJrfmcvuf8gtQSwMEFAAAAAgAMZoHXT7clzi6AAAAtQEAABoAAAB4bC9fcmVscy93b3JrYm9vay54bWwucmVsc72QywrCQAxFf2XI3qbtQkQ6uhHBregHDNP0gZ0Hk/HRv3cQFAtduHIVkktODqm2DzOIGwXunZVQZDkIstrVvW0lnE/7xQoER2VrNThLEkZi2G6qIw0qphXues8iMSxL6GL0a0TWHRnFmfNkU9K4YFRMbWjRK31RLWGZ50sM3wyYMsWhlhAOdQHiNHr6he2apte0c/pqyMaZE3h34cIdUUxQFVqKEj4jxlcpskQFnJcp/yxTvmVw8u7NE1BLAwQUAAAACAAxmgdd+eBaRhkCAAAcBwAAGAAAAHhsL3dvcmtzaGVldHMvc2hlZXQxLnhtbK2V0U/TQBjA/5Xm3uHaqssgbYkwJtMYTETfj+5kjVu79JqBb84YIGFjkLFAwmYcMexFxowToUv8a3pr+19428yCyflwi9c+XK+93/c13/fLaUs7hbxUwi6xHFsHyrwMJGybTtayt3TwaiM9lwQS8ZCdRXnHxjp4hwlYMrRtx31Lchh7EttvEx3kPK+4CCExc7iAyLxTxDZ788ZxC8hjj+4WJEUXo+x4UyEPVVlOwAKybGBo47UU8pChuc625LI82Ko5mjxWgOTpwLLzlo1fei5bt4ihjcMukiIyWUqMS7BbwsCIuhe02sikNOgZGhx9CM0/oGUh0PDkJhjcBL5PO3V6VOXwVoR44cmP6LpFaz/Dz2UOLCWaXNTvhE0eaXUGEr39wCGlZyFVfA7piVgNry/DwS5t9mjrPQe2JgSjjV1aL7MKhp0eB5aZATZs9OK9Ggf2VKwjBh/p0f4EyW3YZzN0Pu1+CgZn8d5xfNH6GwmZWFO71KldqkiMHQs5m6N7E6mympCTckKWFZ5rQtjw8ID2arTb4lkmRFIeJGU2FDZ4kgmxaOU08L/y1Vj9b6S0EGnYbMVn3/8hmSDpnOUUtU/jcj384ge/xiWo+Mocu7g1XRPj9w+i42/06pKeXzFh2CS4rcftu9eZF/SuT6ttnoyjtiwZLHjpvlVCcVfWny+vsz9QH/KMmgR4tLAwDTHRAt47gOD0ZDN+A1BLAwQUAAAACAAxmgdd0hhtZ14BAACbAgAAGAAAAHhsL3dvcmtzaGVldHMvc2hlZXQyLnhtbJVSQU/CMBj9K0vv0rIDIWQbUYmJZ/UHlFFhcWuXthl644YekHjggGJQEk1MCHowIVGif8aN7cRfsANDMOGypId+r/3e+95rjfK552oB4cJh1AT5HAIaoTarObRugpPjg50i0ITEtIZdRokJLogAZctoMn4mGoRITfVTYYKGlH4JQmE3iIdFjvmEqpNTxj0sVcnrUPic4NqyyXOhjlABetihwDKWWAVLbBmcNTWu5lConW5280CTJnCo61ByJLnCHWEZS9mS8LGtRlK8gvCAACuejMJO77BiQGkZML0I7T+ivUxE0WAcvz9Hg2HSakXjr6R9k4zut7DuZ2JdkYXXw/DuIep24++3/5RQuV9HoK8j0LNonDuYVdNVxTrSC6iICgjltwWSCgRWHiEDBpuWMsnFj0/hdPLzOQ07bRX9yuFidhn1J0nrdlXGr9N5rz9/+VjMrrYZhhvvD9cfy/oFUEsBAhQDFAAAAAgAMZoHXSA6cPwEAQAAtQIAABMAAAAAAAAAAAAAAIABAAAAAFtDb250ZW50X1R5cGVzXS54bWxQSwECFAMUAAAACAAxmgddmNrri64AAAAnAQAACwAAAAAAAAAAAAAAgAE1AQAAX3JlbHMvLnJlbHNQSwECFAMUAAAACAAxmgddHm5v9PMAAABhAQAADwAAAAAAAAAAAAAAgAEMAgAAeGwvd29ya2Jvb2sueG1sUEsBAhQDFAAAAAgAMZoHXT7clzi6AAAAtQEAABoAAAAAAAAAAAAAAIABLAMAAHhsL19yZWxzL3dvcmtib29rLnhtbC5yZWxzUEsBAhQDFAAAAAgAMZoHXfngWkYZAgAAHAcAABgAAAAAAAAAAAAAAIABHgQAAHhsL3dvcmtzaGVldHMvc2hlZXQxLnhtbFBLAQIUAxQAAAAIADGaB13SGG1nXgEAAJsCAAAYAAAAAAAAAAAAAACAAW0GAAB4bC93b3Jrc2hlZXRzL3NoZWV0Mi54bWxQSwUGAAAAAAYABgCLAQAAAQgAAAAA'
+
+  function downloadXlsxTemplate(fileName) {
+    const bytes = Uint8Array.from(atob(TEMPLATE_XLSX_B64), (ch) => ch.charCodeAt(0))
+    const blob = new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    setTimeout(() => URL.revokeObjectURL(link.href), 500)
+  }
+
   function downloadCsv(fileName, content) {
     const blob = new Blob([`\uFEFF${content}`], {
       type: 'text/csv;charset=utf-8',
@@ -588,7 +606,9 @@
     addOrderFromScenario,
     clone,
     createFixture,
+    TEMPLATE_XLSX_B64,
     downloadCsv,
+    downloadXlsxTemplate,
     formatMoney,
     getState: loadState,
     maskPhone,
