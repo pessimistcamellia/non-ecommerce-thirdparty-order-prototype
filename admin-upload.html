@@ -903,7 +903,7 @@
 
   const TYPE_LABEL = { new: "新增", modify: "修改", copy: "文案", enum: "口径", logic: "逻辑", flow: "流程", remove: "删除" };
   const LEVEL_LABEL = { page: "页面级", module: "模块级", field: "字段级" };
-  const LS_KEY = "diff-annotator-v3:" + location.pathname;
+  const LS_KEY = "diff-annotator-v4:" + location.pathname;
   const PANEL_W = 360;
 
   CS.changes.forEach((c, i) => { c._no = String(i + 1).padStart(2, "0"); });
@@ -927,9 +927,9 @@
   state.demo = state.demo || {};
   // 新版本新增的模块必须继承"全部显示"状态：老访客的 localStorage 里没有新模块的 key，
   // 若一律默认 false，新增的变更卡在"全部显示"下会凭空消失（严重漏标错觉）。
-  const knownKeys = Object.keys(state.enabled);
-  const inheritOn = knownKeys.length > 0 && knownKeys.every(k => state.enabled[k]);
-  moduleKeys.forEach(k => { if (!(k in state.enabled)) state.enabled[k] = inheritOn; });
+  // 缺失的模块开关一律默认可见：新增模块（尤其 type:new——线上现状没有的能力）绝不能默认隐藏，
+  // 否则老访客在"全部显示"下也看不到新变更，造成"漏标"错觉。历史脏状态由 LS_KEY 版本号升级清除。
+  moduleKeys.forEach(k => { if (!(k in state.enabled)) state.enabled[k] = true; });
   const demoControls = Array.isArray(CS.meta.demoControls) ? CS.meta.demoControls : [];
   demoControls.forEach(control => {
     if (!(control.id in state.demo)) {
