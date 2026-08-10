@@ -168,6 +168,15 @@
         status: '已生效',
         noticeStatus: '已周知',
       },
+      {
+        channelName: '圣智蓝图',
+        channelId: 'shengzhilantu',
+        prepaid: false,
+        commissionRule: '',
+        commissionRate: null,
+        status: '已生效',
+        noticeStatus: '已周知',
+      },
     ],
     uploads: [
       {
