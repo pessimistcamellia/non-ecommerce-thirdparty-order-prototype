@@ -15,6 +15,7 @@
   </div>
   <div id="app" data-loading>
     <span id="consumerSheetPageMeta" data-diff-page="C 端订单服务弹窗" hidden></span>
+    <span id="consumerServicePageMeta" data-diff-page="C 端售后进度" hidden></span>
     <main id="consumerPage" class="phone-stage" data-diff-page="C 端 · 我的购买">
       <header class="phone-header">我的购买</header>
       <div class="phone-tabs">
@@ -86,7 +87,27 @@
           <template v-else-if="selectedOrder">
             <p><b>{{ selectedOrder.product }}</b></p>
             <p class="muted">当前状态：{{ selectedOrder.status }}</p>
-            <div class="notice">可查看退款进度与售后记录，正式申请在 App 售后流程中完成。</div>
+            <div id="consumerServiceProgress">
+              <template v-if="selectedOrder.refunds && selectedOrder.refunds.length">
+                <article
+                  v-for="refund in selectedOrder.refunds"
+                  :key="refund.seq"
+                  class="service-record"
+                >
+                  <header class="service-record__head">
+                    <span>仅退款</span>
+                    <span class="service-record__status">退款完成</span>
+                  </header>
+                  <div class="service-record__amount">退款金额 ¥{{ money(refund.amount) }}</div>
+                  <ul class="timeline">
+                    <li>退款完成，¥{{ money(refund.amount) }} 已由渠道原路退回<br><small>{{ refund.time }}</small></li>
+                    <li>渠道售后受理<br><small>{{ refund.time }}</small></li>
+                  </ul>
+                </article>
+              </template>
+              <div v-else class="notice">暂无售后记录。</div>
+            </div>
+            <div class="notice">复用 App 现有「售后进度」样式；每笔退款一条记录，内部退款原因不在 C 端展示。</div>
           </template>
         </div>
         <footer class="modal__footer">
@@ -180,6 +201,13 @@
             app.sheetType = 'logistics'
             app.sheetVisible = true
           }
+          if (pageId === 'consumerServicePageMeta') {
+            app.selectedOrder = app.state.orders.find(
+              (item) => item.id === 'xiaobaobaba20260731101',
+            )
+            app.sheetType = 'service'
+            app.sheetVisible = true
+          }
         },
         setDemoState: function (controlId, value) {
           if (controlId === 'consumerState') app.demoState = value
@@ -256,6 +284,23 @@
           examples: [
             { case: '实物订单', input: '订单=davdian20260731102', result: '展示待发货节点' },
             { case: '虚拟订单', input: '订单=xiaobaobaba20260731101', result: '提示无需物流' }
+          ],
+          sdd: { section: 'FR-5 退款联动与发货', blockId: 'doxcnuvtIBqjTFqqWl1WSgQTc4m' }
+        },
+        {
+          id: 'chg-consumer-refund-progress',
+          level: 'module',
+          page: 'consumerServicePageMeta',
+          module: '售后进度',
+          target: '#consumerServiceProgress',
+          type: 'new',
+          title: '售后进度逐笔展示导入退款',
+          desc: '每笔导入退款同步生成「仅退款 · 已完成」售后单（复用退款双写链路），C 端售后进度按现有样式逐笔展示金额与时间；对齐线上客服部分退款的可见性。',
+          before: '导入退款不产生售后单，C 端订单状态与金额均无变化，用户无法感知已退款',
+          after: '售后服务里每笔退款一条进度记录（类型/状态/金额/时间），内部退款原因不在 C 端展示',
+          examples: [
+            { case: '两次部分退', input: '订单=xiaobaobaba20260731101', result: '2 条记录：150 元、250 元，各自退款完成时间' },
+            { case: '未退款', input: '订单=davdian20260731102', result: '暂无售后记录' }
           ],
           sdd: { section: 'FR-5 退款联动与发货', blockId: 'doxcnuvtIBqjTFqqWl1WSgQTc4m' }
         }

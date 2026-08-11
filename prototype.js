@@ -58,6 +58,17 @@
         refunded: 99,
         refundCount: 1,
         refundReason: '账期优惠差额退款',
+        refunds: [
+          {
+            seq: 1,
+            amount: 99,
+            time: '2026-08-04 21:58:00',
+            reasonDesc: '账期优惠差额退款（202608 账期）',
+            importFile: '小宝爸爸_202608新增订单.xlsx',
+            importer: 'chenxiaolei@guanghe.tv',
+            recalled: false,
+          },
+        ],
         status: '部分退款',
         shipment: '无需发货',
         rights: '待注册后发放',
@@ -266,6 +277,26 @@
         refunded: 400,
         refundCount: 2,
         refundReason: '两次部分退款',
+        refunds: [
+          {
+            seq: 1,
+            amount: 150,
+            time: '2026-08-01 10:05:00',
+            reasonDesc: '用户与渠道协商退差价（202607 账期）',
+            importFile: '小宝爸爸_202608账期退款.xlsx',
+            importer: 'chenxiaolei@guanghe.tv',
+            recalled: false,
+          },
+          {
+            seq: 2,
+            amount: 250,
+            time: '2026-08-08 09:40:00',
+            reasonDesc: '课程调换差额补退（202608 账期）',
+            importFile: '小宝爸爸_202608账期退款二批.xlsx',
+            importer: 'chenxiaolei@guanghe.tv',
+            recalled: false,
+          },
+        ],
         status: '部分退款',
         shipment: '无需发货',
         rights: '权益已发放',
@@ -347,6 +378,17 @@
         refunded: 498,
         refundCount: 1,
         refundReason: '用户申请全额退款',
+        refunds: [
+          {
+            seq: 1,
+            amount: 498,
+            time: '2026-08-02 11:30:00',
+            reasonDesc: '用户申请全额退款',
+            importFile: '小宝爸爸_202608账期退款.xlsx',
+            importer: 'chenxiaolei@guanghe.tv',
+            recalled: true,
+          },
+        ],
         status: '退款成功',
         shipment: '无需发货',
         rights: '权益已收回',
@@ -374,6 +416,17 @@
         refunded: 699,
         refundCount: 1,
         refundReason: '未注册用户申请退款',
+        refunds: [
+          {
+            seq: 1,
+            amount: 699,
+            time: '2026-08-01 09:12:00',
+            reasonDesc: '未注册用户申请退款',
+            importFile: '万物心选_202608账期退款.xlsx',
+            importer: 'chenxiaolei@guanghe.tv',
+            recalled: false,
+          },
+        ],
         status: '退款成功',
         shipment: '无需发货',
         rights: '未发放（订单已退款）',
@@ -425,7 +478,7 @@
       district: order.district || '',
       detailAddress: order.detailAddress || order.address || '',
     }
-    return {
+    const normalized = {
       quantity: 1,
       accountId: order.registered ? `YC${String(order.phone || '').slice(-6)}` : '',
       refundReason: order.refunded ? '历史退款' : '',
@@ -433,6 +486,21 @@
       ...order,
       ...addressParts,
     }
+    // 旧版本地状态没有逐笔退款记录：按累计金额补一条，保证订单详情退款信息区可渲染
+    if (!Array.isArray(normalized.refunds)) {
+      normalized.refunds = normalized.refunded > 0
+        ? [{
+            seq: 1,
+            amount: normalized.refunded,
+            time: normalized.createdAt || '',
+            reasonDesc: normalized.refundReason || '历史退款',
+            importFile: '',
+            importer: '',
+            recalled: normalized.status === '退款成功',
+          }]
+        : []
+    }
+    return normalized
   }
 
   function migrateState(value) {
@@ -448,7 +516,14 @@
         total: Number(item.success || 0) + Number(item.failed || 0) || 1,
         ...item,
       })),
-      orders: value.orders.map(normalizeOrder),
+      orders: value.orders.map((item) => {
+        // 旧本地状态无逐笔退款记录时，优先回填内置示例数据的同单记录
+        const fixtureOrder = fixture.orders.find((candidate) => candidate.id === item.id)
+        if (fixtureOrder && !Array.isArray(item.refunds)) {
+          return normalizeOrder({ ...item, refunds: fixtureOrder.refunds })
+        }
+        return normalizeOrder(item)
+      }),
       channels: value.channels.map((item) => ({
         prepaid: false,
         commissionRule: '',

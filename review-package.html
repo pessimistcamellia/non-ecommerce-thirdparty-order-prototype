@@ -173,7 +173,7 @@
   .frame-shell iframe{display:block;width:100%;height:760px;border:0;background:#fff}
   .frame-status{padding:9px 12px;border-top:1px solid var(--line);font-size:12px;color:var(--ink3)}
   .frame-status.fail{color:var(--red);background:#fffafa}
-  .doc-links{display:flex;gap:14px;flex-wrap:wrap}
+  .doc-links{display:flex;flex-direction:column;gap:8px}
   @media(max-width:1000px){
     .story-layout{grid-template-columns:1fr}
     .story-controls{position:static}
@@ -249,7 +249,7 @@
       <h3>范围 · 要做什么</h3>
       <ul class="compact-list">
         <li>三方数据管理页平台与文件类型、完整工作簿实时校验、异步全表校验及结果反馈。</li>
-        <li>订单与退款落库、洋葱订单同步、权益开通、仓储发货和退款联动。</li>
+        <li>订单与退款落库、洋葱订单同步、权益开通、仓储发货和退款联动；每笔退款同步洋葱订单退款记录与「仅退款 · 已完成」售后单（运营后台逐笔可查原因，C 端售后进度逐笔可见）。</li>
         <li>C 端订单展示（不展示开发票入口，见边界）、渠道注册 Base、未注册跟踪 Base、飞书个人通知。</li>
         <li>首批渠道枚举：小宝爸爸（<code>xiaobaobaba</code>）、大 V 店（<code>davdian</code>）、万物心选（<code>wanwuxinxuan</code>）、圣智蓝图（<code>shengzhilantu</code>）；与渠道注册 Base 同步。</li>
         <li>财务订单表生成（含订单支付时间 = 数据成功导入时间）并推送数仓；退款表与结算表由数仓基于订单表生成。</li>
@@ -268,8 +268,9 @@
   </div>
   <div class="card" style="padding:12px 16px;font-size:13px">
     <div class="doc-links">
-      <span>相关文档：<a href="https://guanghe.feishu.cn/docx/XPRbdiMtVoRtgZxRUCpcP4Qqncu" target="_blank" rel="noopener">MRD</a> · <a href="https://guanghe.feishu.cn/docx/UYHRdsljPovrstxS8WjcWXHfnue" target="_blank" rel="noopener">PRD</a> · <a href="https://guanghe.feishu.cn/docx/Cw69djCbsosrPGxKlURcM3ZAn6m" target="_blank" rel="noopener">SDD</a> · <a href="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/" target="_blank" rel="noopener">高保真标注原型</a></span>
+      <span>相关文档：<a href="https://guanghe.feishu.cn/docx/XPRbdiMtVoRtgZxRUCpcP4Qqncu" target="_blank" rel="noopener">MRD</a> · <a href="https://guanghe.feishu.cn/docx/UYHRdsljPovrstxS8WjcWXHfnue" target="_blank" rel="noopener">需求说明</a> · <a href="https://guanghe.feishu.cn/docx/Cw69djCbsosrPGxKlURcM3ZAn6m" target="_blank" rel="noopener">SDD</a> · <a href="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/" target="_blank" rel="noopener">高保真标注原型</a></span>
       <span>协作数据：<a href="https://guanghe.feishu.cn/base/HTx5bBzkna9kOsse2stc8Zdrnqe" target="_blank" rel="noopener">财务三表 Base</a> · <a href="https://guanghe.feishu.cn/base/F0I2bV6KnaVBRzsLpwWcDa2Qnxh" target="_blank" rel="noopener">渠道注册 Base</a> · <a href="https://guanghe.feishu.cn/base/UbRfb8m5Ua962tsiILEcvQJgn8b?table=tblW8EMJ8S8mK16U&view=vewMrq51ZI" target="_blank" rel="noopener">专用未注册 Base</a> · <a href="https://guanghe.feishu.cn/base/EyzObSOcKa5Q2mszgOHcmkv6nig?table=tbl91TAYFzbi39EJ&view=vewUcMTdzh" target="_blank" rel="noopener">天猫参考 Base</a></span>
+      <span>相关PRD：<a href="https://guanghe.feishu.cn/docx/ZsgHdqisto2wDFxMTkrcZ4Pfnud" target="_blank" rel="noopener">【长期】全域体验营、研学、新媒体、商业化公域服务期</a> · <a href="https://guanghe.feishu.cn/docx/B0UkdHiyYoYnnkxv2xkcoqZOnyg" target="_blank" rel="noopener">【PRD长期】订单业绩归属</a></span>
     </div>
   </div>
 </section>
@@ -294,7 +295,9 @@
         ①【新增】异步全表校验：支付与退款两张表全部校验，任一失败整批 0 行入库并生成失败回执。<br>
         ②【新增】订单落库后创建洋葱无主订单，绑定用户自动发权益，含实物创建仓储发货单（现状人工发兑换码）。<br>
         ③【新增】未注册用户写入跟踪 Base、每 30 分钟提醒；注册后自动绑定并发权益，退款成功停止提醒且不发权益。<br>
-        ④【新增】退款按累计口径重算状态：累计退款小于实付为部分退款，大于等于实付为退款成功。
+        ④【新增】退款按累计口径重算状态：累计退款小于实付为部分退款，大于等于实付为退款成功。<br>
+        ⑤【新增】每笔退款行同步写入洋葱订单退款记录（refundInfoList：金额、时间、原因描述、来源=三方导入）；累计退满时由洋葱订单既有累计逻辑自动置「退款成功」并回收权益。<br>
+        ⑥【新增】每笔导入退款同步生成「仅退款 · 已完成」售后单（复用现有退款双写链路），支撑 C 端售后进度展示与售后后台查询；导入退款不走 go-gearbox 审批链路，不产生退款申请单。
       </td>
     </tr>
     <tr>
@@ -305,14 +308,18 @@
       </td>
     </tr>
     <tr>
-      <td>运营后台 · 订单中心 · 订单列表页</td>
-      <td>【变更】三方订单退款次数、退款总金额现状在列表显示为 0，改为与详情页口径一致展示。</td>
+      <td>运营后台 · 订单中心 · 订单列表页与订单详情</td>
+      <td>
+        ①【变更】三方订单退款次数、退款总金额现状在列表显示为 0，改为与详情页口径一致展示。<br>
+        ②【新增】订单详情「退款信息」区块逐笔展示导入退款（金额、时间、退款原因描述、来源、权益是否收回），多次部分退款每笔一行、各自展示原因，可点开单笔记录详情；导入退款无飞书审批单号与商户单号。人工发起的退款申请仍按现状展示 gearbox 退款申请单，两类记录并列不重复。
+      </td>
     </tr>
     <tr>
       <td>C 端 · 洋葱 App · 我的购买页</td>
       <td>
         ①【新增】非电商渠道订单与其他订单一致展示订单、物流与售后信息（现状 C 端不可见）。<br>
-        ②【变更】本需求非电商三方订单<strong>不展示「申请开票 / 开发票」入口</strong>（财务：预充值等由分销商开票；不做洋葱自助开票、也不做 C 端驱动分销商开票）。
+        ②【变更】本需求非电商三方订单<strong>不展示「申请开票 / 开发票」入口</strong>（财务：预充值等由分销商开票；不做洋葱自助开票、也不做 C 端驱动分销商开票）。<br>
+        ③【新增】售后进度逐笔展示导入退款：每笔退款一条「仅退款 · 已完成」记录（金额+时间），复用现有售后进度样式、零 C 端前端改造；内部退款原因不在 C 端展示。对齐线上客服部分退款的可见性（客服退款经售后单在 C 端可见）。
       </td>
     </tr>
     <tr>
@@ -326,6 +333,8 @@
     <tr><td><code>import_record</code></td><td>补充上传人、任务状态、成功/失败行数、原始文件与结果文件。</td><td>展示处理中/完成结果，支持审计和失败回执下载。</td></tr>
     <tr><td>非电商三方订单新表</td><td>新增订单 ID、渠道、收件信息、商品、金额、累计退款、状态、绑定状态、订单支付时间（= 数据成功导入时间）等字段。</td><td>承载独立订单域数据并追溯导入批次。</td></tr>
     <tr><td>退款流水</td><td>按退款行记录订单 ID、金额、原因、导入任务和时间。</td><td>支持全局累计、剩余可退与订单状态重算。</td></tr>
+    <tr><td>洋葱订单退款记录（refundInfoList）</td><td>每笔导入退款写入金额、退款时间、退款原因描述、来源标记（三方导入）、权益是否收回。</td><td>运营后台订单详情逐笔展示退款与原因；累计退满自动触发退款成功与权益回收。</td></tr>
+    <tr><td>售后单（after-sale）</td><td>每笔导入退款生成一张「仅退款 · 已完成」售后单（复用退款双写链路），用户侧展示原因用固定中性文案。</td><td>C 端「我的购买 · 售后进度」逐笔可见退款；客服在售后后台可查。</td></tr>
     <tr><td>支付平台枚举</td><td>新增「非电商平台的三方订单」。</td><td>创建、筛选和查询洋葱订单。</td></tr>
     <tr><td>洋葱订单退款展示字段</td><td>列表退款次数、退款总金额兼容三方退款数据。</td><td>让列表与详情页展示一致。</td></tr>
     <tr><td>渠道注册 Base</td><td>维护渠道名称、shopid、负责人、登记时间、启停状态和备注；首批含小宝爸爸 / 大 V 店 / 万物心选 / 圣智蓝图（shopid=<code>shengzhilantu</code>）。</td><td>上传弹窗渠道下拉的枚举来源（需研发同步维护）与后端复核字典。</td></tr>
@@ -836,7 +845,7 @@ prototypeFrame.addEventListener('load',function(){
    SEEDS = 待定事项：只放做包前已与用户确认过要放的问题（需求文档自带的待确认事项可直接放入）。
    留空数组时列表为空，但标题和新增入口仍然常驻，不可隐藏。 */
 (function(){
-var SEEDS=['达人佣金的具体计算公式、配置来源、精度与生效时间尚未确定；未配置前结算表佣金保持为空，禁止使用默认比例。'];
+var SEEDS=['达人佣金的具体计算公式、配置来源、精度与生效时间尚未确定；未配置前结算表佣金保持为空，禁止使用默认比例。','导入退款生成售后单拟复用 after-sale 的「退款双写」接口（RefundDualWriteNotify）：入参 refundId 拟填三方退款流水号、售后单直接置「已完成」，该接口是否强校验 gearbox 退款单存在性需研发确认；不可行则改为直接创建已完成售后单。','C 端售后进度的用户侧展示文案（userShowReason）固定值待定，暂按「渠道售后退款」；内部退款原因描述不透出 C 端。'];
 var KEY='dm-'+(location.pathname.split('/').pop()||'pkg').replace(/-v\d+.*$/,'');
 var IMG_MAX=5,IMG_MB=5;
 var D=null;try{D=JSON.parse(localStorage.getItem(KEY))}catch(e){}
