@@ -15,7 +15,6 @@
   </div>
   <div id="app" data-loading>
     <span id="consumerSheetPageMeta" data-diff-page="C 端订单服务弹窗" hidden></span>
-    <span id="consumerServicePageMeta" data-diff-page="C 端售后进度" hidden></span>
     <main id="consumerPage" class="phone-stage" data-diff-page="C 端 · 我的购买">
       <header class="phone-header">我的购买</header>
       <div class="phone-tabs">
@@ -37,7 +36,7 @@
         >
           <header class="order-card__head">
             <span class="order-card__channel">{{ order.channelName }}</span>
-            <span class="order-card__status">{{ order.status }}</span>
+            <span class="order-card__status">{{ consumerStatus(order) }}</span>
           </header>
           <div class="order-card__product">
             <div class="order-card__image">课</div>
@@ -50,12 +49,6 @@
             </div>
           </div>
           <div class="order-card__amount">实付<strong>¥{{ money(order.paid) }}</strong></div>
-          <div v-if="order.refunded" class="order-card__refund">
-            {{ order.status === '退款成功'
-              ? '已全部退款'
-              : `累计退款 ¥${money(order.refunded)}，剩余可退 ¥${money(order.paid - order.refunded)}` }}
-          </div>
-          <div class="order-card__rights">{{ order.rights }}</div>
           <footer class="order-card__actions">
             <button class="btn" type="button" @click="openSheet(order, 'logistics')">查看物流</button>
             <button class="btn btn--primary" type="button" @click="openSheet(order, 'service')">售后服务</button>
@@ -86,28 +79,8 @@
           </template>
           <template v-else-if="selectedOrder">
             <p><b>{{ selectedOrder.product }}</b></p>
-            <p class="muted">当前状态：{{ selectedOrder.status }}</p>
-            <div id="consumerServiceProgress">
-              <template v-if="selectedOrder.refunds && selectedOrder.refunds.length">
-                <article
-                  v-for="refund in selectedOrder.refunds"
-                  :key="refund.seq"
-                  class="service-record"
-                >
-                  <header class="service-record__head">
-                    <span>仅退款</span>
-                    <span class="service-record__status">退款完成</span>
-                  </header>
-                  <div class="service-record__amount">退款金额 ¥{{ money(refund.amount) }}</div>
-                  <ul class="timeline">
-                    <li>退款完成，¥{{ money(refund.amount) }} 已由渠道原路退回<br><small>{{ refund.time }}</small></li>
-                    <li>渠道售后受理<br><small>{{ refund.time }}</small></li>
-                  </ul>
-                </article>
-              </template>
-              <div v-else class="notice">暂无售后记录。</div>
-            </div>
-            <div class="notice">复用 App 现有「售后进度」样式；每笔退款一条记录，内部退款原因不在 C 端展示。</div>
+            <p class="muted">当前状态：{{ consumerStatus(selectedOrder) }}</p>
+            <div class="notice">可查看退款进度与售后记录，正式申请在 App 售后流程中完成。</div>
           </template>
         </div>
         <footer class="modal__footer">
@@ -162,7 +135,7 @@
               return orders.filter((item) => item.status !== '退款成功')
             }
             if (this.activeTab === 'refund') {
-              return orders.filter((item) => item.refunded > 0)
+              return orders.filter((item) => item.status === '退款成功')
             }
             return orders
           },
@@ -182,6 +155,10 @@
           syncState: function () {
             this.state = PrototypeApp.getState()
           },
+          // 洋葱订单没有「部分退款」状态：累计退满前一律为已支付
+          consumerStatus: function (order) {
+            return order.status === '退款成功' ? '退款成功' : '已支付'
+          },
           openSheet: function (order, type) {
             this.selectedOrder = order
             this.sheetType = type
@@ -199,13 +176,6 @@
               (item) => item.id === 'davdian20260731102',
             )
             app.sheetType = 'logistics'
-            app.sheetVisible = true
-          }
-          if (pageId === 'consumerServicePageMeta') {
-            app.selectedOrder = app.state.orders.find(
-              (item) => item.id === 'xiaobaobaba20260731101',
-            )
-            app.sheetType = 'service'
             app.sheetVisible = true
           }
         },
@@ -242,12 +212,13 @@
           target: '#consumerPage',
           type: 'new',
           title: '我的购买展示非电商三方订单',
-          desc: '已绑定手机号的订单进入我的购买，沿用现有订单卡片。',
+          desc: '已绑定手机号的订单进入我的购买，沿用现有订单卡片；卡片只展示订单状态（已支付 / 退款成功），不展示部分退款、累计退款金额与权益文案，与线上现状一致。',
           before: '我的购买无此来源订单',
-          after: '展示同步后的订单、支付和退款状态',
+          after: '展示同步后的订单与订单状态；洋葱订单无「部分退款」状态，累计退满前一律显示已支付',
           examples: [
-            { case: '已支付', input: '订单=davdian20260731102', result: '显示已支付和权益已发放' },
-            { case: '部分退款', input: '订单=xiaobaobaba20260731101', result: '显示累计退款 400、剩余可退 200' },
+            { case: '已支付', input: '订单=davdian20260731102', result: '状态显示已支付' },
+            { case: '部分退款', input: '订单=xiaobaobaba20260731101（累计退 400 / 实付 600）', result: '状态仍显示已支付，页面无退款金额提示' },
+            { case: '全额退款', input: '订单=xiaobaobaba20260730100', result: '状态显示退款成功' },
             { case: '未注册', input: '订单=wanwuxinxuan20260731103', result: '默认不展示' }
           ],
           sdd: { section: 'FR-4 洋葱订单同步与权益', blockId: 'doxcnBpsxepBxtMmueScIckHusc' }
@@ -265,7 +236,7 @@
           after: '注册后自动绑定，无需再次导入',
           examples: [
             { case: '绑定前', input: 'track-001=未注册', result: '订单只在飞书跟踪表展示' },
-            { case: '绑定后', input: 'track-001=已注册', result: '订单出现且权益已发放' },
+            { case: '绑定后', input: 'track-001=已注册', result: '订单出现在我的购买，后台发放权益' },
             { case: '退款完成', input: 'track-002=退款成功', result: '不展示且不发放权益' }
           ],
           sdd: { section: 'FR-4 洋葱订单同步与权益', blockId: 'doxcnBpsxepBxtMmueScIckHusc' }
@@ -288,19 +259,19 @@
           sdd: { section: 'FR-5 退款联动与发货', blockId: 'doxcnuvtIBqjTFqqWl1WSgQTc4m' }
         },
         {
-          id: 'chg-consumer-refund-progress',
+          id: 'chg-consumer-no-partial',
           level: 'module',
-          page: 'consumerServicePageMeta',
-          module: '售后进度',
-          target: '#consumerServiceProgress',
-          type: 'new',
-          title: '售后进度逐笔展示导入退款',
-          desc: '每笔导入退款同步生成「仅退款 · 已完成」售后单（复用退款双写链路），C 端售后进度按现有样式逐笔展示金额与时间；对齐线上客服部分退款的可见性。',
-          before: '导入退款不产生售后单，C 端订单状态与金额均无变化，用户无法感知已退款',
-          after: '售后服务里每笔退款一条进度记录（类型/状态/金额/时间），内部退款原因不在 C 端展示',
+          page: 'consumerPage',
+          module: '退款展示口径',
+          target: '#consumerOrderList',
+          type: 'logic',
+          title: 'C 端不展示部分退款与退款金额',
+          desc: '订单卡片只展示订单状态；部分退款期间状态保持已支付，全额退完才变退款成功。不展示累计退款/剩余可退金额，也不展示权益文案——与线上现状保持一致。',
+          before: '（原型上一版）卡片展示「累计退款 ¥400，剩余可退 ¥200」「已全部退款」「权益已收回」，线上并无这些内容',
+          after: '仅保留订单状态；退款可见性只体现为「退款成功」',
           examples: [
-            { case: '两次部分退', input: '订单=xiaobaobaba20260731101', result: '2 条记录：150 元、250 元，各自退款完成时间' },
-            { case: '未退款', input: '订单=davdian20260731102', result: '暂无售后记录' }
+            { case: '部分退款', input: '订单=xiaobaobaba20260731101', result: '状态已支付，无任何退款文案' },
+            { case: '全额退款', input: '订单=xiaobaobaba20260730100', result: '状态退款成功，无「已全部退款」「权益已收回」文案' }
           ],
           sdd: { section: 'FR-5 退款联动与发货', blockId: 'doxcnuvtIBqjTFqqWl1WSgQTc4m' }
         }
