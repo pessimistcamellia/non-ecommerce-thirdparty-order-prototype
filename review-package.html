@@ -84,6 +84,13 @@
   .dm-row.done .dm-txt{text-decoration:line-through;color:#9aa3af}
   .dm-ck{width:17px;height:17px;border:1.5px solid #b6bdc9;border-radius:4px;cursor:pointer;flex:none;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;user-select:none}
   .dm-row.done .dm-ck{background:#1a56db;border-color:#1a56db}
+  .dm-ck.dis{opacity:.4;cursor:not-allowed;border-style:dashed}
+  /* 分类下拉：小而不醒目，可不选 */
+  .dm-cat{font-size:11px;color:#9aa3af;border:1px solid transparent;background:transparent;border-radius:5px;padding:0 2px;margin-left:6px;cursor:pointer;font-family:inherit;vertical-align:1px}
+  .dm-cat:hover{border-color:#d7dce3;color:#6b7280}
+  .dm-cat:disabled{color:#b6bdc9;cursor:default;border-color:transparent}
+  .dm-catmini{flex:none;width:88px;border:1px solid #d7dce3;border-radius:6px;padding:8px 6px;font-size:12px;color:#8f959e;font-family:inherit;background:#fff;outline:none}
+  .dm-catmini:focus{border-color:#1a56db}
   .dm-txt{flex:1;font-size:13.5px;line-height:1.65;outline:none;border-radius:4px}
   .dm-txt:focus{background:#f0f5ff}
   .dm-meta{font-size:11.5px;color:#9aa3af;margin-top:3px}
@@ -440,7 +447,7 @@
 <div id="rvPanel">
   <div class="rv-t">本页评审意见 · <span id="rvTab"></span></div>
   <div id="rvList"></div>
-  <div class="dm-add"><input id="rvT" placeholder="记录评审意见"><input id="rvB" class="dm-by" placeholder="撰写人"><button id="rvAdd">添加</button></div>
+  <div class="dm-add"><input id="rvT" placeholder="记录评审意见"><input id="rvB" class="dm-by" placeholder="撰写人"><select id="rvC" class="dm-catmini"><option value="">分类（可不选）</option><option value="pend">待办事项</option><option value="dec">决策共识</option></select><button id="rvAdd">添加</button></div>
 </div>
 <div id="rvFab">评审意见<span id="rvN"></span></div>
 
@@ -881,6 +888,13 @@ var IMG_MAX=5,IMG_MB=5;
 var D=null;try{D=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!D||!Array.isArray(D.pend)){D={pend:SEEDS.map(function(t){return{t:t,done:false}}),op:[],dec:[]};}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}}
+function uid(){return 'op'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+/* 分类：''=不选 | 'pend'=待办事项 | 'dec'=决策共识 */
+var CATS=[['','分类'],['pend','待办事项'],['dec','决策共识']];
+function catSelect(scope,idx,it){
+ var opts=CATS.map(function(o){return '<option value="'+o[0]+'"'+((it.cat||'')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('');
+ return '<select class="dm-cat" data-'+scope+'cat="'+idx+'"'+(it.done?' disabled title="已勾选，分类锁定"':'')+'>'+opts+'</select>';
+}
 var root=document.getElementById('dmRoot');
 if(!root)return;
 var KS=['pend','op','dec'];
@@ -890,8 +904,8 @@ function curTab(){var b=document.querySelector('#nav button.on');return b?tabNam
 var DM_TAB=tabName([].slice.call(document.querySelectorAll('#nav button')).pop());
 function buildRoot(){
  root.innerHTML='<div class="dm">'
-  +'<div class="dm-h">待定事项</div><div id="dmL0"></div><div class="dm-add"><input id="dmI0" placeholder="新增待定事项"><button data-a="0">添加</button></div>'
-  +'<div class="dm-h">评审意见</div><div id="dmL1"></div><div class="dm-add"><input id="dmI1" placeholder="记录评审意见"><input id="dmB1" class="dm-by" placeholder="撰写人"><button data-a="1">添加</button></div>'
+  +'<div class="dm-h">待办事项</div><div id="dmL0"></div><div class="dm-add"><input id="dmI0" placeholder="新增待办事项"><button data-a="0">添加</button></div>'
+  +'<div class="dm-h">评审意见</div><div id="dmL1"></div><div class="dm-add"><input id="dmI1" placeholder="记录评审意见"><input id="dmB1" class="dm-by" placeholder="撰写人"><select id="dmC1" class="dm-catmini"><option value="">分类（可不选）</option><option value="pend">待办事项</option><option value="dec">决策共识</option></select><button data-a="1">添加</button></div>'
   +'<div class="dm-h">决策共识</div><div id="dmL2"></div><div class="dm-add"><input id="dmI2" placeholder="新增共识"><button data-a="2">添加</button></div>'
   +'</div>';
 }
@@ -900,8 +914,15 @@ function rowHtml(k,ki,it,i){
  if(k==='op'){
   var tag=it.mod?'<span class="dm-tag">'+esc(it.mod)+'</span>':'';
   var ba=esc(it.by||'')+(it.by&&it.at?' · ':'')+esc(it.at||'');
-  if(tag||ba)meta='<div class="dm-meta">'+tag+ba+'</div>';
- }else if(it.at){meta='<div class="dm-meta">'+esc(it.at)+'</div>';}
+  meta='<div class="dm-meta">'+tag+ba+catSelect('dm',i,it)+'</div>';
+ }else if(it.fromOp){
+  /* 由评审意见勾选转入：展示方式与评审意见一致（模块名 + 提出人 + 时间） */
+  var tag2=it.mod?'<span class="dm-tag">'+esc(it.mod)+'</span>':'';
+  var ba2=esc(it.by||'')+(it.by&&it.at?' · ':'')+esc(it.at||'');
+  meta='<div class="dm-meta">'+tag2+ba2+' · 由评审意见转入</div>';
+ }else if(it.at){
+  meta='<div class="dm-meta">'+esc(it.at)+'</div>';
+ }
  var thumbs='';
  if(k==='dec'&&it.imgs&&it.imgs.length){
   thumbs='<div class="dm-thumbs">'+it.imgs.map(function(id){
@@ -909,7 +930,12 @@ function rowHtml(k,ki,it,i){
   }).join('')+'</div>';
  }
  var ext=(k==='dec')?'<span class="dm-p" data-k="'+ki+'" data-i="'+i+'" title="贴图 · 最多'+IMG_MAX+'张 · 每张不超过'+IMG_MB+'MB">图</span>':'';
- var ck=(k!=='dec')?'<span class="dm-ck" data-k="'+ki+'" data-i="'+i+'">'+(it.done?'✓':'')+'</span>':'';
+ var ck;
+ if(k==='dec'){ck='';}
+ else if(k==='op'){
+  var off=!it.cat&&!it.done;
+  ck='<span class="dm-ck'+(off?' dis':'')+'" data-k="'+ki+'" data-i="'+i+'"'+(off?' title="请先选择分类再勾选"':'')+'>'+(it.done?'✓':'')+'</span>';
+ }else{ck='<span class="dm-ck" data-k="'+ki+'" data-i="'+i+'">'+(it.done?'✓':'')+'</span>';}
  return '<div class="dm-row'+(it.done?' done':'')+'">'+ck
   +'<div style="flex:1;min-width:0"><div class="dm-txt" contenteditable data-k="'+ki+'" data-i="'+i+'">'+esc(it.t)+'</div>'+meta+thumbs+'</div>'
   +ext
@@ -924,19 +950,51 @@ function render(){
  rvRender();
  hydrate();
 }
+function now(){return new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}
+/* 勾掉一条评审意见 → 按其分类，在待办事项/决策共识区新增一条（原意见保留、置勾并锁定分类） */
+function promoteOp(i){
+ var it=D.op[i];if(!it||!it.cat)return false;
+ if(!it.id)it.id=uid();
+ D[it.cat].push({t:it.t,at:it.at||now(),fromOp:true,srcId:it.id,by:it.by||'',mod:it.mod||'',done:false});
+ it.done=true;
+ return true;
+}
+/* 反勾评审意见 → 删除其转入的那条，解锁分类 */
+function unpromoteOp(i){
+ var it=D.op[i];if(!it)return;
+ if(it.id){['pend','dec'].forEach(function(dst){
+  D[dst]=D[dst].filter(function(x){if(x.fromOp&&x.srcId===it.id){if(x.imgs)x.imgs.forEach(idbDel);return false}return true});
+ });}
+ it.done=false;
+}
 root.addEventListener('click',function(e){
  var t=e.target;
- if(t.classList.contains('dm-ck')){var it=D[KS[+t.dataset.k]][+t.dataset.i];it.done=!it.done;save();render();}
+ if(t.classList.contains('dm-ck')){
+  if(t.classList.contains('dis'))return;
+  var k=KS[+t.dataset.k],i=+t.dataset.i,it=D[k][i];
+  if(k==='op'){
+   if(!it.done){if(!it.cat)return;promoteOp(i);}else{unpromoteOp(i);}
+   save();render();return;
+  }
+  it.done=!it.done;save();render();
+ }
  else if(t.classList.contains('dm-e')){var tx=t.closest('.dm-row').querySelector('.dm-txt');if(tx){tx.focus();var r=document.createRange();r.selectNodeContents(tx);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}}
- else if(t.classList.contains('dm-x')){var itx=D[KS[+t.dataset.k]][+t.dataset.i];if(itx&&itx.imgs)itx.imgs.forEach(idbDel);D[KS[+t.dataset.k]].splice(+t.dataset.i,1);save();render();}
+ else if(t.classList.contains('dm-x')){var itx=D[KS[+t.dataset.k]][+t.dataset.i];if(itx){if(itx.imgs)itx.imgs.forEach(idbDel);if(itx.id)unpromoteOp(+t.dataset.i);}D[KS[+t.dataset.k]].splice(+t.dataset.i,1);save();render();}
  else if(t.classList.contains('dm-p')){imgTarget=D.dec[+t.dataset.i];fInp.click();}
  else if(t.classList.contains('dm-timg-x')){var it2=D.dec[+t.dataset.i];it2.imgs=(it2.imgs||[]).filter(function(x){return x!==+t.dataset.id});idbDel(+t.dataset.id);save();render();}
  else if(t.tagName==='IMG'&&t.dataset.img&&t.src){lightbox(t.src);}
  else if(t.tagName==='BUTTON'&&t.dataset.a!==undefined){
   var a=t.dataset.a,inp=document.getElementById('dmI'+a);if(!inp||!inp.value.trim())return;
   var it={t:inp.value.trim(),done:false,at:now()};
-  if(a==='1'){var by=document.getElementById('dmB1');it.by=by.value.trim();it.mod='';}
+  if(a==='1'){var by=document.getElementById('dmB1');it.by=by.value.trim();it.mod='';it.id=uid();var cs=document.getElementById('dmC1');it.cat=cs?cs.value:'';}
   D[KS[+a]].push(it);inp.value='';save();render();
+ }
+});
+/* 分类下拉变更（决策事项页评审意见行） */
+root.addEventListener('change',function(e){
+ var t=e.target;
+ if(t.classList&&t.classList.contains('dm-cat')&&t.dataset.dmcat!==undefined){
+  var it=D.op[+t.dataset.dmcat];if(it&&!it.done){it.cat=t.value;save();render();}
  }
 });
 /* 决策共识：粘贴图片（截图直接 Ctrl/Cmd+V 到文字上） */
@@ -954,7 +1012,6 @@ root.addEventListener('blur',function(e){
  var t=e.target;
  if(t.classList&&t.classList.contains('dm-txt')){var v=t.innerText.trim();if(v)D[KS[+t.dataset.k]][+t.dataset.i].t=v;save();}
 },true);
-function now(){return new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})}
 /* ---- 决策共识贴图：图片存 IndexedDB（localStorage 装不下），条目里只记图片 id ---- */
 var idb=null;
 function idbOpen(cb){
@@ -1017,19 +1074,36 @@ function rvRender(){
  var items=D.op.map(function(it,i){return{it:it,i:i}}).filter(function(x){return x.it.mod===tab});
  document.getElementById('rvN').textContent=items.length?' · '+items.length:'';
  document.getElementById('rvList').innerHTML=items.length?items.map(function(x){
-  return '<div class="dm-row'+(x.it.done?' done':'')+'"><span class="dm-ck" data-rv="'+x.i+'">'+(x.it.done?'✓':'')+'</span><div style="flex:1;min-width:0"><div class="dm-txt" contenteditable data-rvi="'+x.i+'">'+esc(x.it.t)+'</div><div class="dm-meta">'+esc(x.it.by||'')+(x.it.by&&x.it.at?' · ':'')+esc(x.it.at||'')+'</div></div><span class="dm-e" data-rve="'+x.i+'" title="编辑">✎</span><span class="dm-x" data-rvx="'+x.i+'">✕</span></div>';
+  var it=x.it,i=x.i,off=!it.cat&&!it.done;
+  var ck='<span class="dm-ck'+(off?' dis':'')+'" data-rv="'+i+'"'+(off?' title="请先选择分类再勾选"':'')+'>'+(it.done?'✓':'')+'</span>';
+  var ba=esc(it.by||'')+(it.by&&it.at?' · ':'')+esc(it.at||'');
+  return '<div class="dm-row'+(it.done?' done':'')+'">'+ck+'<div style="flex:1;min-width:0"><div class="dm-txt" contenteditable data-rvi="'+i+'">'+esc(it.t)+'</div><div class="dm-meta">'+ba+catSelect('rv',i,it)+'</div></div><span class="dm-e" data-rve="'+i+'" title="编辑">✎</span><span class="dm-x" data-rvx="'+i+'">✕</span></div>';
  }).join(''):'<div class="note" style="margin:4px 0 8px">本页暂无评审意见</div>';
 }
 fab.addEventListener('click',function(){panel.style.display=panel.style.display==='none'||!panel.style.display?'block':'none';rvRender();});
 panel.addEventListener('click',function(e){
  var t=e.target;
- if(t.dataset.rv!==undefined){var it=D.op[+t.dataset.rv];it.done=!it.done;save();render();}
+ if(t.dataset.rv!==undefined){
+  if(t.classList.contains('dis'))return;
+  var i=+t.dataset.rv,it=D.op[i];
+  if(!it)return;
+  if(!it.done){if(!it.cat)return;promoteOp(i);}else{unpromoteOp(i);}
+  save();render();
+ }
  else if(t.dataset.rve!==undefined){var tx=t.closest('.dm-row').querySelector('.dm-txt');if(tx){tx.focus();var r=document.createRange();r.selectNodeContents(tx);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}}
- else if(t.dataset.rvx!==undefined){D.op.splice(+t.dataset.rvx,1);save();render();}
+ else if(t.dataset.rvx!==undefined){var ix=+t.dataset.rvx;if(D.op[ix]&&D.op[ix].id)unpromoteOp(ix);D.op.splice(ix,1);save();render();}
  else if(t.id==='rvAdd'){
   var inp=document.getElementById('rvT');if(!inp.value.trim())return;
-  D.op.push({t:inp.value.trim(),by:document.getElementById('rvB').value.trim(),at:now(),mod:curTab(),done:false});
+  var cs=document.getElementById('rvC');
+  D.op.push({t:inp.value.trim(),by:document.getElementById('rvB').value.trim(),at:now(),mod:curTab(),done:false,id:uid(),cat:cs?cs.value:''});
   inp.value='';save();render();
+ }
+});
+/* 分类下拉变更（悬浮面板评审意见行） */
+panel.addEventListener('change',function(e){
+ var t=e.target;
+ if(t.classList&&t.classList.contains('dm-cat')&&t.dataset.rvcat!==undefined){
+  var it=D.op[+t.dataset.rvcat];if(it&&!it.done){it.cat=t.value;save();render();}
  }
 });
 panel.addEventListener('keydown',function(e){
