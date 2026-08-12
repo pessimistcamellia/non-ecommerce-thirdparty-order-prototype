@@ -69,7 +69,7 @@
             recalled: false,
           },
         ],
-        status: '部分退款',
+        status: '支付成功',
         shipment: '无需发货',
         rights: '待注册后发放',
         createdAt: '2026-08-04 21:58:00',
@@ -93,7 +93,7 @@
     },
     multiFrontend: {
       label: '聚合错误',
-      fileName: '全量前端校验错误.xlsx',
+      fileName: '全量实时校验错误.xlsx',
       frontendErrors: [
         {
           sheet: '工作簿',
@@ -276,7 +276,7 @@
         listPrice: 698,
         refunded: 400,
         refundCount: 2,
-        refundReason: '两次部分退款',
+        refundReason: '两笔退款记录',
         refunds: [
           {
             seq: 1,
@@ -297,7 +297,7 @@
             recalled: false,
           },
         ],
-        status: '部分退款',
+        status: '支付成功',
         shipment: '无需发货',
         rights: '权益已发放',
         createdAt: '2026-07-31 11:02:18',
@@ -324,7 +324,7 @@
         refunded: 0,
         refundCount: 0,
         refundReason: '',
-        status: '已支付',
+        status: '支付成功',
         shipment: '待发货',
         rights: '权益已发放',
         createdAt: '2026-07-31 17:18:42',
@@ -351,7 +351,7 @@
         refunded: 0,
         refundCount: 0,
         refundReason: '',
-        status: '已支付',
+        status: '支付成功',
         shipment: '无需发货',
         rights: '待注册后发放',
         createdAt: '2026-07-30 18:42:05',
@@ -445,7 +445,7 @@
         orderTime: '2026-07-30 18:42:05',
         registered: false,
         accountId: '',
-        orderStatus: '已支付',
+        orderStatus: '支付成功',
         processResult: '待处理',
       },
       {
@@ -485,6 +485,10 @@
       activatedAt: order.registered ? order.createdAt : '',
       ...order,
       ...addressParts,
+    }
+    // 洋葱订单没有“部分退款”状态：历史演示数据统一迁移为支付成功
+    if (normalized.status === '部分退款' || normalized.status === '已支付') {
+      normalized.status = '支付成功'
     }
     // 旧版本地状态没有逐笔退款记录：按累计金额补一条，保证订单详情退款信息区可渲染
     if (!Array.isArray(normalized.refunds)) {
@@ -541,7 +545,7 @@
         orderTime: order ? order.createdAt : '',
         registered: false,
         accountId: '',
-        orderStatus: order ? order.status : '已支付',
+        orderStatus: order ? order.status : '支付成功',
         processResult:
           order && order.status === '退款成功' ? '已完成' : '待处理',
         ...item,

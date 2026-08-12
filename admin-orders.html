@@ -71,8 +71,7 @@
           </el-form-item>
           <el-form-item v-if="filters.statusMode === 'pick'" label=" ">
             <el-checkbox-group v-model="filters.statuses">
-              <el-checkbox value="已支付">已支付</el-checkbox>
-              <el-checkbox value="部分退款">部分退款</el-checkbox>
+              <el-checkbox value="支付成功">支付成功</el-checkbox>
               <el-checkbox value="退款成功">退款成功</el-checkbox>
             </el-checkbox-group>
           </el-form-item>
@@ -243,98 +242,30 @@
       <el-dialog
         v-model="detailDialogVisible"
         title="订单详情"
-        width="820px"
+        width="960px"
         append-to-body
       >
         <section id="orderDetailDialog" data-diff-page="订单详情弹窗">
-          <el-descriptions v-if="selectedOrder" id="orderDetailBody" :column="2" border>
-            <el-descriptions-item label="洋葱订单号">{{ onionOrderNo(selectedOrder) }}</el-descriptions-item>
-            <el-descriptions-item label="支付平台订单号">{{ selectedOrder.id }}</el-descriptions-item>
-            <el-descriptions-item label="支付平台">非电商平台的三方订单</el-descriptions-item>
-            <el-descriptions-item label="渠道">
-              {{ selectedOrder.channelName }}
-            </el-descriptions-item>
-            <el-descriptions-item label="订单状态">
-              <el-tag :type="statusType(selectedOrder.status)" size="small">{{ selectedOrder.status }}</el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="实付金额">¥{{ money(selectedOrder.paid) }}</el-descriptions-item>
-            <el-descriptions-item label="累计退款">
-              {{ selectedOrder.refundCount }} 次 / ¥{{ money(selectedOrder.refunded) }}
-            </el-descriptions-item>
-            <el-descriptions-item label="收件人">{{ selectedOrder.recipient }}</el-descriptions-item>
-            <el-descriptions-item label="发货状态">{{ selectedOrder.shipment }}</el-descriptions-item>
-            <el-descriptions-item label="权益">{{ selectedOrder.rights }}</el-descriptions-item>
-            <el-descriptions-item label="手机号">{{ maskPhone(selectedOrder.phone) }}</el-descriptions-item>
-          </el-descriptions>
-          <div id="orderRefundSection" class="refund-section">
-            <h4 class="refund-section__title">退款信息（逐笔）</h4>
-            <el-table
-              v-if="selectedOrder && selectedOrder.refunds && selectedOrder.refunds.length"
-              :data="selectedOrder.refunds"
-              size="small"
-              border
-            >
-              <el-table-column type="index" label="#" width="44"></el-table-column>
-              <el-table-column label="退款金额" width="100">
-                <template #default="scope">¥{{ money(scope.row.amount) }}</template>
-              </el-table-column>
-              <el-table-column prop="time" label="退款时间" width="165"></el-table-column>
-              <el-table-column prop="reasonDesc" label="退款原因描述" min-width="200"></el-table-column>
-              <el-table-column label="来源" width="92">
-                <template #default>三方导入</template>
-              </el-table-column>
-              <el-table-column label="权益是否收回" width="108">
-                <template #default="scope">{{ scope.row.recalled ? '是' : '否' }}</template>
-              </el-table-column>
-              <el-table-column label="操作" width="70">
-                <template #default="scope">
-                  <el-button link type="primary" @click="showRefundRecord(scope.row)">详情</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-            <el-empty v-else description="暂无退款记录" :image-size="48"></el-empty>
-            <p class="refund-section__note">
-              逐笔记录读取洋葱订单退款记录（refundInfoList）；导入退款不经 go-gearbox 审批链路，无飞书审批单号与商户单号。
-              人工在后台发起的退款申请仍按现状展示 gearbox 退款申请单，两类记录并列、互不重复。
-            </p>
-          </div>
-          <el-alert
-            class="dialog-notice"
-            type="warning"
-            :closable="false"
-            title="累计退款按历史状态计算；全额退款统一使用累计退款金额 ≥ 支付金额。"
-          ></el-alert>
+          <el-card v-if="selectedOrder" id="orderRefundSection" class="om-section" shadow="never">
+            <template #header>
+              <span class="om-section__title">退款信息</span>
+            </template>
+            <el-descriptions :column="1" border label-width="240">
+              <el-descriptions-item label="退款总金额">
+                {{ money(selectedOrder.refunded) }} 元
+              </el-descriptions-item>
+            </el-descriptions>
+            <template v-for="(item, index) in selectedOrder.refunds || []" :key="index">
+              <el-descriptions :column="1" border class="om-refund-block" label-width="240">
+                <el-descriptions-item label="退款时间">{{ item.time }}</el-descriptions-item>
+                <el-descriptions-item label="退款金额">{{ money(item.amount) }} 元</el-descriptions-item>
+                <el-descriptions-item label="退款原因描述">{{ item.reasonDesc }}</el-descriptions-item>
+              </el-descriptions>
+            </template>
+          </el-card>
         </section>
         <template #footer>
           <el-button size="small" @click="detailDialogVisible = false">关闭</el-button>
-        </template>
-      </el-dialog>
-
-      <el-dialog
-        v-model="refundRecordVisible"
-        title="退款记录详情"
-        width="560px"
-        append-to-body
-      >
-        <section id="refundRecordDialog" data-diff-page="退款记录详情弹窗">
-          <el-descriptions v-if="selectedRefund && selectedOrder" :column="1" border>
-            <el-descriptions-item label="退款记录创建人">{{ selectedRefund.importer || '导入任务（系统）' }}</el-descriptions-item>
-            <el-descriptions-item label="退款时间">{{ selectedRefund.time }}</el-descriptions-item>
-            <el-descriptions-item label="退款类型">{{ refundTypeOf(selectedRefund) }}</el-descriptions-item>
-            <el-descriptions-item label="退款金额">¥{{ money(selectedRefund.amount) }}</el-descriptions-item>
-            <el-descriptions-item label="权益是否收回">{{ selectedRefund.recalled ? '是' : '否' }}</el-descriptions-item>
-            <el-descriptions-item label="是否退货">否</el-descriptions-item>
-            <el-descriptions-item label="退款原因">三方渠道退款（导入）</el-descriptions-item>
-            <el-descriptions-item label="退款原因描述">{{ selectedRefund.reasonDesc }}</el-descriptions-item>
-            <el-descriptions-item label="退款来源">非电商三方订单导入（渠道原路退款，洋葱侧记账）</el-descriptions-item>
-            <el-descriptions-item label="导入批次文件">{{ selectedRefund.importFile || '—' }}</el-descriptions-item>
-            <el-descriptions-item label="商户单号">—（导入退款无）</el-descriptions-item>
-            <el-descriptions-item label="飞书审批单号">—（导入退款不走审批）</el-descriptions-item>
-            <el-descriptions-item label="退款状态">退款完成</el-descriptions-item>
-          </el-descriptions>
-        </section>
-        <template #footer>
-          <el-button size="small" @click="refundRecordVisible = false">关闭</el-button>
         </template>
       </el-dialog>
 
@@ -401,16 +332,14 @@
             loading: false,
             detailDialogVisible: false,
             logisticsDialogVisible: false,
-            refundRecordVisible: false,
             selectedOrder: null,
-            selectedRefund: null,
           }
         },
         computed: {
           visibleOrders: function () {
             let orders = this.state.orders.slice()
-            if (this.demoState === 'partial') {
-              orders = orders.filter((item) => item.status === '部分退款')
+            if (this.demoState === 'refunded') {
+              orders = orders.filter((item) => item.refundCount > 0 && item.status === '支付成功')
             }
             if (this.demoState === 'full') {
               orders = orders.filter((item) => item.status === '退款成功')
@@ -445,11 +374,6 @@
           },
           money: PrototypeApp.formatMoney,
           maskPhone: PrototypeApp.maskPhone,
-          statusType: function (status) {
-            if (status === '退款成功') return 'info'
-            if (status === '部分退款') return 'warning'
-            return 'success'
-          },
           listPrice: function (row) {
             return row.listPrice || row.paid
           },
@@ -494,14 +418,6 @@
             this.selectedOrder = order
             this.detailDialogVisible = true
           },
-          showRefundRecord: function (refund) {
-            this.selectedRefund = refund
-            this.refundRecordVisible = true
-          },
-          refundTypeOf: function (refund) {
-            if (!this.selectedOrder) return '部分退款'
-            return refund.amount >= this.selectedOrder.paid ? '全部退款' : '部分退款'
-          },
           openLogistics: function (order) {
             this.selectedOrder = order
             this.logisticsDialogVisible = true
@@ -521,7 +437,6 @@
         locate: function (pageId) {
           app.detailDialogVisible = false
           app.logisticsDialogVisible = false
-          app.refundRecordVisible = false
           if (pageId === 'orderDetailDialogPageMeta') {
             app.selectedOrder = app.state.orders.find(
               (item) => item.id === 'xiaobaobaba20260731101',
@@ -553,7 +468,7 @@
           default: 'normal',
           options: [
             { value: 'normal', label: '全部' },
-            { value: 'partial', label: '部分退款' },
+            { value: 'refunded', label: '支付成功（已有退款记录）' },
             { value: 'full', label: '退款成功' },
             { value: 'empty', label: '空态' }
           ]
@@ -589,7 +504,7 @@
           before: '线上三方订单退款数据仅详情页展示，列表退款次数为 0',
           after: '新增退款次数列',
           examples: [
-            { case: '部分退款', input: '订单=xiaobaobaba20260731101', result: '退款次数=2' },
+            { case: '已发生退款', input: '订单=xiaobaobaba20260731101', result: '订单状态仍为支付成功；退款次数=2' },
             { case: '未退款', input: '订单=davdian20260731102', result: '退款次数=0' }
           ],
           sdd: { section: 'FR-3 订单落库与状态', blockId: 'doxcn3kEThDpSzKP5F48iD43zBe' }
@@ -606,7 +521,7 @@
           before: '线上三方订单退款数据仅详情页展示，列表退款总金额为 0',
           after: '新增退款总金额列',
           examples: [
-            { case: '部分退款', input: '支付=600；累计退款=400', result: '剩余可退=200' },
+            { case: '累计未退满', input: '支付=600；累计退款=400', result: '订单状态仍为支付成功；剩余可退=200' },
             { case: '全额退款', input: '支付=498；累计退款=498', result: '订单状态=退款成功' }
           ],
           sdd: { section: 'FR-3 订单落库与状态', blockId: 'doxcn3kEThDpSzKP5F48iD43zBe' }
@@ -629,36 +544,19 @@
           sdd: { section: 'FR-6 存量缺陷修复', blockId: 'doxcnoTxqJTmvrBq5txlq4z7JNd' }
         },
         {
-          id: 'chg-order-detail',
-          level: 'module',
-          page: 'orderDetailDialogPageMeta',
-          module: '订单同步详情',
-          target: '#orderDetailBody',
-          type: 'flow',
-          title: '同步订单、权益和退款状态',
-          desc: '订单详情使用 Element Plus Descriptions 呈现一致状态。',
-          before: '无非电商订单同步详情',
-          after: '订单、权益、退款状态保持一致',
-          examples: [
-            { case: '已注册', input: '订单=xiaobaobaba20260731101', result: '订单已绑定且权益已发放' },
-            { case: '未注册', input: '订单=wanwuxinxuan20260731103', result: '进入飞书跟踪表，C 端暂不展示' }
-          ],
-          sdd: { section: 'FR-4 洋葱订单同步与权益', blockId: 'doxcnBpsxepBxtMmueScIckHusc' }
-        },
-        {
           id: 'chg-order-refund-records',
           level: 'module',
           page: 'orderDetailDialogPageMeta',
           module: '退款数据',
           target: '#orderRefundSection',
           type: 'new',
-          title: '订单详情逐笔退款记录与原因',
-          desc: '导入退款直接写洋葱订单退款记录（refundInfoList：金额、时间、原因描述、来源），订单详情新增「退款信息」区块逐笔展示；多次部分退款每笔一行、各自展示原因，可点详情查看完整记录。',
-          before: '详情仅有累计退款汇总；逐笔原因只存在于 gearbox 退款申请单，导入退款不产生申请单则无处可查',
-          after: '「退款信息」区块逐笔展示金额/时间/原因描述/来源/权益是否收回，与 gearbox 退款申请单并列不重复',
+          title: '按线上规范补充退款原因',
+          desc: '复用线上 OrderRefundSection：退款总金额单独展示，每笔退款继续使用 Element Plus Descriptions 展示退款时间、退款金额，并新增退款原因描述；不展示来源，不另造订单详情字段或二级详情弹窗。',
+          before: '线上退款模块展示退款总金额及逐笔退款时间、退款金额，但没有导入退款原因',
+          after: '在同一线上退款模块的逐笔描述块增加退款原因描述',
           examples: [
-            { case: '两次部分退', input: '订单=xiaobaobaba20260731101', result: '2 行记录：150 元（退差价）、250 元（调换补退）' },
-            { case: '全额退款', input: '订单=xiaobaobaba20260730100', result: '1 行记录：498 元，权益收回=是' }
+            { case: '两笔退款', input: '订单=xiaobaobaba20260731101', result: '总金额 400 元；逐笔展示 150 元与 250 元及各自原因' },
+            { case: '全额退款', input: '订单=xiaobaobaba20260730100', result: '总金额 498 元；逐笔展示时间、金额、原因' }
           ],
           sdd: { section: 'FR-5 退款联动与发货', blockId: 'doxcnuvtIBqjTFqqWl1WSgQTc4m' }
         },

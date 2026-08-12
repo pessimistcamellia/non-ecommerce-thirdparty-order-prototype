@@ -19,7 +19,7 @@
       <span id="uploadDialogPageMeta" data-diff-page="上传文件弹窗" hidden></span>
       <span id="uploadDetailDialogPageMeta" data-diff-page="上传结果详情弹窗" hidden></span>
       <span id="validationRulesDialogPageMeta" data-diff-page="导入校验规则弹窗" hidden></span>
-      <span id="frontendErrorDialogPageMeta" data-diff-page="前端校验结果弹窗" hidden></span>
+      <span id="frontendErrorDialogPageMeta" data-diff-page="实时校验结果弹窗" hidden></span>
       <el-form id="uploadFilters" :inline="true" :model="filters" size="small">
         <el-form-item label="平台">
           <el-select
@@ -189,7 +189,7 @@
                 非电商三方订单导入模板.xlsx
               </el-button>
               <el-button type="text" @click="validationRulesVisible = true">
-                查看实时校验规则
+                查看校验规则
               </el-button>
               <div class="dialog-subtext">Excel 包含“支付成功订单表”和“退款订单表”两个 sheet；渠道由上方下拉选择，Excel 不再填写渠道名称。</div>
             </el-form-item>
@@ -224,7 +224,7 @@
               type="warning"
               :closable="false"
               show-icon
-              title="前端校验通过后进入异步校验；全部通过后数据入库，失败则 0 行入库。异步结果将通过飞书消息推送。"
+              title="实时校验由后端执行；通过后进入异步校验。两阶段全部通过后数据入库，任一失败则 0 行入库，异步结果通过飞书消息推送。"
             ></el-alert>
           </el-form>
         </section>
@@ -289,7 +289,7 @@
       </el-dialog>
 
       <el-dialog
-        title="前端实时校验规则"
+        title="实时与异步校验规则"
         width="820px"
         :visible.sync="validationRulesVisible"
         append-to-body
@@ -299,18 +299,35 @@
             type="info"
             :closable="false"
             show-icon
-            title="任一规则不通过时立即反馈，不创建上传记录，也不会进入异步校验。"
+            title="实时校验由后端同步执行；任一规则不通过时立即反馈，不创建上传记录，也不会进入异步校验。"
           ></el-alert>
           <el-table
-            id="frontendValidationRules"
+            id="realtimeValidationRules"
             class="detail-errors"
-            :data="frontendValidationRules"
+            :data="realtimeValidationRules"
             border
             stripe
           >
             <el-table-column prop="caseName" label="校验 case" width="140"></el-table-column>
             <el-table-column prop="input" label="可复现输入" width="250" show-overflow-tooltip></el-table-column>
-            <el-table-column prop="result" label="前端反馈"></el-table-column>
+            <el-table-column prop="result" label="处理结果"></el-table-column>
+          </el-table>
+          <h4 class="refund-section__title" style="margin-top:18px">异步校验规则</h4>
+          <el-alert
+            type="warning"
+            :closable="false"
+            show-icon
+            title="异步校验扫描支付与退款两张表；任一规则不通过则整批 0 行入库，并生成失败回执。"
+          ></el-alert>
+          <el-table
+            id="asyncValidationRules"
+            class="detail-errors"
+            :data="asyncValidationRules"
+            border
+            stripe
+          >
+            <el-table-column prop="caseName" label="校验项" width="180"></el-table-column>
+            <el-table-column prop="rule" label="规则"></el-table-column>
           </el-table>
         </section>
         <span slot="footer">
@@ -319,12 +336,12 @@
       </el-dialog>
 
       <el-dialog
-        title="前端校验结果"
+        title="实时校验结果"
         width="860px"
         :visible.sync="frontendErrorDialogVisible"
         append-to-body
       >
-        <section id="frontendErrorDialog" data-diff-page="前端校验结果弹窗">
+        <section id="frontendErrorDialog" data-diff-page="实时校验结果弹窗">
           <el-alert
             type="error"
             :closable="false"
@@ -402,7 +419,7 @@
               fileType: [{ required: true, message: '请选择文件类型', trigger: 'change' }],
               fileName: [{ required: true, message: '请选择 Excel 文件', trigger: 'change' }],
             },
-            frontendValidationRules: [
+            realtimeValidationRules: [
               {
                 caseName: 'sheet / 表头缺失',
                 input: '缺少“退款订单表”或必填列',
@@ -428,6 +445,14 @@
                 input: '电话号码不是 11 位手机号',
                 result: '提示“电话号码格式错误”',
               },
+            ],
+            asyncValidationRules: [
+              { caseName: '渠道后端复核', rule: '上传所选渠道已登记且生效，并按渠道名称取得渠道 ID' },
+              { caseName: '商品可售校验', rule: '组合商品存在、已上架且为正价商品' },
+              { caseName: '金额与库存', rule: '实付金额不超过商品正价；含实物 SKU 时库存充足' },
+              { caseName: '支付订单唯一', rule: '订单 ID 未在历史支付记录中出现' },
+              { caseName: '退款关联支付', rule: '本批或历史记录中存在对应支付订单' },
+              { caseName: '退款不超可退', rule: '本笔退款不超过实付减历史退款及本批更早退款后的余额' },
             ],
           }
         },
@@ -564,9 +589,9 @@
               const frontendErrors = this.getFrontendErrorRows(scenario)
               if (frontendErrors.length) {
                 this.frontendErrorRows = frontendErrors
-                this.fileValidationError = `前端校验未通过，共发现 ${frontendErrors.length} 条错误`
+                this.fileValidationError = `实时校验未通过，共发现 ${frontendErrors.length} 条错误`
                 this.frontendErrorDialogVisible = true
-                this.$message.error(`前端校验未通过，共发现 ${frontendErrors.length} 条错误，请查看详情`)
+                this.$message.error(`实时校验未通过，共发现 ${frontendErrors.length} 条错误，请查看详情`)
                 return
               }
               this.submitting = true
@@ -589,7 +614,7 @@
               this.$message({
                 type: 'success',
                 duration: 3600,
-                message: '前端校验通过，已进入异步校验。结果将通过飞书消息推送。',
+                message: '实时校验通过，已进入异步校验。结果将通过飞书消息推送。',
               })
               setTimeout(() => this.completeAsyncUpload(nextId, scenario), 1800)
             })
@@ -773,22 +798,22 @@
           target: '#excelTemplateField',
           type: 'new',
           title: '新增导入模板下载',
-          desc: '上传弹窗提供「非电商三方订单导入模板.xlsx」下载（真实 .xlsx，含“支付成功订单表”与“退款订单表”两个 sheet，各带表头与一行示例，字段与实时校验规则一致）及“查看实时校验规则”入口。',
+          desc: '上传弹窗提供「非电商三方订单导入模板.xlsx」下载（真实 .xlsx，含“支付成功订单表”与“退款订单表”两个 sheet，各带表头与一行示例）及“查看校验规则”入口；规则弹窗同时展示实时与异步校验。',
           before: '线上上传弹窗无模板下载，也无格式说明',
-          after: '新增双 sheet Excel 模板下载与“查看实时校验规则”入口',
+          after: '新增双 sheet Excel 模板下载与“查看校验规则”入口',
           sdd: { section: 'FR-1 上传入口', blockId: 'doxcn3Ht0Dk0NxezDMN13zOoHff' }
         },
         {
           id: 'chg-upload-template',
           level: 'field',
           page: 'uploadDialogPageMeta',
-          module: 'Excel 与前端校验',
+          module: 'Excel 与实时校验',
           target: '#uploadFileField',
           type: 'new',
           title: '选择文件即实时校验',
-          desc: '渠道由弹窗下拉选定，Excel 不含渠道列；前端读取文件并实时校验，失败不生成上传记录。',
+          desc: '渠道由弹窗下拉选定，Excel 不含渠道列；后端同步读取文件并实时校验，失败不生成上传记录。',
           before: '线上上传弹窗只选平台与文件类型，文件内容在提交前不做任何校验',
-          after: '选择文件后前端同步读取 Excel 并执行实时校验',
+          after: '提交文件后由后端同步读取 Excel 并执行实时校验',
           examples: [
             { case: '正常', input: '小宝爸爸_202608新增订单.xlsx', result: '进入异步校验并生成上传记录' },
             { case: '必填缺失', input: '支付表商品名称为空.xlsx', result: '立即提示，不生成上传记录' },
@@ -801,18 +826,18 @@
           id: 'chg-upload-validation-rules',
           level: 'module',
           page: 'validationRulesDialogPageMeta',
-          module: '前端实时校验 case',
-          target: '#frontendValidationRules',
+          module: '实时与异步校验规则',
+          target: '#realtimeValidationRules',
           type: 'new',
           title: '逐项展示实时校验失败 case',
-          desc: '校验规则弹窗给出可复现输入、前端反馈和“不创建上传记录”的处理结果。',
-          before: '线上无前端内容校验，自然没有校验规则说明',
-          after: '新增规则弹窗，运营可查看五类实时校验 case 及错误反馈',
+          desc: '校验规则弹窗同时展示实时校验的可复现输入、处理结果，以及异步校验项。',
+          before: '线上无导入规则说明',
+          after: '新增规则弹窗，运营可同时查看实时与异步校验规则',
           examples: [
             { case: '必填缺失', input: '第 2 行商品名称为空', result: '立即提示，不创建上传记录' },
             { case: '订单ID重复', input: '第 2、3 行订单ID相同', result: '标记两个重复行号' },
             { case: '金额/数量', input: '实付金额≤0或商品数量≠1', result: '立即拦截' },
-            { case: '聚合错误', input: '全量前端校验错误.xlsx', result: '一次返回 6 条错误，覆盖全部 6 类实时规则' }
+            { case: '聚合错误', input: '全量实时校验错误.xlsx', result: '一次返回 6 条错误，覆盖全部 6 类实时规则' }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
         },
@@ -820,17 +845,17 @@
           id: 'chg-upload-frontend-error-summary',
           level: 'module',
           page: 'frontendErrorDialogPageMeta',
-          module: '前端错误汇总',
+          module: '实时错误汇总',
           target: '#frontendErrorTable',
           type: 'new',
           title: '一次汇总全表实时校验错误',
-          desc: '前端完整扫描两个 sheet 后集中展示 sheet、行号、字段和原因；Toast 只提示错误总数。',
+          desc: '后端实时完整扫描两个 sheet 后集中展示 sheet、行号、字段和原因；Toast 只提示错误总数。',
           before: '线上文件直接提交异步处理，格式错误在上传前无法发现，也没有错误汇总',
           after: '新增错误汇总弹窗，一次反馈全部错误，修正一轮后再重新上传',
           examples: [
             {
               case: '多项命中',
-              input: '全量前端校验错误.xlsx',
+              input: '全量实时校验错误.xlsx',
               result: '一次展示 6 条错误，覆盖 6 类实时规则，且不创建上传记录'
             }
           ],
@@ -846,7 +871,7 @@
           title: '异步全表校验后数据入库',
           desc: '异步校验可能耗时数分钟；任一失败则整批 0 行入库。',
           before: '线上上传后无任何校验与结果反馈，成败不可知',
-          after: '前端校验 → 异步全表校验 → 全部通过整批入库，任一失败 0 行入库',
+          after: '实时校验 → 异步全表校验 → 全部通过整批入库，任一失败 0 行入库',
           examples: [
             { case: '商品失败', input: '组合商品不存在.xlsx', result: '异步失败，0 行入库' },
             { case: '退款失败', input: '累计退款超额.xlsx', result: '异步失败，0 行入库' },
