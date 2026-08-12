@@ -123,6 +123,9 @@
   body.editing [data-eid]{outline:1px dashed #ddd0f5;outline-offset:2px;border-radius:3px}
   body.editing [data-eid]:hover{outline-color:var(--accent)}
   body.editing [data-eid]:focus{outline:2px solid var(--accent);background:#faf7ff}
+  /* 留空单元格（如「开发团队」列）在编辑态要有可点击区域和提示 */
+  body.editing td[data-eid]:empty,body.editing th[data-eid]:empty{min-width:72px}
+  body.editing td[data-eid]:empty::before,body.editing th[data-eid]:empty::before{content:'点击填写';color:#c0c4cc;font-size:12px}
   /* 分页评审意见悬浮面板 */
   #rvFab{position:fixed;right:24px;bottom:24px;background:#1a56db;color:#fff;border-radius:999px;padding:9px 18px;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(26,86,219,.35);z-index:99;user-select:none}
   #rvPanel{position:fixed;right:24px;bottom:74px;width:360px;max-height:55vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.14);z-index:99;display:none}
@@ -279,7 +282,7 @@
 <section class="tab" id="t1">
   <h3 style="margin:0 0 12px">行为变更</h3>
   <table>
-    <tr><th style="width:210px">位置（端 · 平台 · 页面/系统）</th><th>变更内容（【新增】/【变更】，现状与目标已并入说明）</th></tr>
+    <tr><th style="width:210px">位置（端 · 平台 · 页面/系统）</th><th>变更内容（【新增】/【变更】，现状与目标已并入说明）</th><th style="width:96px">开发团队</th></tr>
     <tr>
       <td>运营后台 · 渠道投放 · 三方数据管理页</td>
       <td>
@@ -289,6 +292,7 @@
         ④【新增】上传弹窗前端实时校验：一次扫描完整工作簿、聚合全部错误，按 sheet、行号、字段展示，Toast 只报总数（现状逐项中断反馈，需多次修改重传）。<br>
         ⑤【新增】列表增加「上传用户」「上传结果」列；记录立即进入处理中，完成后飞书个人消息通知上传人，失败可下载带原因的回执（现状异步结果不可感知）。
       </td>
+      <td></td>
     </tr>
     <tr>
       <td>服务端 · 三方订单系统 · 导入与履约</td>
@@ -299,6 +303,7 @@
         ④【新增】退款按累计口径重算状态：累计退款小于实付为部分退款，大于等于实付为退款成功。<br>
         ⑤【新增】每笔退款行同步写入洋葱订单退款记录（refundInfoList：金额、时间、原因描述、来源=三方导入）；累计退满时由洋葱订单既有累计逻辑自动置「退款成功」并回收权益。导入退款不走 go-gearbox 审批链路，不产生退款申请单，也不生成售后单。
       </td>
+      <td></td>
     </tr>
     <tr>
       <td>服务端 · 三方订单系统 · 存量缺陷修复（全平台）</td>
@@ -306,6 +311,7 @@
         ①【变更】全额退款判定由「退款金额等于订单金额」改为「累计退款 <code>&gt;=</code> 实付金额」。<br>
         ②【变更】洋葱退款反向同步现状会重复累加三方侧金额，改为只同步状态与洋葱侧退款额。
       </td>
+      <td></td>
     </tr>
     <tr>
       <td>运营后台 · 订单中心 · 订单列表页与订单详情</td>
@@ -313,6 +319,7 @@
         ①【变更】三方订单退款次数、退款总金额现状在列表显示为 0，改为与详情页口径一致展示。<br>
         ②【新增】订单详情「退款信息」区块逐笔展示导入退款（金额、时间、退款原因描述、来源、权益是否收回），多次部分退款每笔一行、各自展示原因，可点开单笔记录详情；导入退款无飞书审批单号与商户单号。人工发起的退款申请仍按现状展示 gearbox 退款申请单，两类记录并列不重复。
       </td>
+      <td></td>
     </tr>
     <tr>
       <td>C 端 · 洋葱 App · 我的购买页</td>
@@ -321,26 +328,28 @@
         ②【变更】本需求非电商三方订单<strong>不展示「申请开票 / 开发票」入口</strong>（财务：预充值等由分销商开票；不做洋葱自助开票、也不做 C 端驱动分销商开票）。<br>
         ③【口径】订单卡片<strong>只展示订单状态</strong>（已支付 / 退款成功），<strong>不展示部分退款</strong>：洋葱订单无「部分退款」状态，累计退满前一律显示已支付；不展示累计退款/剩余可退金额，也不展示「已全部退款」「权益已收回」等文案（follow 线上现状，无 C 端前端改造）。
       </td>
+      <td></td>
     </tr>
     <tr>
       <td>服务端 · 洋葱订单系统与数仓 · 财务三表</td>
       <td>【新增】财务订单表由洋葱订单数据生成并推送数仓，新增「订单支付时间」字段（= 数据成功导入时间）；退款表与结算表由数仓基于订单表生成，业务侧不再单独生成（现状无统一链路）。</td>
+      <td></td>
     </tr>
   </table>
   <h3 style="margin:26px 0 12px">数据变更</h3>
   <table>
-    <tr><th style="width:220px">对象</th><th>变更</th><th>用途</th></tr>
-    <tr><td><code>import_record</code></td><td>补充上传人、任务状态、成功/失败行数、原始文件与结果文件。</td><td>展示处理中/完成结果，支持审计和失败回执下载。</td></tr>
-    <tr><td>非电商三方订单新表</td><td>新增订单 ID、渠道、收件信息、商品、金额、累计退款、状态、绑定状态、订单支付时间（= 数据成功导入时间）等字段。</td><td>承载独立订单域数据并追溯导入批次。</td></tr>
-    <tr><td>退款流水</td><td>按退款行记录订单 ID、金额、原因、导入任务和时间。</td><td>支持全局累计、剩余可退与订单状态重算。</td></tr>
-    <tr><td>洋葱订单退款记录（refundInfoList）</td><td>每笔导入退款写入金额、退款时间、退款原因描述、来源标记（三方导入）、权益是否收回。</td><td>运营后台订单详情逐笔展示退款与原因；累计退满自动触发退款成功与权益回收。仅后台可见，不透出 C 端。</td></tr>
-    <tr><td>支付平台枚举</td><td>新增「非电商平台的三方订单」。</td><td>创建、筛选和查询洋葱订单。</td></tr>
-    <tr><td>洋葱订单退款展示字段</td><td>列表退款次数、退款总金额兼容三方退款数据。</td><td>让列表与详情页展示一致。</td></tr>
-    <tr><td>渠道注册 Base</td><td>维护渠道名称、shopid、负责人、登记时间、启停状态和备注；首批含小宝爸爸 / 大 V 店 / 万物心选 / 圣智蓝图（shopid=<code>shengzhilantu</code>）。</td><td>上传弹窗渠道下拉的枚举来源（需研发同步维护）与后端复核字典。</td></tr>
-    <tr><td>未注册跟踪 Base</td><td>新增手机号、订单 ID、渠道、商品、注册状态、账号 ID、订单状态和处理结果。</td><td>支撑 30 分钟提醒及注册/退款后的闭环。</td></tr>
-    <tr><td>财务订单表</td><td>第一列固定订单 ID；包含渠道、收件、商品、实付和订单支付时间（= 数据成功导入时间）。</td><td>由洋葱订单数据生成并推送数仓。</td></tr>
-    <tr><td>财务退款表</td><td>第一列固定订单 ID；包含增量退款、累计退款、原因、状态与入库时间。</td><td>由数仓基于订单表生成。</td></tr>
-    <tr><td>财务结算表</td><td>第一列固定订单 ID；包含结算/激活/支付时间、渠道、洋葱 ID、实付、佣金和结算金额。</td><td>由数仓基于订单表生成。</td></tr>
+    <tr><th style="width:220px">对象</th><th>变更</th><th>用途</th><th style="width:96px">开发团队</th></tr>
+    <tr><td><code>import_record</code></td><td>补充上传人、任务状态、成功/失败行数、原始文件与结果文件。</td><td>展示处理中/完成结果，支持审计和失败回执下载。</td><td></td></tr>
+    <tr><td>非电商三方订单新表</td><td>新增订单 ID、渠道、收件信息、商品、金额、累计退款、状态、绑定状态、订单支付时间（= 数据成功导入时间）等字段。</td><td>承载独立订单域数据并追溯导入批次。</td><td></td></tr>
+    <tr><td>退款流水</td><td>按退款行记录订单 ID、金额、原因、导入任务和时间。</td><td>支持全局累计、剩余可退与订单状态重算。</td><td></td></tr>
+    <tr><td>洋葱订单退款记录（refundInfoList）</td><td>每笔导入退款写入金额、退款时间、退款原因描述、来源标记（三方导入）、权益是否收回。</td><td>运营后台订单详情逐笔展示退款与原因；累计退满自动触发退款成功与权益回收。仅后台可见，不透出 C 端。</td><td></td></tr>
+    <tr><td>支付平台枚举</td><td>新增「非电商平台的三方订单」。</td><td>创建、筛选和查询洋葱订单。</td><td></td></tr>
+    <tr><td>洋葱订单退款展示字段</td><td>列表退款次数、退款总金额兼容三方退款数据。</td><td>让列表与详情页展示一致。</td><td></td></tr>
+    <tr><td>渠道注册 Base</td><td>维护渠道名称、shopid、负责人、登记时间、启停状态和备注；首批含小宝爸爸 / 大 V 店 / 万物心选 / 圣智蓝图（shopid=<code>shengzhilantu</code>）。</td><td>上传弹窗渠道下拉的枚举来源（需研发同步维护）与后端复核字典。</td><td></td></tr>
+    <tr><td>未注册跟踪 Base</td><td>新增手机号、订单 ID、渠道、商品、注册状态、账号 ID、订单状态和处理结果。</td><td>支撑 30 分钟提醒及注册/退款后的闭环。</td><td></td></tr>
+    <tr><td>财务订单表</td><td>第一列固定订单 ID；包含渠道、收件、商品、实付和订单支付时间（= 数据成功导入时间）。</td><td>由洋葱订单数据生成并推送数仓。</td><td></td></tr>
+    <tr><td>财务退款表</td><td>第一列固定订单 ID；包含增量退款、累计退款、原因、状态与入库时间。</td><td>由数仓基于订单表生成。</td><td></td></tr>
+    <tr><td>财务结算表</td><td>第一列固定订单 ID；包含结算/激活/支付时间、渠道、洋葱 ID、实付、佣金和结算金额。</td><td>由数仓基于订单表生成。</td><td></td></tr>
   </table>
   <div class="note">字段名与实际实现以研发核对为准。</div>
 </section>
@@ -463,9 +472,9 @@ var SKIP={SCRIPT:1,STYLE:1,LINK:1,META:1,INPUT:1,SELECT:1,TEXTAREA:1,BUTTON:1,IF
    列表（ul/ol）整体作为一个编辑单元，编辑态里回车即可新增一条、退格删空即可删除一条。 */
 function stamp(doc){
  var n=0,seen=[];
+ function skip(el){return SKIP[el.tagName]||el.closest('#dmRoot,#rvPanel,#rvFab,#edBar,nav,[data-noedit]')}
  [].forEach.call(doc.querySelectorAll('body *'),function(el){
-  if(SKIP[el.tagName])return;
-  if(el.closest('#dmRoot,#rvPanel,#rvFab,#edBar,nav,[data-noedit]'))return;
+  if(skip(el))return;
   var has=false,cs=el.childNodes;
   for(var j=0;j<cs.length;j++)if(cs[j].nodeType===3&&cs[j].textContent.trim()){has=true;break}
   if(!has)return;
@@ -473,6 +482,13 @@ function stamp(doc){
   while(l){t=l;l=l.parentElement&&l.parentElement.closest('ul,ol')}
   for(var i=0;i<seen.length;i++)if(seen[i]===t||seen[i].contains(t))return;
   t.setAttribute('data-eid',n++);seen.push(t);
+ });
+ /* 第二趟：留空的表格单元格（如「开发团队」列）也要可编辑。
+    必须排在有文字元素之后编号，否则已有草稿的 data-eid 会整体错位。 */
+ [].forEach.call(doc.querySelectorAll('td,th'),function(el){
+  if(skip(el)||el.hasAttribute('data-eid'))return;
+  if(el.children.length||el.textContent.trim())return;
+  el.setAttribute('data-eid',n++);
  });
 }
 var OV={};try{OV=JSON.parse(localStorage.getItem(OKEY))||{}}catch(e){}
