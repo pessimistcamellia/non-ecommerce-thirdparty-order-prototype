@@ -308,16 +308,17 @@
             border
             stripe
           >
-            <el-table-column prop="caseName" label="校验 case" width="140"></el-table-column>
-            <el-table-column prop="rule" label="规则" min-width="200"></el-table-column>
-            <el-table-column prop="msg" label="报错反馈文案" min-width="260"></el-table-column>
+            <el-table-column prop="caseName" label="校验 case" width="130"></el-table-column>
+            <el-table-column prop="rule" label="规则" min-width="180"></el-table-column>
+            <el-table-column prop="req" label="是否必填" width="90"></el-table-column>
+            <el-table-column prop="msg" label="报错反馈文案" min-width="220"></el-table-column>
           </el-table>
           <h4 class="refund-section__title" style="margin-top:18px">异步校验规则</h4>
           <el-alert
             type="warning"
             :closable="false"
             show-icon
-            title="异步校验扫描支付与退款两张表；任一规则不通过则整批 0 行入库，并生成失败回执。"
+            title="异步校验扫描支付与退款两张表；按组合商品 ID 判定含实物时地址必填；任一规则不通过则整批 0 行入库，并生成失败回执。"
           ></el-alert>
           <el-table
             id="asyncValidationRules"
@@ -326,9 +327,10 @@
             border
             stripe
           >
-            <el-table-column prop="caseName" label="校验项" width="160"></el-table-column>
-            <el-table-column prop="rule" label="规则" min-width="200"></el-table-column>
-            <el-table-column prop="msg" label="报错反馈文案" min-width="240"></el-table-column>
+            <el-table-column prop="caseName" label="校验项" width="150"></el-table-column>
+            <el-table-column prop="rule" label="规则" min-width="180"></el-table-column>
+            <el-table-column prop="req" label="是否必填" width="90"></el-table-column>
+            <el-table-column prop="msg" label="报错反馈文案" min-width="220"></el-table-column>
           </el-table>
         </section>
         <span slot="footer">
@@ -423,44 +425,51 @@
             realtimeValidationRules: [
               {
                 caseName: 'sheet / 表头缺失',
-                rule: '两个 Sheet 名称精确匹配，必填表头完整',
+                rule: '两个 Sheet 名称精确匹配，表头列齐全（含地址列名）',
+                req: '必填',
                 msg: '缺少对应 sheet / 列名（例：缺少“退款订单表”，且支付成功订单表缺少“组合商品 ID”列）',
               },
               {
-                caseName: '必填项缺失',
-                rule: '必填列和必填单元格均不可为空',
+                caseName: '常驻必填缺失',
+                rule: '支付表：订单 ID/电话/商品名称/数量/组合商品 ID/实付；退款表：订单 ID/退款金额。地址不在本条',
+                req: '必填',
                 msg: '第 N 行：{字段}为必填项（例：支付成功订单表第 2 行：商品名称为必填项）',
               },
               {
                 caseName: '订单 ID 重复',
                 rule: '支付 Sheet 内订单 ID 不可重复',
+                req: '不适用',
                 msg: '第 N、M 行：订单 ID {id} 重复',
               },
               {
                 caseName: '金额错误',
                 rule: '实付与退款金额必须为大于 0 的数字',
+                req: '必填',
                 msg: '第 N 行：订单实付金额 / 退款金额必须为大于 0 的数字',
               },
               {
                 caseName: '数量错误',
                 rule: '商品数量必须等于 1',
+                req: '必填',
                 msg: '第 N 行：商品数量必须为 1，当前值为 {x}',
               },
               {
                 caseName: '手机号格式错误',
                 rule: '电话号码必须为 11 位手机号',
+                req: '必填',
                 msg: '第 N 行：电话号码格式错误，必须为 11 位手机号',
               },
             ],
             asyncValidationRules: [
-              { caseName: '渠道后端复核', rule: '上传所选渠道已登记且生效，并按渠道名称取得渠道 ID', msg: '渠道「{name}」未登记或未生效，无法取得渠道 ID' },
-              { caseName: '组合商品存在', rule: '组合商品 ID 存在（已配置）', msg: '组合商品 ID {id} 不存在' },
-              { caseName: '组合商品上架', rule: '组合商品当前已上架', msg: '组合商品 ID {id} 未上架' },
-              { caseName: '金额不超正价', rule: '订单实付金额不大于商品正价', msg: '订单 {id} 实付金额超过商品正价' },
-              { caseName: '实物库存', rule: '含实物 SKU 时库存充足', msg: '订单 {id} 含实物 SKU 且库存不足' },
-              { caseName: '支付订单唯一', rule: '订单 ID 未在历史支付记录中出现', msg: '订单 ID {id} 已在历史支付记录中存在' },
-              { caseName: '退款关联支付', rule: '本批或历史记录中存在对应支付订单', msg: '退款订单 {id} 找不到对应支付记录' },
-              { caseName: '退款不超可退', rule: '本笔退款不超过实付减历史退款及本批更早退款后的余额', msg: '订单 {id} 累计退款超过可退金额' },
+              { caseName: '渠道后端复核', rule: '上传所选渠道已登记且生效，并按渠道名称取得渠道 ID', req: '必填', msg: '渠道「{name}」未登记或未生效，无法取得渠道 ID' },
+              { caseName: '组合商品存在', rule: '组合商品 ID 存在（已配置）', req: '必填', msg: '组合商品 ID {id} 不存在' },
+              { caseName: '组合商品上架', rule: '组合商品当前已上架', req: '必填', msg: '组合商品 ID {id} 未上架' },
+              { caseName: '金额不超正价', rule: '订单实付金额不大于商品正价', req: '必填', msg: '订单 {id} 实付金额超过商品正价' },
+              { caseName: '实物库存', rule: '含实物 SKU 时库存充足', req: '条件必填', msg: '订单 {id} 含实物 SKU 且库存不足' },
+              { caseName: '支付订单唯一', rule: '订单 ID 未在历史支付记录中出现', req: '必填', msg: '订单 ID {id} 已在历史支付记录中存在' },
+              { caseName: '退款关联支付', rule: '本批或历史记录中存在对应支付订单', req: '必填', msg: '退款订单 {id} 找不到对应支付记录' },
+              { caseName: '退款不超可退', rule: '本笔退款不超过实付减历史退款及本批更早退款后的余额', req: '必填', msg: '订单 {id} 累计退款超过可退金额' },
+              { caseName: '含实物时地址必填', rule: '按组合商品 ID 判定含实物：收件人姓名/省市区/详细地址必填；纯虚拟非必填（不新增「是否含实物」列）', req: '条件必填', msg: '第 N 行：组合商品含实物，{地址字段}为必填项' },
             ],
           }
         },
