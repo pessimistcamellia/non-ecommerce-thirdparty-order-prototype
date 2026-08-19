@@ -49,17 +49,13 @@
     .drop-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding-top: 16px; color: #909399; font-size: 12px; }
     .drop-page-btn { min-width: 30px; height: 28px; border: 1px solid #dcdfe6; border-radius: 3px; color: #606266; background: #fff; }
     .drop-page-btn.is-current { color: #fff; border-color: #1687e9; background: #1687e9; }
-    .drop-dialog-mask { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.42); }
-    .drop-dialog { width: 480px; border-radius: 4px; background: #fff; box-shadow: 0 20px 55px rgba(0,0,0,.22); }
-    .drop-dialog__head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #ebeef5; }
-    .drop-dialog__head h2 { margin: 0; font-size: 16px; }
-    .drop-dialog__close { border: 0; color: #909399; background: transparent; cursor: pointer; font-size: 22px; }
-    .drop-dialog__body { padding: 22px 24px 10px; }
-    .drop-dialog__body .drop-field { margin-bottom: 16px; }
-    .drop-dialog__body .drop-field label { width: 100px; }
-    .drop-dialog__body .input { width: 290px; }
+    .modal--supply { width: 480px; }
+    .modal--supply .modal__title { margin: 0; font-size: 16px; }
+    .modal--supply .modal__body { padding: 22px 24px 10px; }
+    .modal--supply .drop-field { margin-bottom: 16px; }
+    .modal--supply .drop-field label { width: 100px; }
+    .modal--supply .input { width: 290px; }
     .drop-dialog__tip { margin: -4px 0 0 108px; color: #909399; font-size: 12px; line-height: 1.6; }
-    .drop-dialog__foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px 20px; }
   </style>
 </head>
 <body>
@@ -156,18 +152,18 @@
     </section>
   </main>
 
-  <div id="supplyDialog" class="drop-dialog-mask" hidden>
-    <section class="drop-dialog" role="dialog" aria-modal="true" aria-labelledby="supplyDialogTitle">
-      <header class="drop-dialog__head">
-        <h2 id="supplyDialogTitle">修改掉单</h2>
-        <button id="closeDialog" class="drop-dialog__close" type="button" aria-label="关闭">×</button>
+  <div id="supplyDialog" class="modal-mask">
+    <section class="modal modal--supply" role="dialog" aria-modal="true" aria-labelledby="supplyDialogTitle">
+      <header class="modal__header">
+        <h2 id="supplyDialogTitle" class="modal__title">修改掉单</h2>
+        <button id="closeDialog" class="modal__close" type="button" aria-label="关闭">×</button>
       </header>
-      <div class="drop-dialog__body">
-        <div class="drop-field"><label>父订单ID</label><input id="dialogOrderId" class="input" readonly></div>
+      <div class="modal__body">
+        <div class="drop-field"><label for="dialogOrderId">父订单ID</label><input id="dialogOrderId" class="input" readonly></div>
         <div class="drop-field"><label for="ycSkuId">洋葱SKU组ID</label><input id="ycSkuId" class="input" placeholder="请输入正确的洋葱SKU组ID"></div>
         <p class="drop-dialog__tip">非电商订单使用导入数据完成补单，不调用电商平台订单查询接口；提交成功后同步更新页面与掉单表。</p>
       </div>
-      <footer class="drop-dialog__foot">
+      <footer class="modal__footer">
         <button id="cancelDialog" class="btn" type="button">取消</button>
         <button id="submitSupply" class="btn btn--primary" type="button">确认处理</button>
       </footer>
@@ -260,11 +256,11 @@
         selectedId = id
         $('#dialogOrderId').value = id
         $('#ycSkuId').value = ''
-        $('#supplyDialog').hidden = false
+        $('#supplyDialog').classList.add('is-open')
       }
 
       function closeDialog() {
-        $('#supplyDialog').hidden = true
+        $('#supplyDialog').classList.remove('is-open')
       }
 
       function submitSupply() {
@@ -286,6 +282,8 @@
       $('#closeDialog').addEventListener('click', closeDialog)
       $('#cancelDialog').addEventListener('click', closeDialog)
       $('#submitSupply').addEventListener('click', submitSupply)
+      $('#supplyDialog').addEventListener('click', (event) => { if (event.target === event.currentTarget) closeDialog() })
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeDialog() })
       window.PrototypeApp.renderNav('dropped')
       renderPlatformOptions()
       renderRows()
