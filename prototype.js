@@ -4,6 +4,7 @@
   const STATE_KEY = 'proto-note:non-ecommerce-thirdparty-order:state:v1'
   const PAGE_LINKS = [
     { id: 'upload', label: '运营后台 · 三方数据管理', href: 'admin-upload.html' },
+    { id: 'dropped', label: '运营后台 · 掉单管理', href: 'admin-dropped-orders.html' },
     { id: 'orders', label: '运营后台 · 订单管理', href: 'admin-orders.html' },
     { id: 'consumer', label: 'C 端 · 我的购买', href: 'consumer.html' },
   ]
@@ -13,6 +14,7 @@
     { label: '财务三表 Base', href: 'https://guanghe.feishu.cn/base/HTx5bBzkna9kOsse2stc8Zdrnqe' },
     { label: '渠道注册 Base', href: 'https://guanghe.feishu.cn/base/F0I2bV6KnaVBRzsLpwWcDa2Qnxh' },
     { label: '未注册跟踪 Base', href: 'https://guanghe.feishu.cn/base/UbRfb8m5Ua962tsiILEcvQJgn8b?table=tblW8EMJ8S8mK16U&view=vewMrq51ZI' },
+    { label: '掉单 Base', href: 'https://guanghe.feishu.cn/base/UbRfb8m5Ua962tsiILEcvQJgn8b?table=tblgRxlZ2vIKZkTo&view=vewY0A8bUa' },
   ]
 
   const FILE_TYPES_BY_PLATFORM = {

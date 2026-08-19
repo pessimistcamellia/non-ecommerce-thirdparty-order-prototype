@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="非电商三方订单掉单管理高保真原型">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%233370ff'/%3E%3C/svg%3E">
+  <title>运营后台 · 掉单管理</title>
+  <link rel="stylesheet" href="prototype.css">
+  <style>
+    body { min-width: 1520px; background: #f5f6f7; }
+    .drop-shell { display: flex; width: 1500px; min-height: calc(100vh - 50px); background: #fff; }
+    .drop-sidebar { width: 168px; flex: 0 0 168px; color: #c8d2e1; background: #071a2c; }
+    .drop-sidebar__brand { height: 54px; display: flex; align-items: center; padding: 0 14px; color: #fff; font-size: 15px; font-weight: 650; border-bottom: 1px solid rgba(255,255,255,.07); }
+    .drop-sidebar__group { padding: 13px 14px 7px; color: #718197; font-size: 12px; }
+    .drop-sidebar__item { height: 40px; display: flex; align-items: center; padding: 0 18px; color: #c8d2e1; text-decoration: none; }
+    .drop-sidebar__item:hover { color: #fff; background: rgba(255,255,255,.05); }
+    .drop-sidebar__item.is-active { color: #fff; background: #1687e9; }
+    .drop-main { width: 1332px; padding: 0 18px 44px; overflow: hidden; }
+    .drop-breadcrumb { height: 50px; display: flex; align-items: center; color: #8f959e; border-bottom: 1px solid #edf0f3; font-size: 12px; }
+    .drop-tabs { display: flex; gap: 28px; height: 52px; align-items: flex-end; border-bottom: 1px solid #e8ebef; }
+    .drop-tab { position: relative; height: 52px; padding: 0 2px 13px; color: #606266; border: 0; background: transparent; cursor: pointer; font-weight: 500; }
+    .drop-tab:hover { color: #1687e9; }
+    .drop-tab.is-active { color: #1687e9; font-weight: 600; }
+    .drop-tab.is-active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #1687e9; }
+    .drop-filter { padding: 18px 12px 4px; }
+    .drop-filter__row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .drop-field { display: flex; align-items: center; gap: 8px; }
+    .drop-field label { width: 58px; color: #606266; text-align: right; white-space: nowrap; }
+    .drop-field .input, .drop-field .select { min-width: 150px; width: 150px; color: #606266; }
+    .drop-field--wide .input { width: 236px; }
+    .drop-field--time .input { width: 330px; }
+    .drop-actions { padding-left: 2px; }
+    .drop-actions .btn + .btn { margin-left: 8px; }
+    .drop-table-wrap { width: 100%; overflow-x: auto; border-top: 1px solid #f0f1f3; }
+    .drop-table { width: 1580px; border-collapse: collapse; table-layout: fixed; }
+    .drop-table th, .drop-table td { min-height: 54px; padding: 12px 10px; color: #606266; border-bottom: 1px solid #ebeef5; text-align: left; vertical-align: middle; font-size: 13px; }
+    .drop-table th { height: 48px; color: #7a8495; background: #fff; font-weight: 600; }
+    .drop-table tbody tr:hover td { background: #f7faff; }
+    .drop-table .mono { color: #4e5969; font-variant-numeric: tabular-nums; word-break: break-all; }
+    .drop-table .money { font-variant-numeric: tabular-nums; }
+    .drop-table .reason { line-height: 1.6; }
+    .drop-table .action { color: #1687e9; border: 0; background: transparent; cursor: pointer; }
+    .drop-table .action:hover { text-decoration: underline; }
+    .drop-result { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .drop-result::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #e6a23c; }
+    .drop-result.is-done::before { background: #00a870; }
+    .drop-empty { padding: 70px 0; color: #a2a9b3; text-align: center; }
+    .drop-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding-top: 16px; color: #909399; font-size: 12px; }
+    .drop-page-btn { min-width: 30px; height: 28px; border: 1px solid #dcdfe6; border-radius: 3px; color: #606266; background: #fff; }
+    .drop-page-btn.is-current { color: #fff; border-color: #1687e9; background: #1687e9; }
+    .drop-dialog-mask { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.42); }
+    .drop-dialog { width: 480px; border-radius: 4px; background: #fff; box-shadow: 0 20px 55px rgba(0,0,0,.22); }
+    .drop-dialog__head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #ebeef5; }
+    .drop-dialog__head h2 { margin: 0; font-size: 16px; }
+    .drop-dialog__close { border: 0; color: #909399; background: transparent; cursor: pointer; font-size: 22px; }
+    .drop-dialog__body { padding: 22px 24px 10px; }
+    .drop-dialog__body .drop-field { margin-bottom: 16px; }
+    .drop-dialog__body .drop-field label { width: 100px; }
+    .drop-dialog__body .input { width: 290px; }
+    .drop-dialog__tip { margin: -4px 0 0 108px; color: #909399; font-size: 12px; line-height: 1.6; }
+    .drop-dialog__foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px 20px; }
+  </style>
+</head>
+<body>
+  <div id="prototypeNav"></div>
+  <main id="droppedOrderPage" class="drop-shell" data-diff-page="运营后台 · 掉单管理">
+    <span id="supplyDialogPageMeta" data-diff-page="掉单修改弹窗" hidden></span>
+    <aside class="drop-sidebar" aria-label="后台菜单">
+      <div class="drop-sidebar__brand">洋葱学园APP运营平台</div>
+      <div class="drop-sidebar__group">渠道投放</div>
+      <a class="drop-sidebar__item" href="javascript:void(0)">检测链接</a>
+      <div class="drop-sidebar__group">第三方订单管理</div>
+      <a class="drop-sidebar__item" href="javascript:void(0)">微店</a>
+      <a class="drop-sidebar__item" href="javascript:void(0)">抖店</a>
+      <a class="drop-sidebar__item" href="javascript:void(0)">通用三方</a>
+      <a class="drop-sidebar__item is-active" href="javascript:void(0)">掉单管理</a>
+      <a class="drop-sidebar__item" href="admin-upload.html">三方数据管理</a>
+      <a class="drop-sidebar__item" href="javascript:void(0)">激活链接配置</a>
+    </aside>
+
+    <section class="drop-main">
+      <div class="drop-breadcrumb">渠道投放&nbsp; / &nbsp;掉单管理</div>
+      <div id="platformCategoryTabs" class="drop-tabs" role="tablist" aria-label="订单平台分类">
+        <button class="drop-tab is-active" type="button" role="tab" data-tab="ecommerce" aria-selected="true">电商平台</button>
+        <button class="drop-tab" type="button" role="tab" data-tab="non-ecommerce" aria-selected="false">非电商平台</button>
+      </div>
+
+      <section id="droppedOrderFilters" class="drop-filter" aria-label="掉单筛选">
+        <div class="drop-filter__row">
+          <div class="drop-field">
+            <label for="platform">第三方平台</label>
+            <select id="platform" class="select"></select>
+          </div>
+          <div class="drop-field">
+            <label for="shopId">店铺ID</label>
+            <input id="shopId" class="input" placeholder="请输入店铺id">
+          </div>
+          <div class="drop-field">
+            <label for="shopName">店铺名称</label>
+            <input id="shopName" class="input" placeholder="请输入店铺名称">
+          </div>
+          <div class="drop-field drop-field--wide">
+            <label for="spuId">父订单ID</label>
+            <input id="spuId" class="input" placeholder="请输入父订单ID">
+          </div>
+        </div>
+        <div class="drop-filter__row">
+          <div class="drop-field drop-field--time">
+            <label for="createTime">订单创建时间</label>
+            <input id="createTime" class="input" placeholder="开始创建时间  至  结束创建时间" readonly>
+          </div>
+          <div class="drop-field">
+            <label for="reason">掉单原因</label>
+            <select id="reason" class="select">
+              <option value="">请选择掉单原因</option>
+              <option>配置的组合商品ID错误</option>
+              <option>创建洋葱订单失败</option>
+              <option>组合商品库存不足</option>
+            </select>
+          </div>
+          <div class="drop-field">
+            <label for="result">处理结果</label>
+            <select id="result" class="select">
+              <option value="">请选择处理结果</option>
+              <option>待处理</option>
+              <option>已完成</option>
+            </select>
+          </div>
+        </div>
+        <div class="drop-actions">
+          <button id="queryButton" class="btn btn--primary" type="button">查询</button>
+          <button id="resetButton" class="btn" type="button">清空</button>
+        </div>
+      </section>
+
+      <div id="droppedOrderTable" class="drop-table-wrap">
+        <table class="drop-table">
+          <colgroup>
+            <col style="width:140px"><col style="width:220px"><col style="width:145px"><col style="width:90px">
+            <col style="width:100px"><col style="width:90px"><col style="width:110px"><col style="width:150px">
+            <col style="width:110px"><col style="width:200px"><col style="width:80px"><col style="width:110px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>父订单ID</th><th>商品名称</th><th>支付时间</th><th>支付金额</th>
+              <th>订单状态</th><th>退款金额</th><th>平台</th><th>店铺名称</th>
+              <th>店铺id</th><th>掉单原因</th><th>操作</th><th>处理结果</th>
+            </tr>
+          </thead>
+          <tbody id="dropRows"></tbody>
+        </table>
+        <div id="emptyState" class="drop-empty" hidden>暂无符合条件的掉单记录</div>
+      </div>
+      <div class="drop-pagination"><span id="totalText">共 0 条</span><button class="drop-page-btn is-current">1</button><span>20 条/页</span></div>
+    </section>
+  </main>
+
+  <div id="supplyDialog" class="drop-dialog-mask" hidden>
+    <section class="drop-dialog" role="dialog" aria-modal="true" aria-labelledby="supplyDialogTitle">
+      <header class="drop-dialog__head">
+        <h2 id="supplyDialogTitle">修改掉单</h2>
+        <button id="closeDialog" class="drop-dialog__close" type="button" aria-label="关闭">×</button>
+      </header>
+      <div class="drop-dialog__body">
+        <div class="drop-field"><label>父订单ID</label><input id="dialogOrderId" class="input" readonly></div>
+        <div class="drop-field"><label for="ycSkuId">洋葱SKU组ID</label><input id="ycSkuId" class="input" placeholder="请输入正确的洋葱SKU组ID"></div>
+        <p class="drop-dialog__tip">非电商订单使用导入数据完成补单，不调用电商平台订单查询接口；提交成功后同步更新页面与掉单表。</p>
+      </div>
+      <footer class="drop-dialog__foot">
+        <button id="cancelDialog" class="btn" type="button">取消</button>
+        <button id="submitSupply" class="btn btn--primary" type="button">确认处理</button>
+      </footer>
+    </section>
+  </div>
+
+  <script src="prototype.js"></script>
+  <script>
+    (function () {
+      const ecommerceRows = [
+        { id: '5118915171116035443', product: '洋葱学园VIP初中数学同步课', time: '2026-06-08 09:56:38', amount: 493, status: '支付成功', refund: 0, platform: '天猫', shopName: '洋葱学园旗舰店', shopId: '499187844', reason: '配置的组合商品ID错误', result: '待处理' },
+        { id: '5118848894159060001', product: '洋葱学园VIP初中科学同步课', time: '2026-06-03 23:57:13', amount: 558, status: '支付成功', refund: 0, platform: '天猫', shopName: '洋葱学园旗舰店', shopId: '499187844', reason: '配置的组合商品ID错误', result: '已完成' }
+      ]
+      const nonEcommerceRows = [
+        { id: 'xiaobaobaba20260818001', product: '洋葱数学思维年度组合课', time: '2026-08-18 15:26:42', amount: 899, status: '支付成功', refund: 0, platform: '非电商平台的三方订单', shopName: '小宝爸爸', shopId: 'xiaobaobaba', reason: '组合商品库存不足', result: '待处理' },
+        { id: 'davdian20260818002', product: '洋葱英语全年成长课', time: '2026-08-18 15:42:08', amount: 699, status: '支付成功', refund: 0, platform: '非电商平台的三方订单', shopName: '大V店', shopId: 'davdian', reason: '创建洋葱订单失败', result: '待处理' },
+        { id: 'wanwuxinxuan20260818003', product: '洋葱物理实验成长包', time: '2026-08-18 16:06:31', amount: 498, status: '支付成功', refund: 0, platform: '非电商平台的三方订单', shopName: '万物心选', shopId: 'wanwuxinxuan', reason: '配置的组合商品ID错误', result: '已完成' }
+      ]
+      let activeTab = 'ecommerce'
+      let selectedId = ''
+      let demoState = 'normal'
+      const $ = (selector) => document.querySelector(selector)
+      const $$ = (selector) => Array.from(document.querySelectorAll(selector))
+      const platformOptions = {
+        ecommerce: ['', '天猫', '京东', '拼多多', '抖店', '视频号小店', '小红书', '微店', '快手', '有赞'],
+        'non-ecommerce': ['', '非电商平台的三方订单']
+      }
+
+      function currentRows() {
+        if (demoState === 'empty') return []
+        const source = activeTab === 'ecommerce' ? ecommerceRows : nonEcommerceRows
+        return source.filter((row) => {
+          const platform = $('#platform').value
+          const shopId = $('#shopId').value.trim()
+          const shopName = $('#shopName').value.trim()
+          const spuId = $('#spuId').value.trim()
+          const reason = $('#reason').value
+          const result = $('#result').value
+          return (!platform || row.platform === platform)
+            && (!shopId || row.shopId.includes(shopId))
+            && (!shopName || row.shopName.includes(shopName))
+            && (!spuId || row.id.includes(spuId))
+            && (!reason || row.reason === reason)
+            && (!result || row.result === result)
+        })
+      }
+
+      function renderPlatformOptions() {
+        $('#platform').innerHTML = platformOptions[activeTab].map((value) =>
+          `<option value="${value}">${value || '请选择'}</option>`
+        ).join('')
+      }
+
+      function renderRows() {
+        const rows = currentRows()
+        $('#dropRows').innerHTML = rows.map((row) => `
+          <tr>
+            <td class="mono">${row.id}</td><td>${row.product}</td><td class="mono">${row.time}</td>
+            <td class="money">${row.amount}</td><td>${row.status}</td><td class="money">${row.refund}</td>
+            <td>${row.platform}</td><td>${row.shopName}</td><td class="mono">${row.shopId}</td>
+            <td class="reason">${row.reason}</td>
+            <td>${row.result === '待处理' ? `<button class="action" data-id="${row.id}">修改</button>` : ''}</td>
+            <td><span class="drop-result ${row.result === '已完成' ? 'is-done' : ''}">${row.result}</span></td>
+          </tr>`).join('')
+        $('#emptyState').hidden = rows.length > 0
+        $('#droppedOrderTable').querySelector('table').hidden = rows.length === 0
+        $('#totalText').textContent = `共 ${rows.length} 条`
+        $$('.action').forEach((button) => button.addEventListener('click', () => openDialog(button.dataset.id)))
+      }
+
+      function switchTab(tab) {
+        activeTab = tab
+        $$('.drop-tab').forEach((button) => {
+          const active = button.dataset.tab === tab
+          button.classList.toggle('is-active', active)
+          button.setAttribute('aria-selected', String(active))
+        })
+        resetFilters(false)
+        renderPlatformOptions()
+        renderRows()
+      }
+
+      function resetFilters(render = true) {
+        ['shopId', 'shopName', 'spuId', 'reason', 'result'].forEach((id) => { $('#' + id).value = '' })
+        $('#platform').value = ''
+        if (render) renderRows()
+      }
+
+      function openDialog(id) {
+        selectedId = id
+        $('#dialogOrderId').value = id
+        $('#ycSkuId').value = ''
+        $('#supplyDialog').hidden = false
+      }
+
+      function closeDialog() {
+        $('#supplyDialog').hidden = true
+      }
+
+      function submitSupply() {
+        const sku = $('#ycSkuId').value.trim()
+        if (!sku) {
+          window.PrototypeApp.notify('请输入洋葱SKU组ID', 'warning')
+          return
+        }
+        const row = nonEcommerceRows.find((item) => item.id === selectedId) || ecommerceRows.find((item) => item.id === selectedId)
+        if (row) row.result = '已完成'
+        closeDialog()
+        renderRows()
+        window.PrototypeApp.notify('补单成功，页面与多维表格已同步更新', 'success')
+      }
+
+      $$('.drop-tab').forEach((button) => button.addEventListener('click', () => switchTab(button.dataset.tab)))
+      $('#queryButton').addEventListener('click', renderRows)
+      $('#resetButton').addEventListener('click', () => resetFilters())
+      $('#closeDialog').addEventListener('click', closeDialog)
+      $('#cancelDialog').addEventListener('click', closeDialog)
+      $('#submitSupply').addEventListener('click', submitSupply)
+      window.PrototypeApp.renderNav('dropped')
+      renderPlatformOptions()
+      renderRows()
+
+      window.DIFF_HOOKS = {
+        locate(pageId) {
+          closeDialog()
+          if (pageId === 'droppedOrderPage') switchTab('non-ecommerce')
+          if (pageId === 'supplyDialogPageMeta') {
+            switchTab('non-ecommerce')
+            openDialog('xiaobaobaba20260818001')
+          }
+        },
+        setDemoState(controlId, value) {
+          if (controlId === 'dropState') {
+            demoState = value
+            renderRows()
+          }
+        }
+      }
+    })()
+  </script>
+  <script>
+    window.DIFF_CHANGESET = {
+      meta: {
+        sddTitle: '非电商平台三方订单导入 SDD',
+        sddUrl: 'https://guanghe.feishu.cn/docx/Cw69djCbsosrPGxKlURcM3ZAn6m',
+        sddType: 'feishu',
+        demoControls: [{
+          id: 'dropState',
+          label: '页面状态',
+          default: 'normal',
+          options: [{ value: 'normal', label: '正常' }, { value: 'empty', label: '空态' }]
+        }]
+      },
+      changes: [
+        {
+          id: 'chg-drop-tabs',
+          level: 'module',
+          page: 'droppedOrderPage',
+          module: '平台分类',
+          target: '#platformCategoryTabs',
+          type: 'new',
+          title: '新增电商与非电商平台 Tab',
+          desc: '掉单管理按平台类型隔离。默认展示电商平台，非电商平台进入独立 Tab。',
+          before: '线上只有一张三方订单掉单列表，无平台类型分区',
+          after: '默认电商平台 Tab + 非电商平台 Tab',
+          examples: [
+            { case: '默认进入', input: '首次打开掉单管理', result: '展示电商平台 Tab 与电商订单' },
+            { case: '切换非电商', input: '点击“非电商平台”', result: '只展示非电商平台的三方订单' }
+          ],
+          sdd: { section: 'FR-9 掉单管理与掉单表', blockId: 'doxcnH57QPqZB21TtTJdV8KvKpc' }
+        },
+        {
+          id: 'chg-drop-filter-scope',
+          level: 'module',
+          page: 'droppedOrderPage',
+          module: '平台分类',
+          target: '#droppedOrderFilters',
+          type: 'logic',
+          title: '筛选项与列表格式保持一致',
+          desc: '两个 Tab 复用同一套筛选项、表格列和分页；第三方平台选项按当前 Tab 收敛，避免跨类型串数。',
+          before: '未区分非电商平台数据范围',
+          after: '电商 Tab 排除非电商；非电商 Tab 只查统一非电商平台值',
+          examples: [
+            { case: '按渠道筛选', input: '非电商平台 Tab；店铺ID=xiaobaobaba', result: '只展示小宝爸爸掉单' },
+            { case: '按结果筛选', input: '非电商平台 Tab；处理结果=待处理', result: '展示两条待处理记录' }
+          ],
+          sdd: { section: 'FR-9 掉单管理与掉单表', blockId: 'doxcnH57QPqZB21TtTJdV8KvKpc' }
+        },
+        {
+          id: 'chg-drop-supply',
+          level: 'module',
+          page: 'supplyDialogPageMeta',
+          module: '非电商补单',
+          target: '#supplyDialog',
+          type: 'logic',
+          title: '补齐非电商平台补单分支',
+          desc: '非电商掉单复用同款修改入口，但基于导入订单数据补单，不调用电商平台订单查询接口。',
+          before: '现有后端遇到非电商平台会返回“未知的平台渠道”',
+          after: '输入正确洋葱SKU组ID后完成补单，并同步更新页面与掉单表',
+          examples: [
+            { case: '成功补单', input: '父订单ID=xiaobaobaba20260818001；SKU组ID=COMBO-2026-MATH', result: '处理结果变为已完成' },
+            { case: '缺少SKU', input: '洋葱SKU组ID为空', result: '提示“请输入洋葱SKU组ID”' }
+          ],
+          sdd: { section: 'FR-9 掉单管理与掉单表', blockId: 'doxcnH57QPqZB21TtTJdV8KvKpc' }
+        },
+        {
+          id: 'chg-drop-base',
+          level: 'module',
+          page: 'droppedOrderPage',
+          module: '流程与链路',
+          target: null,
+          type: 'flow',
+          title: '非电商掉单同步写入多维表格',
+          desc: '创建掉单时同步写入专用 Base 的“掉单”表；处理成功后将处理结果更新为已完成。',
+          before: '专用 Base 仅有未注册用户表，无掉单表',
+          after: '新增掉单表：父订单ID、订单创建时间、掉单原因、处理结果',
+          sdd: { section: 'FR-9 掉单管理与掉单表', blockId: 'doxcnH57QPqZB21TtTJdV8KvKpc' }
+        }
+      ]
+    }
+  </script>
+  <script>
+/* ============ 原型变更标注引擎 proto-note（零依赖，可整段复用） ============
+   布局参考：固定右侧深色批注栏 + 页面编号锚点 + canvas 连线（axure 批注风格）
+   规则：默认不显示任何标注；按模块勾选显示；只联动 SDD（不展示 PRD）
+   约定：
+   - change.target 为 null 的“页面不可见”变更（纯流程/链路），不画锚点不连线，
+     统一排在批注栏最后的「流程与链路」分节；数据数组中也应放在最后。
+   - target 在弹窗内的变更，点击批注卡片时由 DIFF_HOOKS.locate(pageId) 自动打开弹窗，
+     引擎轮询等待目标挂载后再滚动定位并连线。
+   - 浮层 z-index 必须压过 Element 弹窗（2000+），否则弹窗打开时锚点与连线被蒙层盖住。 */
+(function () {
+  const CS = window.DIFF_CHANGESET;
+  if (!CS || !CS.changes || !CS.changes.length) return;
+
+  const TYPE_LABEL = { new: "新增", modify: "修改", copy: "文案", enum: "口径", logic: "逻辑", flow: "流程", remove: "删除" };
+  const LEVEL_LABEL = { page: "页面级", module: "模块级", field: "字段级" };
+  const LS_KEY = "diff-annotator-v4:" + location.pathname;
+  const PANEL_W = 360;
+
+  CS.changes.forEach((c, i) => { c._no = String(i + 1).padStart(2, "0"); });
+  const targeted = c => !!c.target;
+
+  /* ---------- 状态 ---------- */
+  const moduleKeys = [];
+  const byModule = {};
+  CS.changes.forEach(c => {
+    const key = c.page + "::" + c.module;
+    if (!byModule[key]) { byModule[key] = []; moduleKeys.push(key); }
+    byModule[key].push(c);
+  });
+  const byTarget = {};
+  CS.changes.filter(targeted).forEach(c => { (byTarget[c.target] = byTarget[c.target] || []).push(c); });
+  const keyOf = c => c.page + "::" + c.module;
+
+  let state = { open: true, enabled: {}, demo: {} };
+  try { state = Object.assign(state, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); } catch (e) {}
+  state.enabled = state.enabled || {};
+  state.demo = state.demo || {};
+  // 新版本新增的模块必须继承"全部显示"状态：老访客的 localStorage 里没有新模块的 key，
+  // 若一律默认 false，新增的变更卡在"全部显示"下会凭空消失（严重漏标错觉）。
+  // 缺失的模块开关一律默认可见：新增模块（尤其 type:new——线上现状没有的能力）绝不能默认隐藏，
+  // 否则老访客在"全部显示"下也看不到新变更，造成"漏标"错觉。历史脏状态由 LS_KEY 版本号升级清除。
+  moduleKeys.forEach(k => { if (!(k in state.enabled)) state.enabled[k] = true; });
+  const demoControls = Array.isArray(CS.meta.demoControls) ? CS.meta.demoControls : [];
+  demoControls.forEach(control => {
+    if (!(control.id in state.demo)) {
+      const firstOption = Array.isArray(control.options) ? control.options[0] : null;
+      state.demo[control.id] = control.default ?? (firstOption && firstOption.value);
+    }
+  });
+  const persist = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} };
+  const isOn = c => state.enabled[keyOf(c)];
+
+  function pageName(pid) {
+    const el = document.getElementById(pid);
+    return (el && el.getAttribute("data-diff-page")) || pid;
+  }
+
+  /* ---------- 样式 ---------- */
+  const style = document.createElement("style");
+  style.setAttribute("data-da", "1");
+  style.textContent = `
+  :root { --da-navy:#071d2f; --da-blue:#1479d1; --da-blue-soft:#2c93e8; --da-sky:#72c4ff; --da-panel-w:${PANEL_W}px; }
+  html.da-open { overflow-x:auto !important; }
+  body.da-open { padding-right:0 !important; overflow-x:visible !important; }
+  .da-scroll-spacer { position:absolute; top:0; width:var(--da-panel-w); height:1px; pointer-events:none; visibility:hidden; }
+
+  .da-launch { position:fixed; top:14px; right:14px; z-index:9200; display:inline-flex; align-items:center; gap:8px;
+    background:var(--da-navy); color:#fff; border:0; border-radius:999px; padding:9px 16px; font-size:13px; font-weight:600;
+    cursor:pointer; box-shadow:0 6px 20px rgba(7,29,47,.28); }
+  .da-launch .da-launch-n { color:var(--da-sky); font-weight:700; }
+
+  .da-panel { position:fixed; z-index:9100; top:0; right:0; bottom:0; width:var(--da-panel-w); overflow-y:auto;
+    color:rgba(255,255,255,.78); border-left:1px solid rgba(255,255,255,.08);
+    background:radial-gradient(circle at 100% 0, rgba(44,147,232,.16), transparent 20rem), var(--da-navy);
+    box-shadow:-18px 0 50px rgba(7,29,47,.12); font-size:12px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.2) transparent; }
+  .da-panel-inner { padding:20px 20px 40px; }
+  .da-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+  .da-top h2 { margin:0; color:#fff; font-size:17px; font-weight:740; letter-spacing:-.01em; }
+  .da-top h2 small { margin-left:6px; color:var(--da-sky); font-size:12px; font-weight:700; }
+  .da-top-actions { display:flex; align-items:center; gap:8px; }
+  .da-sdd-doc { color:var(--da-sky); font-size:11px; font-weight:650; text-decoration:none; white-space:nowrap; }
+  .da-sdd-doc:hover { text-decoration:underline; }
+  .da-hide { width:28px; height:28px; flex:0 0 auto; border:1px solid rgba(255,255,255,.14); border-radius:8px;
+    color:#fff; background:rgba(255,255,255,.06); font-size:14px; line-height:1; cursor:pointer; }
+  .da-hide:hover { background:rgba(255,255,255,.12); }
+
+  .da-demo { margin-bottom:12px; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:rgba(255,255,255,.045); }
+  .da-demo-title { margin-bottom:8px; color:#fff; font-size:12px; font-weight:700; }
+  .da-demo-row + .da-demo-row { margin-top:9px; }
+  .da-demo-label { display:block; margin-bottom:5px; color:rgba(255,255,255,.45); font-size:10px; font-weight:650; }
+  .da-segments { display:flex; padding:2px; border:1px solid rgba(255,255,255,.1); border-radius:8px; background:rgba(5,17,28,.4); }
+  .da-segment { min-width:0; flex:1; min-height:28px; border:0; border-radius:6px; color:rgba(255,255,255,.58);
+    background:transparent; font-size:11px; cursor:pointer; }
+  .da-segment:hover { color:#fff; }
+  .da-segment.da-selected { color:#fff; background:rgba(44,147,232,.42); box-shadow:0 1px 5px rgba(0,0,0,.16); }
+
+  .da-mods { margin-bottom:20px; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:rgba(255,255,255,.045); }
+  .da-mods-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .da-mods-head span { color:#fff; font-size:12px; font-weight:700; }
+  .da-bulk { display:flex; gap:10px; }
+  .da-bulk button { border:0; background:none; padding:0; color:rgba(255,255,255,.5); font-size:11px; cursor:pointer; }
+  .da-bulk button:hover { color:var(--da-sky); }
+  .da-mod-group { margin-top:8px; }
+  .da-mod-group-name { margin-bottom:2px; color:rgba(255,255,255,.4); font-size:10px; font-weight:650; letter-spacing:.04em; }
+  .da-mod { display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:7px; cursor:pointer; }
+  .da-mod:hover { background:rgba(255,255,255,.06); }
+  .da-mod input { margin:0; flex:0 0 auto; accent-color:var(--da-blue-soft); cursor:pointer; }
+  .da-mod-name { flex:1; min-width:0; color:rgba(255,255,255,.86); font-size:12px; font-weight:550; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .da-mod-types { flex:0 0 auto; color:rgba(255,255,255,.34); font-size:10px; }
+
+  .da-note-section { margin-bottom:18px; }
+  .da-note-heading { display:flex; align-items:center; gap:9px; margin-bottom:10px; color:#fff; font-size:12px; font-weight:700; }
+  .da-note-heading::after { height:1px; flex:1; background:rgba(255,255,255,.1); content:""; }
+  .da-empty { padding:10px 2px; color:rgba(255,255,255,.35); font-size:11px; }
+
+  .da-note { position:relative; scroll-margin-top:16px; margin-bottom:9px; padding:12px 13px; border:1px solid rgba(255,255,255,.1);
+    border-radius:11px; background:rgba(255,255,255,.045); cursor:pointer;
+    transition:border-color .18s ease, background .18s ease, transform .18s ease; }
+  .da-note::before { content:""; position:absolute; top:23px; left:-15px; width:14px; height:1px;
+    background:rgba(114,196,255,.32); transition:background .16s ease, box-shadow .16s ease; }
+  .da-note::after { content:""; position:absolute; top:20px; left:-19px; width:7px; height:7px; border-radius:50%;
+    border:1px solid rgba(114,196,255,.55); background:var(--da-navy); transition:background .16s ease, box-shadow .16s ease; }
+  .da-note.da-nowire::before, .da-note.da-nowire::after { display:none; }
+  .da-note:hover, .da-note.da-active { border-color:rgba(114,196,255,.65); background:rgba(44,147,232,.13); transform:translateX(-3px); }
+  .da-note.da-active::before { background:#72c4ff; box-shadow:0 0 12px rgba(44,147,232,.62); }
+  .da-note.da-active::after { background:#72c4ff; box-shadow:0 0 0 4px rgba(44,147,232,.18); }
+  .da-note-head { display:flex; align-items:center; gap:9px; margin-bottom:6px; color:#fff; font-size:12px; font-weight:700; }
+  .da-no { display:inline-grid; width:22px; height:22px; flex:0 0 auto; place-items:center; border:1px solid rgba(114,196,255,.3);
+    border-radius:50%; color:#8fd1ff; background:rgba(44,147,232,.09); font-size:9px; font-weight:800; }
+  .da-note.da-active .da-no { color:var(--da-navy); border-color:#bfe6ff; background:#bfe6ff; }
+  .da-note-kind { flex:0 0 auto; margin-left:auto; color:rgba(255,255,255,.35); font-size:10px; font-weight:500; }
+  .da-note p { margin:0; color:rgba(255,255,255,.62); font-size:11px; line-height:1.75; }
+  .da-note-ba { margin-top:8px; padding:7px 9px; border-radius:7px; background:rgba(5,17,28,.52); font-size:10px; line-height:1.7; color:rgba(255,255,255,.55); }
+  .da-note-ba b { color:#bfe6ff; font-weight:650; }
+  .da-examples { margin-top:8px; overflow:hidden; border:1px solid rgba(114,196,255,.15); border-radius:7px; background:rgba(5,17,28,.34); }
+  .da-example { display:grid; grid-template-columns:58px minmax(0,1fr); gap:4px 8px; padding:7px 9px; font-size:10px; line-height:1.55; }
+  .da-example + .da-example { border-top:1px solid rgba(255,255,255,.07); }
+  .da-example-case { grid-row:1 / span 2; color:#bfe6ff; font-weight:650; }
+  .da-example-input { min-width:0; color:#fff; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap:anywhere; }
+  .da-example-result { color:rgba(255,255,255,.5); }
+  .da-example-result::before { content:"→ "; color:rgba(114,196,255,.55); }
+  .da-note-sdd { display:inline-flex; align-items:center; gap:5px; margin-top:9px; color:var(--da-sky); font-size:10.5px;
+    font-weight:650; text-decoration:none; }
+  .da-note-sdd:hover { text-decoration:underline; }
+
+  .da-anchors { position:absolute; left:0; top:0; width:0; height:0; z-index:9000; pointer-events:none; }
+  .da-anchor { position:absolute; display:grid; width:22px; height:22px; place-items:center; border:1px solid rgba(20,121,209,.28);
+    border-radius:50%; color:var(--da-blue); background:#eff8ff; font-size:9px; font-weight:800; cursor:pointer;
+    pointer-events:auto; box-shadow:0 2px 8px rgba(7,29,47,.14); transition:transform .15s ease, background .15s ease; }
+  .da-anchor:hover { transform:scale(1.1); }
+  .da-anchor.da-active { color:#fff; border-color:var(--da-blue-soft); background:var(--da-blue);
+    box-shadow:0 0 0 4px rgba(44,147,232,.16), 0 5px 14px rgba(20,121,209,.24); transform:scale(1.08); }
+
+  .da-outlined { outline:1.5px dashed rgba(20,121,209,.45) !important; outline-offset:2px; }
+  @keyframes da-pulse { 0% { box-shadow:0 0 0 0 rgba(44,147,232,.4); } 100% { box-shadow:0 0 0 14px rgba(44,147,232,0); } }
+  .da-pulsing { animation:da-pulse .9s ease-out 2; }
+
+  .da-wires { position:fixed; inset:0; z-index:8990; width:100vw; height:100vh; pointer-events:none; }
+
+  @media print { .da-panel, .da-anchors, .da-wires, .da-launch, .da-scroll-spacer { display:none !important; }
+    html.da-open { overflow-x:visible !important; } body.da-open { padding-right:0 !important; } }
+  `;
+  document.head.appendChild(style);
+
+  /* ---------- DOM 骨架 ---------- */
+  const launcher = document.createElement("button");
+  launcher.className = "da-launch";
+  launcher.setAttribute("data-da", "1");
+  launcher.innerHTML = '变更导览 <span class="da-launch-n">' + CS.changes.length + "</span>";
+  document.body.appendChild(launcher);
+
+  const panel = document.createElement("aside");
+  panel.className = "da-panel";
+  panel.setAttribute("data-da", "1");
+  document.body.appendChild(panel);
+
+  // 在业务页面真实右边缘后追加与批注栏等宽的滚动缓冲区。
+  // 它只扩展 scrollWidth，不改变、压缩或重排原页面。
+  const scrollSpacer = document.createElement("div");
+  scrollSpacer.className = "da-scroll-spacer";
+  scrollSpacer.setAttribute("data-da", "1");
+  document.body.appendChild(scrollSpacer);
+
+  const anchorLayer = document.createElement("div");
+  anchorLayer.className = "da-anchors";
+  anchorLayer.setAttribute("data-da", "1");
+  document.body.appendChild(anchorLayer);
+
+  const wires = document.createElement("canvas");
+  wires.className = "da-wires";
+  wires.setAttribute("data-da", "1");
+  document.body.appendChild(wires);
+  const wctx = wires.getContext("2d");
+
+  let activeId = null;   // 悬停中的变更
+  let pinnedId = null;   // 点击固定的变更（再次点击取消）
+
+  /* ---------- 面板渲染 ---------- */
+  const pages = [];
+  const modsByPage = {};
+  moduleKeys.forEach(k => {
+    const p = k.split("::")[0];
+    if (!modsByPage[p]) { modsByPage[p] = []; pages.push(p); }
+    modsByPage[p].push(k);
+  });
+
+  function noteCard(c) {
+    let html = '<article class="da-note' + (targeted(c) ? "" : " da-nowire") + '" id="da-note-' + c.id + '" data-chg="' + c.id + '">';
+    html += '<div class="da-note-head"><span class="da-no">' + c._no + '</span><span>' + c.title + '</span>';
+    html += '<span class="da-note-kind">' + (TYPE_LABEL[c.type] || "变更") + " · " + (LEVEL_LABEL[c.level] || "") + "</span></div>";
+    html += "<p>" + c.desc + "</p>";
+    if (c.before && c.after) html += '<div class="da-note-ba"><b>前</b>　' + c.before + '<br><b>后</b>　' + c.after + "</div>";
+    if (Array.isArray(c.examples) && c.examples.length) {
+      html += '<div class="da-examples">';
+      c.examples.forEach(example => {
+        html += '<div class="da-example"><span class="da-example-case">' + example.case + '</span>' +
+          '<code class="da-example-input">' + example.input + '</code>' +
+          '<span class="da-example-result">' + example.result + "</span></div>";
+      });
+      html += "</div>";
+    }
+    if (c.sdd && CS.meta.sddUrl && c.sdd.blockId) {
+      html += '<a class="da-note-sdd" target="_blank" href="' + CS.meta.sddUrl + "#" + c.sdd.blockId + '">SDD · ' + c.sdd.section + " ↗</a>";
+    } else if (c.sdd && c.sdd.section) {
+      html += '<span class="da-note-sdd" style="color:rgba(255,255,255,.4)">SDD · ' + c.sdd.section + "</span>";
+    }
+    html += "</article>";
+    return html;
+  }
+
+  function renderPanel() {
+    let html = '<div class="da-panel-inner">';
+    html += '<div class="da-top"><h2>变更导览<small>' + CS.changes.length + "</small></h2><div class=\"da-top-actions\">";
+    if (CS.meta.sddUrl) html += '<a class="da-sdd-doc" target="_blank" href="' + CS.meta.sddUrl + '">' + (CS.meta.sddTitle || "SDD") + " ↗</a>";
+    html += '<button class="da-hide" title="收起">✕</button></div></div>';
+
+    if (demoControls.length && window.DIFF_HOOKS && typeof window.DIFF_HOOKS.setDemoState === "function") {
+      html += '<section class="da-demo"><div class="da-demo-title">演示状态</div>';
+      demoControls.forEach(control => {
+        html += '<div class="da-demo-row"><span class="da-demo-label">' + control.label + '</span><div class="da-segments">';
+        (control.options || []).forEach(option => {
+          const selected = state.demo[control.id] === option.value;
+          html += '<button class="da-segment' + (selected ? " da-selected" : "") + '" data-demo-control="' + control.id +
+            '" data-demo-value="' + option.value + '">' + option.label + "</button>";
+        });
+        html += "</div></div>";
+      });
+      html += "</section>";
+    }
+
+    html += '<div class="da-mods"><div class="da-mods-head"><span>模块</span><span class="da-bulk"><button data-all="on">全部显示</button><button data-all="off">全部隐藏</button></span></div>';
+    pages.forEach(p => {
+      html += '<div class="da-mod-group"><div class="da-mod-group-name">' + pageName(p) + "</div>";
+      modsByPage[p].forEach(k => {
+        const mod = k.split("::")[1];
+        const types = [...new Set(byModule[k].map(c => TYPE_LABEL[c.type] || "变更"))].join("·");
+        html += '<label class="da-mod" data-key="' + k + '"><input type="checkbox"' + (state.enabled[k] ? " checked" : "") + ">";
+        html += '<span class="da-mod-name">' + mod + '</span><span class="da-mod-types">' + types + "</span></label>";
+      });
+      html += "</div>";
+    });
+    html += "</div>";
+
+    const anyOn = CS.changes.some(isOn);
+    if (!anyOn) {
+      html += '<div class="da-empty">勾选模块后展示对应标注与连线</div>';
+    } else {
+      pages.forEach(p => {
+        const list = CS.changes.filter(c => c.page === p && isOn(c) && targeted(c));
+        if (!list.length) return;
+        html += '<section class="da-note-section"><h3 class="da-note-heading">' + pageName(p) + "</h3>";
+        list.forEach(c => { html += noteCard(c); });
+        html += "</section>";
+      });
+      // 页面不可见的流程/链路变更统一放在最后，不连线
+      const flowList = CS.changes.filter(c => isOn(c) && !targeted(c));
+      if (flowList.length) {
+        html += '<section class="da-note-section"><h3 class="da-note-heading">流程与链路 · 页面不可见</h3>';
+        flowList.forEach(c => { html += noteCard(c); });
+        html += "</section>";
+      }
+    }
+    html += "</div>";
+    panel.innerHTML = html;
+    bindPanel();
+  }
+
+  function bindPanel() {
+    panel.querySelector(".da-hide").addEventListener("click", () => setOpen(false));
+    panel.querySelectorAll("[data-demo-control]").forEach(button => {
+      button.addEventListener("click", () => {
+        const controlId = button.getAttribute("data-demo-control");
+        const value = button.getAttribute("data-demo-value");
+        state.demo[controlId] = value;
+        persist();
+        window.DIFF_HOOKS.setDemoState(controlId, value);
+        renderPanel();
+        setTimeout(scheduleUpdate, 80);
+      });
+    });
+    panel.querySelectorAll(".da-mod input").forEach(cb => {
+      cb.addEventListener("change", () => {
+        const k = cb.closest(".da-mod").getAttribute("data-key");
+        state.enabled[k] = cb.checked;
+        if (pinnedId && !isOn(CS.changes.find(x => x.id === pinnedId))) pinnedId = null;
+        persist();
+        renderPanel();
+        syncAnnotations();
+        applyActive();
+        if (cb.checked) locateModule(k);
+      });
+    });
+    panel.querySelectorAll("[data-all]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const on = btn.getAttribute("data-all") === "on";
+        moduleKeys.forEach(k => { state.enabled[k] = on; });
+        if (!on) pinnedId = null;
+        persist(); renderPanel(); syncAnnotations(); applyActive();
+      });
+    });
+    panel.querySelectorAll(".da-note").forEach(card => {
+      const id = card.getAttribute("data-chg");
+      card.addEventListener("mouseenter", () => setActive(id));
+      card.addEventListener("mouseleave", () => clearActive(id));
+      card.addEventListener("click", e => {
+        if (e.target.closest("a")) return;
+        const c = CS.changes.find(x => x.id === id);
+        if (!c) return;
+        pinnedId = id;
+        applyActive();
+        locateChange(c);
+      });
+    });
+    panel.addEventListener("scroll", scheduleUpdate, { passive: true });
+  }
+
+  /* ---------- 锚点浮层（仅针对有 target 的变更） ---------- */
+  const anchorEls = {};   // change.id -> { el, last:{x,y,shown} }
+  CS.changes.filter(targeted).forEach(c => {
+    const a = document.createElement("button");
+    a.className = "da-anchor";
+    a.setAttribute("data-da", "1");
+    a.textContent = c._no;
+    a.style.display = "none";
+    a.addEventListener("mouseenter", () => setActive(c.id));
+    a.addEventListener("mouseleave", () => clearActive(c.id));
+    a.addEventListener("click", () => {
+      togglePin(c.id);
+      if (pinnedId === c.id) {
+        const card = document.getElementById("da-note-" + c.id);
+        if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+    anchorLayer.appendChild(a);
+    anchorEls[c.id] = { el: a, last: { x: -1, y: -1, shown: false } };
+  });
+
+  function targetVisible(el, rect) {
+    if (!el.getClientRects().length) return false;
+    // 遮挡检测（仅当取样点在视口内才有意义）：取样点若不属于目标元素（如被弹窗蒙层盖住），视为不可见。
+    // 引擎自身的浮层（锚点/连线，[data-da]）不算遮挡。目标滚出视口时不做钳制——锚点随文档自然滚出即可。
+    const inViewport = (x, y) => x >= 0 && x <= innerWidth && y >= 0 && y <= innerHeight;
+    const hit = (x, y) => {
+      const top = document.elementFromPoint(x, y);
+      if (!top) return false;
+      if (top.closest && top.closest("[data-da]")) return true;
+      return el === top || el.contains(top) || top.contains(el);
+    };
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    if (inViewport(cx, cy)) {
+      if (hit(cx, cy)) return true;
+      const sx = rect.left + 10, sy = rect.top + 10;
+      if (inViewport(sx, sy)) return hit(sx, sy);
+      return false;
+    }
+    return true;
+  }
+
+  function syncAnnotations() {
+    Object.keys(byTarget).forEach(t => {
+      const el = document.querySelector(t);
+      if (!el) return;
+      const on = byTarget[t].some(isOn) && state.open;
+      el.classList.toggle("da-outlined", on);
+    });
+    scheduleUpdate();
+  }
+
+  function updateOverlay() {
+    // 弹窗跟随页面滚动（横/纵；滚动/弹窗开合都会触发本函数，随动即可）
+    syncDialogFollow();
+    // 锚点钉在目标左上角，使用文档坐标（以锚点层自身为基准），随页面原生滚动——
+    // 杜绝 fixed 浮层"滚动事件追帧"造成的抖动漂移，也不做视口钳制（滚出即自然滚出）
+    const layerRect = anchorLayer.getBoundingClientRect();
+    Object.keys(byTarget).forEach(t => {
+      const el = document.querySelector(t);
+      const rect = el ? el.getBoundingClientRect() : null;
+      const visible = el && state.open && rect && targetVisible(el, rect);
+      byTarget[t].forEach((c, slot) => {
+        const rec = anchorEls[c.id];
+        const show = visible && isOn(c);
+        if (!show) {
+          if (rec.last.shown) { rec.el.style.display = "none"; rec.last.shown = false; }
+          return;
+        }
+        const x = Math.max(rect.left - 11, 2) + slot * 25 - layerRect.left;
+        const y = rect.top - 11 - layerRect.top;
+        if (!rec.last.shown) { rec.el.style.display = "grid"; rec.last.shown = true; }
+        if (rec.last.x !== x || rec.last.y !== y) {
+          rec.el.style.left = x + "px";
+          rec.el.style.top = y + "px";
+          rec.last.x = x; rec.last.y = y;
+        }
+      });
+    });
+    drawWires();
+  }
+
+  /* ---------- 连线 ---------- */
+  function setWireSize() {
+    const ratio = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.round(innerWidth * ratio));
+    const h = Math.max(1, Math.round(innerHeight * ratio));
+    if (wires.width !== w || wires.height !== h) { wires.width = w; wires.height = h; }
+    wctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+
+  function wirePath(sx, sy, ex, ey, active) {
+    const gap = Math.max(38, ex - sx);
+    wctx.save();
+    wctx.beginPath();
+    wctx.moveTo(sx, sy);
+    wctx.bezierCurveTo(sx + Math.min(120, gap * 0.42), sy, ex - Math.min(82, gap * 0.28), ey, ex, ey);
+    wctx.lineWidth = active ? 2 : 1.3;
+    wctx.strokeStyle = active ? "rgba(44,147,232,.96)" : "rgba(44,147,232,.42)";
+    wctx.shadowColor = active ? "rgba(44,147,232,.7)" : "transparent";
+    wctx.shadowBlur = active ? 9 : 0;
+    wctx.stroke();
+    wctx.shadowBlur = 0;
+    wctx.beginPath(); wctx.arc(sx, sy, active ? 3.2 : 2.1, 0, Math.PI * 2);
+    wctx.fillStyle = active ? "#2c93e8" : "rgba(44,147,232,.5)"; wctx.fill();
+    wctx.beginPath(); wctx.arc(ex - 1, ey, active ? 3 : 2, 0, Math.PI * 2);
+    wctx.fillStyle = active ? "#72c4ff" : "rgba(114,196,255,.45)"; wctx.fill();
+    wctx.restore();
+  }
+
+  function drawWires() {
+    setWireSize();
+    wctx.clearRect(0, 0, innerWidth, innerHeight);
+    if (!state.open) return;
+    // 一个编号一条线：固定态优先于悬停态（滚动中误触发的 hover 不得篡改已选中的连线）
+    const id = pinnedId || activeId;
+    if (!id) return;
+    const c = CS.changes.find(x => x.id === id);
+    if (!c || !isOn(c) || !targeted(c)) return;
+    const rec = anchorEls[id];
+    if (!rec || !rec.last.shown) return;
+    // 起点取锚点实时视口坐标（锚点在文档流中，滚动时坐标必须现算，不能用缓存）
+    const ar = rec.el.getBoundingClientRect();
+    if (ar.bottom < 0 || ar.top > innerHeight) return; // 锚点滚出视口则不画线
+    const card = document.getElementById("da-note-" + id);
+    if (!card) return;
+    const cr = card.querySelector(".da-no").getBoundingClientRect();
+    if (cr.bottom < 40 || cr.top > innerHeight - 8) return;
+    wirePath(ar.right, ar.top + ar.height / 2, innerWidth - PANEL_W + 1, cr.top + cr.height / 2, true);
+  }
+
+  /* ---------- 高亮联动 ---------- */
+  function applyActive() {
+    // 固定态优先：钉住某编号后，悬停其他锚点不改变高亮与连线
+    const id = pinnedId || activeId;
+    CS.changes.forEach(c => {
+      const rec = anchorEls[c.id];
+      if (rec) rec.el.classList.toggle("da-active", c.id === id);
+      const card = document.getElementById("da-note-" + c.id);
+      if (card) card.classList.toggle("da-active", c.id === id);
+    });
+    drawWires();
+  }
+  function setActive(id) { activeId = id; applyActive(); }
+  function clearActive(id) { if (activeId === id) { activeId = null; applyActive(); } }
+  function togglePin(id) {
+    pinnedId = pinnedId === id ? null : id;
+    applyActive();
+  }
+
+  /* ---------- 定位 ---------- */
+  function locateChange(c) {
+    // 先执行页面钩子（可能需要打开弹窗），再轮询等待目标挂载/弹窗动画结束后定位。
+    if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.locate === "function") window.DIFF_HOOKS.locate(c.page);
+    else if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.showPage === "function") window.DIFF_HOOKS.showPage(c.page);
+    if (!targeted(c)) { scheduleUpdate(); return; }
+    let tries = 0;
+    const attempt = () => {
+      const el = document.querySelector(c.target);
+      if (!el || !el.getClientRects().length) {
+        if (++tries < 12) { setTimeout(attempt, 130); }
+        return;
+      }
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.classList.remove("da-pulsing"); void el.offsetWidth; el.classList.add("da-pulsing");
+      setTimeout(() => el.classList.remove("da-pulsing"), 2000);
+      scheduleUpdate();
+      setTimeout(scheduleUpdate, 360); // 弹窗打开动画结束后再校准一次锚点与连线
+    };
+    setTimeout(attempt, 160);
+  }
+  function locateModule(key) { locateChange(byModule[key][0]); }
+
+  /* ---------- 内容视口 ---------- */
+  function syncScrollSpace() {
+    if (!state.open) return;
+    // 业务内容宽度用 document.body.scrollWidth 测：spacer 是 body 下的 absolute 子元素，
+    // 它贡献的是 html 的滚动区而非 body.scrollWidth，所以测量全程不需要隐藏/移动 spacer——
+    // scrollWidth 不会瞬间收缩，浏览器也就不会钳制 scrollLeft。
+    // （旧实现先 display:none 再测量，页面若设了 scroll-behavior:smooth，恢复滚动是异步动画，
+    //   会和用户正在进行的横向拖拽打架，表现为"一拽就弹回"。）
+    const contentWidth = Math.max(document.documentElement.clientWidth, document.body.scrollWidth);
+    const next = contentWidth + "px";
+    scrollSpacer.style.display = "block";
+    if (scrollSpacer.style.left !== next) {
+      const sx = window.scrollX, sy = window.scrollY;
+      scrollSpacer.style.left = next;
+      // 内容变窄仍可能钳制一次，必须用 instant 立即恢复，绝不能吃页面的 scroll-behavior:smooth
+      if (window.scrollX !== sx || window.scrollY !== sy) window.scrollTo({ left: sx, top: sy, behavior: "instant" });
+    }
+  }
+
+  /* ---------- 弹窗跟随页面滚动 ----------
+     Element 弹窗容器是 position:fixed，不随文档滚动。批注栏开着时：
+     - 横滚：被批注栏遮住的弹窗右侧要能拖出来；
+     - 纵滚：高于视口的弹窗底部要能跟着底页一起滚出。
+     做法：批注栏开启时，把弹窗容器（不含蒙层）按 (-scrollX, -scrollY) 平移，
+     弹窗与底层页面同步滑动；收起批注栏时清掉 transform。 */
+  function syncDialogFollow() {
+    const sx = state.open ? window.scrollX : 0;
+    const sy = state.open ? window.scrollY : 0;
+    const tf = (sx || sy) ? ("translate(" + (-sx) + "px," + (-sy) + "px)") : "";
+    document.querySelectorAll(".el-dialog__wrapper, .el-overlay-dialog").forEach(w => {
+      if (!(w.offsetWidth || w.offsetHeight)) return;
+      if (w.style.transform !== tf) w.style.transform = tf;
+    });
+  }
+
+  /* ---------- 开关 ---------- */
+  function setOpen(open) {
+    state.open = open;
+    persist();
+    document.documentElement.classList.toggle("da-open", open);
+    document.body.classList.toggle("da-open", open);
+    panel.style.display = open ? "" : "none";
+    launcher.style.display = open ? "none" : "";
+    if (open) {
+      syncScrollSpace();
+    } else {
+      scrollSpacer.style.display = "none";
+      if (scrollX) window.scrollTo(0, scrollY);
+    }
+    syncAnnotations();
+  }
+  launcher.addEventListener("click", () => setOpen(true));
+
+  /* ---------- 更新调度 ---------- */
+  let frame = 0;
+  function scheduleUpdate() {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(updateOverlay);
+  }
+  window.addEventListener("scroll", scheduleUpdate, { passive: true, capture: true });
+  window.addEventListener("resize", () => {
+    syncScrollSpace();
+    scheduleUpdate();
+  }, { passive: true });
+  document.addEventListener("click", e => {
+    if (e.target.closest("[data-da]")) return;
+    setTimeout(scheduleUpdate, 60);
+    setTimeout(scheduleUpdate, 360);
+  }, true);
+  const mo = new MutationObserver(records => {
+    if (records.every(r => r.target && r.target.closest && r.target.closest("[data-da]"))) return;
+    syncScrollSpace();
+    scheduleUpdate();
+  });
+  mo.observe(document.body, { attributes: true, attributeFilter: ["class", "style"], childList: true, subtree: true });
+
+  /* ---------- 初始 ---------- */
+  if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.setDemoState === "function") {
+    demoControls.forEach(control => window.DIFF_HOOKS.setDemoState(control.id, state.demo[control.id]));
+  }
+  renderPanel();
+  setOpen(state.open);
+  setTimeout(scheduleUpdate, 150);
+})();
+
+  </script>
+</body>
+</html>
