@@ -81,17 +81,17 @@
     required: {
       label: '必填缺失',
       fileName: '支付表商品名称为空.xlsx',
-      frontendError: '支付成功订单表第 2 行：商品名称为必填项',
+      frontendError: '【支付成功订单表】商品名称为必填项',
     },
     duplicate: {
       label: '订单ID重复',
       fileName: '同文件订单ID重复.xlsx',
-      frontendError: '支付成功订单表第 2、3 行：订单ID xiaobaobaba20260804002 重复',
+      frontendError: '【支付成功订单表】订单ID xiaobaobaba20260804002 重复',
     },
     amount: {
       label: '金额/数量错误',
       fileName: '金额数量错误.xlsx',
-      frontendError: '支付成功订单表第 2 行：订单实付金额须大于 0，商品数量必须为 1',
+      frontendError: '【支付成功订单表】订单实付金额须大于 0，商品数量必须为 1',
     },
     multiFrontend: {
       label: '聚合错误',
@@ -101,37 +101,37 @@
           sheet: '工作簿',
           row: '—',
           field: 'sheet / 表头',
-          reason: '缺少“退款订单表”，且支付成功订单表缺少“组合商品 ID”列',
+          reason: '【退款订单表】Sheet 不存在；【支付成功订单表】缺少“组合商品 ID”列',
         },
         {
           sheet: '支付成功订单表',
           row: '第 2 行',
           field: '商品名称',
-          reason: '商品名称为必填项',
+          reason: '【支付成功订单表】商品名称为必填项',
         },
         {
           sheet: '支付成功订单表',
           row: '第 2、3 行',
           field: '订单 ID',
-          reason: '订单 ID xiaobaobaba20260804002 重复',
+          reason: '【支付成功订单表】订单 ID xiaobaobaba20260804002 重复',
         },
         {
           sheet: '支付成功订单表',
           row: '第 4 行',
           field: '订单实付金额',
-          reason: '订单实付金额必须为大于 0 的数字',
+          reason: '【支付成功订单表】订单实付金额必须为大于 0 的数字',
         },
         {
           sheet: '支付成功订单表',
           row: '第 5 行',
           field: '商品数量',
-          reason: '商品数量必须为 1，当前值为 2',
+          reason: '【支付成功订单表】商品数量必须为 1，当前值为 2',
         },
         {
           sheet: '支付成功订单表',
           row: '第 6 行',
           field: '电话号码',
-          reason: '电话号码格式错误，必须为 11 位手机号',
+          reason: '【支付成功订单表】电话号码格式错误，必须为 11 位手机号',
         },
       ],
     },
@@ -139,20 +139,27 @@
       label: '异步商品失败',
       fileName: '组合商品不存在.xlsx',
       asyncResult: 'failed',
-      asyncError: '组合商品 ID COMBO-9981 不存在',
+      asyncError: '【支付成功订单表】组合商品 ID COMBO-9981 不存在',
     },
     asyncRefund: {
       label: '异步退款失败',
       fileName: '累计退款超额.xlsx',
       asyncResult: 'failed',
-      asyncError: '订单 xiaobaobaba20260731101 累计退款超过可退金额',
+      asyncError: '【退款订单表】订单 xiaobaobaba20260731101 累计退款超过可退金额',
     },
   }
 
   const clone = (value) => JSON.parse(JSON.stringify(value))
 
+  const normalizeValidationReason = (reason) => {
+    const text = String(reason || '')
+    if (!text || text.startsWith('【')) return text
+    const sheet = text.includes('退款') ? '退款订单表' : '支付成功订单表'
+    return `【${sheet}】${text}`
+  }
+
   const createFixture = () => ({
-    version: 2,
+    version: 3,
     channels: [
       {
         channelName: '小宝爸爸',
@@ -216,8 +223,8 @@
         success: 0,
         failed: 2,
         errors: [
-          '组合商品 ID COMBO-9981 不存在',
-          '订单 xiaobaobaba20260731101 已成功导入，不可重复导入',
+          '【支付成功订单表】组合商品 ID COMBO-9981 不存在',
+          '【退款订单表】订单 xiaobaobaba20260731101 累计退款超过可退金额',
         ],
       },
       {
@@ -517,10 +524,13 @@
     const state = {
       ...fixture,
       ...value,
-      version: 2,
+      version: 3,
       uploads: value.uploads.map((item) => ({
         total: Number(item.success || 0) + Number(item.failed || 0) || 1,
         ...item,
+        errors: Array.isArray(item.errors)
+          ? item.errors.map(normalizeValidationReason)
+          : item.errors,
       })),
       orders: value.orders.map((item) => {
         // 旧本地状态无逐笔退款记录时，优先回填内置示例数据的同单记录
@@ -675,17 +685,21 @@
     setTimeout(() => URL.revokeObjectURL(link.href), 500)
   }
 
-  function downloadCsv(fileName, content) {
-    const blob = new Blob([`\uFEFF${content}`], {
-      type: 'text/csv;charset=utf-8',
-    })
+  function downloadValidationResult(fileName, errors) {
+    const reasons = errors || []
+    const hasPayment = reasons.some((reason) => reason.includes('【支付成功订单表】'))
+    const hasRefund = reasons.some((reason) => reason.includes('【退款订单表】'))
+    const resource = hasPayment && hasRefund
+      ? 'validation-result-both.xlsx'
+      : hasRefund
+        ? 'validation-result-refund.xlsx'
+        : 'validation-result-payment.xlsx'
     const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
+    link.href = resource
     link.download = fileName
     document.body.appendChild(link)
     link.click()
     link.remove()
-    setTimeout(() => URL.revokeObjectURL(link.href), 500)
   }
 
   window.PrototypeApp = {
@@ -697,7 +711,7 @@
     clone,
     createFixture,
     TEMPLATE_XLSX_B64,
-    downloadCsv,
+    downloadValidationResult,
     downloadXlsxTemplate,
     formatMoney,
     getState: loadState,
