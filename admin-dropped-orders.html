@@ -89,11 +89,11 @@
             <select id="platform" class="select"></select>
           </div>
           <div class="drop-field">
-            <label for="shopId">店铺ID</label>
-            <input id="shopId" class="input" placeholder="请输入店铺id">
+            <label id="shopIdLabel" for="shopId">店铺ID</label>
+            <input id="shopId" class="input" placeholder="请输入店铺ID">
           </div>
           <div class="drop-field">
-            <label for="shopName">店铺名称</label>
+            <label id="shopNameLabel" for="shopName">店铺名称</label>
             <input id="shopName" class="input" placeholder="请输入店铺名称">
           </div>
           <div class="drop-field drop-field--wide">
@@ -140,8 +140,8 @@
           <thead>
             <tr>
               <th>父订单ID</th><th>商品名称</th><th>支付时间</th><th>支付金额</th>
-              <th>订单状态</th><th>退款金额</th><th>平台</th><th>店铺名称</th>
-              <th>店铺id</th><th>掉单原因</th><th>操作</th><th>处理结果</th>
+              <th>订单状态</th><th>退款金额</th><th>平台</th><th id="shopNameHeader">店铺名称</th>
+              <th id="shopIdHeader">店铺ID</th><th>掉单原因</th><th>操作</th><th>处理结果</th>
             </tr>
           </thead>
           <tbody id="dropRows"></tbody>
@@ -215,6 +215,15 @@
         $('#platform').innerHTML = platformOptions[activeTab].map((value) =>
           `<option value="${value}">${value || '请选择'}</option>`
         ).join('')
+        const nonEcommerce = activeTab === 'non-ecommerce'
+        $('#platform').value = nonEcommerce ? '非电商平台的三方订单' : ''
+        $('#platform').disabled = nonEcommerce
+        $('#shopIdLabel').textContent = nonEcommerce ? '渠道ID' : '店铺ID'
+        $('#shopNameLabel').textContent = nonEcommerce ? '渠道名称' : '店铺名称'
+        $('#shopId').placeholder = nonEcommerce ? '请输入渠道ID' : '请输入店铺ID'
+        $('#shopName').placeholder = nonEcommerce ? '请输入渠道名称' : '请输入店铺名称'
+        $('#shopIdHeader').textContent = nonEcommerce ? '渠道ID' : '店铺ID'
+        $('#shopNameHeader').textContent = nonEcommerce ? '渠道名称' : '店铺名称'
       }
 
       function renderRows() {
@@ -248,7 +257,7 @@
 
       function resetFilters(render = true) {
         ['shopId', 'shopName', 'spuId', 'reason', 'result'].forEach((id) => { $('#' + id).value = '' })
-        $('#platform').value = ''
+        $('#platform').value = activeTab === 'non-ecommerce' ? '非电商平台的三方订单' : ''
         if (render) renderRows()
       }
 
@@ -344,12 +353,12 @@
           module: '平台分类',
           target: '#droppedOrderFilters',
           type: 'logic',
-          title: '筛选项与列表格式保持一致',
-          desc: '两个 Tab 复用同一套筛选项、表格列和分页；第三方平台选项按当前 Tab 收敛，避免跨类型串数。',
+          title: '非电商筛选锁平台并改用渠道文案',
+          desc: '非电商 Tab 的第三方平台固定为“非电商平台的三方订单”且不可修改；店铺 ID/名称的展示文案改为渠道 ID/名称，底层字段仍复用 shop。',
           before: '未区分非电商平台数据范围',
-          after: '电商 Tab 排除非电商；非电商 Tab 只查统一非电商平台值',
+          after: '电商 Tab 保持原筛选；非电商 Tab 锁平台并使用渠道文案',
           examples: [
-            { case: '按渠道筛选', input: '非电商平台 Tab；店铺ID=xiaobaobaba', result: '只展示小宝爸爸掉单' },
+            { case: '按渠道筛选', input: '非电商平台 Tab；渠道ID=xiaobaobaba', result: '只展示小宝爸爸掉单' },
             { case: '按结果筛选', input: '非电商平台 Tab；处理结果=待处理', result: '展示两条待处理记录' }
           ],
           sdd: { section: 'FR-9 掉单管理与掉单表', blockId: 'doxcnH57QPqZB21TtTJdV8KvKpc' }
