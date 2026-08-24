@@ -433,7 +433,7 @@
               },
               {
                 caseName: '文件大小',
-                rule: '单个文件最大 10MB（按 10 × 1024 × 1024 字节计算）；选择文件时不拦截，点击「确定」时校验',
+                rule: '单个文件最大 10MB（十进制，按 10 × 1000 × 1000 = 10,000,000 字节计算）；选择文件时不拦截，点击「确定」时校验',
                 req: '必填',
                 msg: '文件大小不能超过 10MB，请重新选择',
               },
@@ -618,7 +618,7 @@
             if (this.submitting) return
             this.$refs.uploadForm.validate((valid) => {
               if (!valid) return
-              if (this.uploadForm.fileSize > 10 * 1024 * 1024) {
+              if (this.uploadForm.fileSize > 10 * 1000 * 1000) {
                 this.fileValidationError = '文件大小不能超过 10MB，请重新选择'
                 this.$message.error(this.fileValidationError)
                 return
@@ -837,12 +837,12 @@
           target: '#uploadFileField',
           type: 'logic',
           title: '增加 10MB 文件大小硬限制',
-          desc: '单个文件最大 10MB（按 10 × 1024 × 1024 字节计算）；选择文件时不拦截，点击“确定”时校验，超限则阻止提交。',
+          desc: '单个文件最大 10MB（十进制，按 10 × 1000 × 1000 = 10,000,000 字节计算）；选择文件时不拦截，点击“确定”时校验，超限则阻止提交。',
           before: '仅提示“建议不超过 10MB”，不阻止提交',
           after: '提示改为“最大 10MB”；超限提示“文件大小不能超过 10MB，请重新选择”',
           examples: [
-            { case: '超限文件', input: '文件大小=10MB+1B，点击确定', result: '拦截提交并提示“文件大小不能超过 10MB，请重新选择”' },
-            { case: '边界文件', input: '文件大小=10MB，点击确定', result: '通过文件大小校验' }
+            { case: '超限文件', input: '文件大小=10,000,001 字节，点击确定', result: '拦截提交并提示“文件大小不能超过 10MB，请重新选择”' },
+            { case: '边界内文件', input: '文件大小=9,999,999 字节，点击确定', result: '通过文件大小校验' }
           ],
           sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
         },
