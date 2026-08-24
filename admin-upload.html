@@ -205,15 +205,15 @@
                 :auto-upload="false"
                 :show-file-list="false"
                 accept=".xlsx"
+                :on-change="handleFileChange"
               >
                 <el-button
                   slot="trigger"
                   type="primary"
                   plain
-                  @click.stop.prevent="selectFixtureFile"
                 >选择文件</el-button>
               </el-upload>
-              <div class="dialog-subtext">仅支持 .xlsx，单个文件不超过 10MB；当前将载入右侧演示场景对应 fixture。</div>
+              <div class="dialog-subtext">仅支持 .xlsx，单个文件最大 10MB；文件大小在点击「确定」时校验。</div>
               <div v-if="uploadForm.fileName" class="dialog-file-name">
                 {{ uploadForm.fileName }}
               </div>
@@ -408,10 +408,12 @@
               channel: '',
               fileType: '导入订单',
               fileName: '',
+              fileSize: 0,
             },
             uploadRules: {
               platform: [{ required: true, message: '请选择平台', trigger: 'change' }],
               channel: [{
+                required: true,
                 validator: (rule, value, callback) => {
                   if (this.uploadForm && this.uploadForm.platform === '非电商平台的三方订单' && !value) {
                     callback(new Error('请选择渠道'))
@@ -423,6 +425,18 @@
               fileName: [{ required: true, message: '请选择 Excel 文件', trigger: 'change' }],
             },
             realtimeValidationRules: [
+              {
+                caseName: '渠道必填',
+                rule: '非电商平台上传时，渠道为必填项；点击「确定」时校验',
+                req: '必填',
+                msg: '请选择渠道',
+              },
+              {
+                caseName: '文件大小',
+                rule: '单个文件最大 10MB（按 10 × 1024 × 1024 字节计算）；选择文件时不拦截，点击「确定」时校验',
+                req: '必填',
+                msg: '文件大小不能超过 10MB，请重新选择',
+              },
               {
                 caseName: 'sheet / 表头缺失',
                 rule: '两个 Sheet 名称精确匹配，表头列齐全（含地址列名）',
@@ -568,6 +582,7 @@
               channel: '',
               fileType: '导入订单',
               fileName: '',
+              fileSize: 0,
             }
             this.$nextTick(() => this.$refs.uploadForm && this.$refs.uploadForm.clearValidate())
           },
@@ -576,9 +591,10 @@
               (PrototypeApp.FILE_TYPES_BY_PLATFORM[platform] || [])[0] || ''
             this.uploadForm.channel = ''
           },
-          selectFixtureFile: function () {
+          handleFileChange: function (file) {
             this.fileValidationError = ''
-            this.uploadForm.fileName = this.activeScenario.fileName
+            this.uploadForm.fileName = file && file.name ? file.name : ''
+            this.uploadForm.fileSize = file && file.size ? file.size : 0
             this.$nextTick(() => this.$refs.uploadForm.validateField('fileName'))
           },
           getFrontendErrorRows: function (scenario) {
@@ -602,6 +618,11 @@
             if (this.submitting) return
             this.$refs.uploadForm.validate((valid) => {
               if (!valid) return
+              if (this.uploadForm.fileSize > 10 * 1024 * 1024) {
+                this.fileValidationError = '文件大小不能超过 10MB，请重新选择'
+                this.$message.error(this.fileValidationError)
+                return
+              }
               const scenario = this.activeScenario
               const frontendErrors = this.getFrontendErrorRows(scenario)
               if (frontendErrors.length) {
@@ -719,6 +740,7 @@
           app.frontendErrorRows = []
           app.frontendErrorDialogVisible = false
           app.uploadForm.fileName = ''
+          app.uploadForm.fileSize = 0
         },
       }
     })()
@@ -798,7 +820,7 @@
           target: '#channelField',
           type: 'new',
           title: '新增渠道下拉（仅非电商平台）',
-          desc: '平台选择“非电商平台的三方订单”时展示渠道下拉，整个文件按所选渠道入库，Excel 模板不再填写渠道名称。枚举与渠道注册 Base 同步，渠道新增/停用需研发同步更新枚举。',
+          desc: '平台选择“非电商平台的三方订单”时展示带红色 * 的必填渠道下拉；未选择渠道点击“确定”时拦截并提示“请选择渠道”。整个文件按所选渠道入库，Excel 模板不再填写渠道名称。枚举与渠道注册 Base 同步，渠道新增/停用需研发同步更新枚举。',
           before: '线上仅电商平台展示“店铺”下拉，无渠道字段；渠道信息只能写在 Excel 里',
           after: '新增渠道下拉，必选；仅登记且已生效的渠道可选',
           examples: [
@@ -806,6 +828,23 @@
             { case: '未选渠道', input: '直接点确定', result: '表单校验提示“请选择渠道”' }
           ],
           sdd: { section: 'FR-1 上传入口', blockId: 'doxcn3Ht0Dk0NxezDMN13zOoHff' }
+        },
+        {
+          id: 'chg-upload-file-size',
+          level: 'field',
+          page: 'uploadDialogPageMeta',
+          module: '上传文件',
+          target: '#uploadFileField',
+          type: 'logic',
+          title: '增加 10MB 文件大小硬限制',
+          desc: '单个文件最大 10MB（按 10 × 1024 × 1024 字节计算）；选择文件时不拦截，点击“确定”时校验，超限则阻止提交。',
+          before: '仅提示“建议不超过 10MB”，不阻止提交',
+          after: '提示改为“最大 10MB”；超限提示“文件大小不能超过 10MB，请重新选择”',
+          examples: [
+            { case: '超限文件', input: '文件大小=10MB+1B，点击确定', result: '拦截提交并提示“文件大小不能超过 10MB，请重新选择”' },
+            { case: '边界文件', input: '文件大小=10MB，点击确定', result: '通过文件大小校验' }
+          ],
+          sdd: { section: 'FR-2 校验', blockId: 'doxcn1740YYJAs7eoqg7NsACuCf' }
         },
         {
           id: 'chg-upload-template-download',
