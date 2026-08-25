@@ -135,7 +135,6 @@
   #edBar .eb:hover{color:var(--ink2);border-color:#c9ced6}
   #edBar .eb.pri{background:var(--accent);border-color:var(--accent);color:#fff}
   #edBar .ed-tip{font-size:13px;color:var(--ink3);background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 10px}
-  .gh-host-note{margin:-2px 0 14px;padding:7px 11px;border:1px solid #d9e2f2;border-radius:7px;background:#f7faff;color:#667085;font-size:12.5px}
   body.editing [data-eid]{outline:1px dashed #ddd0f5;outline-offset:2px;border-radius:3px}
   body.editing [data-eid]:hover{outline-color:var(--accent)}
   body.editing [data-eid]:focus{outline:2px solid var(--accent);background:#faf7ff}
@@ -189,8 +188,8 @@ const nav=document.querySelector('#nav');nav.addEventListener('click',e=>{if(e.t
       （--mode first 或 --mode update），由脚本注入本行 PUT URL 与整数毫秒 exp。
       MinIO 线上残留任一占位符即视为发布失败。
    4. GitHub Pages 发布：必须保留本编辑脚本、决策事项脚本与 localStorage 持久化；
-      仅删除下一行 window.__SAVE__ 注入位。此时自动隐藏「保存发布」，保留「✎ 编辑」与「导出 HTML」，
-      且页面显示 GitHub 本地保存提示。禁止把整个编辑引擎一起删除。 */
+      仅删除下一行 window.__SAVE__ 注入位。此时自动隐藏「保存发布」，保留「✎ 编辑」与「导出 HTML」。
+      禁止把整个编辑引擎一起删除；不要在页面上插入 GitHub 托管提示条。 */
 
 (function(){
 var FILE=location.pathname.split('/').pop()||'pkg';
@@ -234,11 +233,6 @@ if(saveMisconfigured){
  bad.style.cssText='position:fixed;left:0;right:0;top:0;z-index:10001;padding:10px 16px;background:#b42318;color:#fff;font:600 14px/1.4 system-ui;text-align:center';
  bad.textContent='发布配置错误：预签名写回地址或整数到期时间未注入，本页面不得交付。';
  document.body.appendChild(bad);
-}
-if(githubMode){
- var hostNote=document.createElement('div');hostNote.className='gh-host-note';hostNote.setAttribute('data-noedit','');
- hostNote.textContent='本包托管在 GitHub Pages；编辑内容保存在当前浏览器本地。如需固化，请进入「✎ 编辑」后导出 HTML 交回。';
- var header=document.querySelector('.wrap>header');if(header&&header.parentNode)header.parentNode.insertBefore(hostNote,header.nextSibling);
 }
 function canPub(){return !!saveCfg&&!saveMisconfigured&&/^https?:/.test(saveCfg.url)&&expMs>Date.now()}
 var bar=document.createElement('div');bar.id='edBar';document.body.appendChild(bar);

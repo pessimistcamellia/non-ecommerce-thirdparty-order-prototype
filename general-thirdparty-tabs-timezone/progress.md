@@ -25,3 +25,5 @@
 - 线上评审包无「保存发布」按钮，`window.__SAVE__` 未定义；评审包控制台无 error。
 - 线上 proto-note 实测：6 张批注卡、5 个模块勾选、6 个锚点与 connector canvas 正常；模块开关可将可见卡从 6 降到 5，锚点 03 可定位卡片；控制台无 error。
 - 已通过 chrome-devtools 留下「编辑入口与 GitHub 提示」「决策三区与共识贴图」「proto-note 卡片/锚点连线」三张在线截图证据。
+- 已按用户要求彻底移除评审包页 GitHub Pages 提示条（容器、样式、注入脚本）；编辑引擎与导出 HTML 保留。
+- 已同步去掉 template.html 中的提示条生成逻辑，并修订 skill/delivery-gate：规则仍说明 GitHub 兜底不提供原址发布，但不再要求在页面上渲染提示文案。

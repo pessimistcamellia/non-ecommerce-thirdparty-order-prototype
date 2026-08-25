@@ -12,6 +12,7 @@
 - [completed] 6. 更新规划文件并自动打开全部本地产物
 - [completed] 7. 恢复 template 编辑引擎与 GitHub 本地持久化
 - [completed] 8. 原链接重部署并完成线上全量交互验证
+- [in_progress] 9. 移除 GitHub Pages 页面提示条并原址重部署
 
 ## 硬约束
 - 不修改或混入现有 v14 MinIO 大评审包。
