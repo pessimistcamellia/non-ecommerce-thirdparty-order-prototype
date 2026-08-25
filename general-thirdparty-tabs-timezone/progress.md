@@ -10,6 +10,7 @@
 - 已按评审删除「存量处理」整节（评审包 + 需求说明投影）。
 - 已按评审删除「字段与时间规则」整个页签，页签重编号为 ①简介 ②变更清单 ③高保真交互原型 ④决策事项。
 - 原型删除页面内「时间口径演示」条；原 03/04/05/06 四条时区标注合并为一条「查询时间与列表、导出的订单创建时间保持一致」，标注总数 3 条。
+- 2026-08-25 内网首发：原型 key `review-pkg-demos/general-thirdparty-tabs-timezone-prototype-20260825.html`（sha256 与本地一致）；评审包 key `review-pkg-demos/general-thirdparty-tabs-timezone-review-20260825.html`，`--mode first` 通过四门禁（`key_conflict_resolved=false`、无占位符、sha256 一致、public_url 与计划一致），`__SAVE__` 有效期至 2026-09-01。内网版 iframe 指向内网原型，`review-package.minio.html` 含预签名写入 URL，已加入 .gitignore 不入库；7 天内更新走 `--mode update`。
 - 浏览器验证通过：电商/非电商切换、非电商平台锁定、三条非电商演示数据与 created_at 时间列正常；无业务 JavaScript 错误。
 - `deploy-prototype` 实际脚本对 `Leo-ai05/prototypes` 推送被 403 拒绝，已按用户允许的备选路径发布到本仓库 GitHub Pages 独立目录。
 - 已在生产力方舟创建同名子文件夹及两篇 docx，文档 owner 为当前用户朱楚茗；已互链外网评审包、外网原型和对应文档。
