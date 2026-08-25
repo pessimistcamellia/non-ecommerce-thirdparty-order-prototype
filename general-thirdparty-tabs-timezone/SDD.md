@@ -7,7 +7,7 @@
 | 相关文档 | 链接 |
 |---|---|
 | 需求评审包 | [外网评审包](https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/review-package.html) |
-| 需求说明 | [需求说明 · 通用三方双 Tab 与时区统一](__REQUIREMENT_URL__) |
+| 需求说明 | [需求说明 · 通用三方双 Tab 与时区统一](https://guanghe.feishu.cn/docx/Lpn2d8rjCo48VzxcT8lcWgUJn3e) |
 | 高保真原型 | [外网高保真原型](https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/prototype.html) |
 | 需求标签 | 通用三方 · 双 Tab · 非电商平台 · created_at · Asia/Shanghai · UTC ISO · 导出 |
 

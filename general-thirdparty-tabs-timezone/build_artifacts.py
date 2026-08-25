@@ -5,8 +5,8 @@ ENGINE = Path("/Users/zhuchuming/.cursor/skills/proto-note/assets/diff-annotator
 
 PROTOTYPE_URL = "https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/prototype.html"
 PACKAGE_URL = "https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/review-package.html"
-REQ_URL = "__REQUIREMENT_URL__"
-SDD_URL = "__SDD_URL__"
+REQ_URL = "https://guanghe.feishu.cn/docx/Lpn2d8rjCo48VzxcT8lcWgUJn3e"
+SDD_URL = "https://guanghe.feishu.cn/docx/KHQfdClRjo5vnaxWTGjcdVJ3nS4"
 
 
 prototype = r"""<!doctype html>
@@ -125,7 +125,16 @@ window.DIFF_CHANGESET={meta:{sddTitle:'SDD · 通用三方双 Tab 与时区统�
 <script>
 __ENGINE__
 </script>
-</body></html>""".replace("__ENGINE__", ENGINE).replace("__SDD_URL__", SDD_URL)
+</body></html>""".replace("__ENGINE__", ENGINE).replace("__SDD_URL__", SDD_URL).replace(
+    "sdd:{section:'FR-1 平台双 Tab 与查询隔离'}",
+    "sdd:{section:'FR-1 平台双 Tab 与查询隔离',blockId:'doxcn2Uj6WHQONJPYKyDv0Bahje'}",
+).replace(
+    "sdd:{section:'FR-2 时间筛选与展示统一'}",
+    "sdd:{section:'FR-2 时间筛选与展示统一',blockId:'doxcnE78JECH5jhfUex8syoEm7Z'}",
+).replace(
+    "sdd:{section:'FR-3 导出口径'}",
+    "sdd:{section:'FR-3 导出口径',blockId:'doxcnEMxRdr51C56ZZuXkAyMEDe'}",
+)
 
 
 package = r"""<!doctype html>
@@ -287,6 +296,8 @@ sdd = """# SDD · 通用三方双 Tab 与时区统一
 - `created_at` 与 `pay_time` 列名、字段值不混用。
 """.replace("__REQUIREMENT_URL__", REQ_URL)
 
+requirement = requirement.replace("__SDD_URL__", SDD_URL)
+sdd = sdd.replace("__REQUIREMENT_URL__", REQ_URL)
 
 for name, content in {
     "prototype.html": prototype,
