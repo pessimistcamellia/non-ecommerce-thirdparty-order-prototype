@@ -13,3 +13,4 @@
 - 两篇文档已验证 `link_share_entity=tenant_editable`、`comment_entity=anyone_can_edit`、`security_entity=anyone_can_edit`、`share_entity=anyone`。
 - 当前 OpenAPI schema 不支持修改 `manage_collaborator_entity`，直接请求返回 `1063001 Invalid parameter`；该字段保持 `collaborator_can_view`。
 - 已取得 SDD FR-1/FR-2/FR-3 block ID 并回填原型变更卡深链。
+- GitHub Pages 最终流水线成功；评审包与原型两个 HTTPS 链接均已外网回读，且评审包 iframe 指向同仓独立原型 URL。
