@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>运营后台 · 通用三方</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-width:1540px;background:#f5f6f7;color:#606266;font:13px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+button,input,select{font:inherit}.shell{display:flex;width:1520px;min-height:100vh;background:#fff}.sidebar{width:168px;flex:none;background:#071a2c;color:#c8d2e1}.brand{height:54px;display:flex;align-items:center;padding:0 12px;color:#fff;font-size:15px;font-weight:650;border-bottom:1px solid rgba(255,255,255,.08)}.side-group{padding:13px 14px 7px;color:#718197;font-size:12px}.side-item{height:40px;display:flex;align-items:center;padding:0 18px;color:#c8d2e1;text-decoration:none}.side-item.active{color:#fff;background:#1687e9}.main{width:1352px;padding:0 18px 40px;overflow:hidden}.breadcrumb{height:50px;display:flex;align-items:center;color:#8f959e;border-bottom:1px solid #edf0f3;font-size:12px}
+.tabs{display:flex;gap:28px;height:52px;align-items:flex-end;border-bottom:1px solid #e8ebef}.tab{position:relative;height:52px;padding:0 2px 13px;border:0;background:transparent;color:#606266;cursor:pointer;font-weight:500}.tab:hover,.tab.active{color:#1687e9}.tab.active{font-weight:600}.tab.active:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:#1687e9}
+.filters{padding:18px 10px 4px}.filter-row{display:flex;align-items:flex-end;gap:16px;margin-bottom:14px}.field{display:flex;flex-direction:column;gap:6px}.field label{color:#606266}.field.required label:before{content:"*";color:#f56c6c;margin-right:3px}.input,.select{height:32px;width:126px;padding:0 10px;border:1px solid #dcdfe6;border-radius:3px;background:#fff;color:#606266}.input.wide{width:238px}.input.time{width:310px}.select:disabled{color:#606266;background:#f5f7fa;cursor:not-allowed}.actions{display:flex;align-items:center;gap:10px}.btn{height:32px;padding:0 18px;border:1px solid #dcdfe6;border-radius:3px;background:#fff;color:#606266;cursor:pointer}.btn.primary{border-color:#409eff;background:#409eff;color:#fff}.btn:hover{opacity:.88}.export-note{color:#909399;font-size:12px}.request-preview{margin:0 10px 14px;padding:9px 12px;border:1px solid #d9ecff;border-radius:4px;background:#f4faff;color:#606266}.request-preview b{color:#3370ff}.request-preview code{color:#4e5969;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.table-wrap{width:100%;overflow-x:auto;border-top:1px solid #f0f1f3}.table{width:1840px;border-collapse:collapse;table-layout:fixed}.table th,.table td{padding:11px 9px;border-bottom:1px solid #ebeef5;text-align:left;vertical-align:middle;font-size:13px}.table th{height:48px;color:#7a8495;background:#fff;font-weight:600}.table tbody tr:hover td{background:#f7faff}.mono{font-variant-numeric:tabular-nums;word-break:break-all}.money{font-variant-numeric:tabular-nums}.link{border:0;background:transparent;color:#1687e9;cursor:pointer}.pagination{display:flex;justify-content:flex-end;gap:8px;align-items:center;padding-top:16px;color:#909399}.page{min-width:30px;height:28px;border:1px solid #1687e9;border-radius:3px;background:#1687e9;color:#fff}.toast{position:fixed;left:50%;top:22px;z-index:10000;transform:translateX(-50%);padding:10px 18px;border-radius:4px;background:#303133;color:#fff;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:.94}.empty{display:none;padding:70px;text-align:center;color:#a2a9b3}
+</style>
+</head>
+<body>
+<main id="generalThirdpartyPage" class="shell" data-diff-page="运营后台 · 通用三方">
+  <aside class="sidebar">
+    <div class="brand">洋葱学园APP运营平台</div>
+    <div class="side-group">微信生态</div><a class="side-item">微信公众号</a>
+    <div class="side-group">App配置</div><a class="side-item">版本管理</a>
+    <div class="side-group">学生运营</div><a class="side-item">用户管理</a>
+    <div class="side-group">渠道投放</div><a class="side-item">检测链接</a>
+    <div class="side-group">三方订单管理</div>
+    <a class="side-item">微店</a><a class="side-item">抖店</a><a class="side-item active">通用三方</a><a class="side-item">掉单管理</a><a class="side-item">三方数据管理</a>
+  </aside>
+  <section class="main">
+    <div class="breadcrumb">渠道投放&nbsp; / &nbsp;通用三方</div>
+    <div id="platformTabs" class="tabs" role="tablist">
+      <button class="tab active" data-tab="ecommerce" role="tab" aria-selected="true">电商平台</button>
+      <button class="tab" data-tab="non-ecommerce" role="tab" aria-selected="false">非电商平台</button>
+    </div>
+    <section id="filterArea" class="filters">
+      <div class="filter-row">
+        <div class="field"><label>第三方平台</label><select id="platform" class="select"></select></div>
+        <div class="field"><label id="channelIdLabel">店铺ID</label><input id="channelId" class="input" placeholder="请输入店铺id"></div>
+        <div class="field"><label id="channelNameLabel">店铺名称</label><input id="channelName" class="input" placeholder="请输入店铺名称"></div>
+        <div id="createdAtFilter" class="field required"><label>订单创建时间</label><input id="createdRange" class="input time" value="2026-08-01 00:00:00 至 2026-08-25 23:59:59" readonly></div>
+      </div>
+      <div class="filter-row">
+        <div class="field"><label>父订单ID</label><input id="parentId" class="input" placeholder="请输入父订单id"></div>
+        <div class="field"><label>洋葱商品名称</label><input id="goodsName" class="input" placeholder="请输入洋葱商品名称"></div>
+        <div class="field"><label>洋葱商品ID</label><input id="goodsId" class="input" placeholder="请输入商品ID"></div>
+        <div class="field"><label>洋葱用户ID</label><input id="userId" class="input" placeholder="请输入userid"></div>
+        <div class="field"><label>退款状态</label><select id="refundStatus" class="select"><option value="">请选择退款状态</option><option>未退款</option><option>退款成功</option></select></div>
+      </div>
+      <div class="filter-row">
+        <div class="actions"><button id="query" class="btn primary">查询</button><button id="clear" class="btn">清空</button><button id="export" class="btn primary">导出</button></div>
+        <span class="export-note">导出需指定单个第三方平台，且时间范围不得超过 90 天</span>
+      </div>
+    </section>
+    <div id="utcPreview" class="request-preview"><b>时间口径演示：</b>页面按 Asia/Shanghai 选择与展示；请求转换为 UTC ISO：
+      <code>2026-07-31T16:00:00.000Z ~ 2026-08-25T15:59:59.000Z</code>；后端过滤 <code>thirdpart_general_order.created_at</code>。
+    </div>
+    <div id="orderTable" class="table-wrap">
+      <table class="table">
+        <colgroup><col style="width:160px"><col style="width:170px"><col style="width:150px"><col style="width:90px"><col style="width:90px"><col style="width:140px"><col style="width:110px"><col style="width:160px"><col style="width:155px"><col style="width:90px"><col style="width:100px"><col style="width:90px"><col style="width:90px"><col style="width:80px"></colgroup>
+        <thead><tr><th>yc商品名称</th><th>yc订单ID</th><th>yc商品ID</th><th>yc订单实付金额</th><th>yc退款金额</th><th>yc用户ID</th><th>yc订单状态</th><th>父订单ID</th><th id="createdAtColumn">订单创建时间</th><th>支付金额</th><th>订单状态</th><th>退款金额</th><th id="channelColumn">店铺名称</th><th>操作</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div id="empty" class="empty">暂无符合条件的订单</div>
+    </div>
+    <div class="pagination"><span id="total">共 0 条</span><button class="page">1</button><span>20 条/页</span></div>
+  </section>
+</main>
+<div id="toast" class="toast"></div>
+<script>
+(() => {
+const ecommerce=[
+ {platform:'天猫',channelId:'499187844',channel:'洋葱学园旗舰店',goods:'小学数学同步课（12个月）',ycOrder:'6a8d127aab9c6ed83993a568',goodsId:'96cb56d2-8188-4cdf-863f-cb87939d246f',ycPaid:498,ycRefund:0,user:'668f51e82f81630001ce1c04',ycStatus:'支付成功',parent:'33163662390442438751',createdAt:'2026-08-25 11:56:40',paid:498,status:'支付成功',refund:0},
+ {platform:'小红书',channelId:'redbook-onion',channel:'洋葱学园课程店',goods:'7天全科同步课',ycOrder:'6a8d0fd68f333997f07474e3',goodsId:'4bfc6d78-f959-46b6-a6c5-7fddb9ca3b7d',ycPaid:19.9,ycRefund:0,user:'6690f21c3826f10001f32db9',ycStatus:'支付成功',parent:'P803181507530099321',createdAt:'2026-08-25 11:45:20',paid:19.9,status:'支付成功',refund:0},
+ {platform:'抖店',channelId:'douyin-yc',channel:'洋葱学园官方店',goods:'初中物理实验成长包',ycOrder:'6a8cfa206583dcd971268af2',goodsId:'2d331ea1-940c-4ebf-a390-721db0148850',ycPaid:299,ycRefund:299,user:'668d12f8da2b970001ce3cc9',ycStatus:'退款成功',parent:'DOU2026082400928',createdAt:'2026-08-24 20:08:11',paid:299,status:'退款成功',refund:299}
+];
+const nonEcommerce=[
+ {platform:'非电商平台的三方订单',channelId:'xiaobaobaba',channel:'小宝爸爸',goods:'洋葱数学思维年度组合课',ycOrder:'6a910712f4ea593f142cc001',goodsId:'COMBO-2026-MATH',ycPaid:899,ycRefund:0,user:'6691aa7017a25e0001c055a8',ycStatus:'支付成功',parent:'xiaobaobaba20260818001',createdAt:'2026-08-18 15:26:42',paid:899,status:'支付成功',refund:0},
+ {platform:'非电商平台的三方订单',channelId:'davdian',channel:'大V店',goods:'洋葱英语全年成长课',ycOrder:'6a910742178ab591cdf10122',goodsId:'COMBO-2026-ENGLISH',ycPaid:699,ycRefund:0,user:'6691aba336ad770001b93a12',ycStatus:'支付成功',parent:'davdian20260818002',createdAt:'2026-08-18 15:42:08',paid:699,status:'支付成功',refund:0},
+ {platform:'非电商平台的三方订单',channelId:'wanwuxinxuan',channel:'万物心选',goods:'洋葱物理实验成长包',ycOrder:'6a91078dcf01b993dd520163',goodsId:'COMBO-2026-PHYSICS',ycPaid:498,ycRefund:198,user:'6691ac1dd4f6830001c18b0a',ycStatus:'支付成功',parent:'wanwuxinxuan20260818003',createdAt:'2026-08-18 16:06:31',paid:498,status:'支付成功',refund:198}
+];
+let tab='ecommerce';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');setTimeout(()=>$('#toast').classList.remove('show'),2200)}
+function setup(){
+ const non=tab==='non-ecommerce';
+ $('#platform').innerHTML=(non?['非电商平台的三方订单']:['','天猫','小红书','抖店']).map(v=>`<option value="${v}">${v||'请选择'}</option>`).join('');
+ $('#platform').value=non?'非电商平台的三方订单':'';$('#platform').disabled=non;
+ $('#channelIdLabel').textContent=non?'渠道ID':'店铺ID';$('#channelNameLabel').textContent=non?'渠道名称':'店铺名称';$('#channelColumn').textContent=non?'渠道名称':'店铺名称';
+ $('#channelId').placeholder=non?'请输入渠道ID':'请输入店铺id';$('#channelName').placeholder=non?'请输入渠道名称':'请输入店铺名称';
+}
+function data(){
+ let rows=tab==='ecommerce'?ecommerce:nonEcommerce;
+ const f={p:$('#platform').value,id:$('#channelId').value.trim(),name:$('#channelName').value.trim(),parent:$('#parentId').value.trim(),goods:$('#goodsName').value.trim(),goodsId:$('#goodsId').value.trim(),user:$('#userId').value.trim(),refund:$('#refundStatus').value};
+ return rows.filter(r=>(!f.p||r.platform===f.p)&&(!f.id||r.channelId.includes(f.id))&&(!f.name||r.channel.includes(f.name))&&(!f.parent||r.parent.includes(f.parent))&&(!f.goods||r.goods.includes(f.goods))&&(!f.goodsId||r.goodsId.includes(f.goodsId))&&(!f.user||r.user.includes(f.user))&&(!f.refund||(f.refund==='退款成功'?r.refund>0:r.refund===0)));
+}
+function render(){
+ const rows=data();$('#rows').innerHTML=rows.map(r=>`<tr><td>${r.goods}</td><td class="mono">${r.ycOrder}</td><td class="mono">${r.goodsId}</td><td class="money">${r.ycPaid}</td><td class="money">${r.ycRefund}</td><td class="mono">${r.user}</td><td>${r.ycStatus}</td><td class="mono">${r.parent}</td><td class="mono">${r.createdAt}</td><td class="money">${r.paid}</td><td>${r.status}</td><td class="money">${r.refund}</td><td>${r.channel}</td><td><button class="link">激活课程</button></td></tr>`).join('');
+ $('#empty').style.display=rows.length?'none':'block';$('#orderTable table').style.display=rows.length?'table':'none';$('#total').textContent=`共 ${rows.length} 条`;
+}
+function switchTab(next){tab=next;$$('.tab').forEach(b=>{const on=b.dataset.tab===next;b.classList.toggle('active',on);b.setAttribute('aria-selected',on)});clear(false);setup();render()}
+function clear(doRender=true){['channelId','channelName','parentId','goodsName','goodsId','userId'].forEach(id=>$('#'+id).value='');$('#refundStatus').value='';if(doRender)render()}
+$$('.tab').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));$('#query').addEventListener('click',()=>{render();toast('已按订单创建时间（东八区）查询')});$('#clear').addEventListener('click',()=>{clear();setup()});$('#export').addEventListener('click',()=>{if(!$('#platform').value)return toast('请选择单个第三方平台');toast('导出任务已创建：created_at 与全部时间按东八区输出')});
+setup();render();
+window.DIFF_HOOKS={locate(pageId){if(pageId==='generalThirdpartyPage'){}},setDemoState(controlId,value){if(controlId==='platformView')switchTab(value)}};
+})();
+</script>
+<script>
+window.DIFF_CHANGESET={meta:{sddTitle:'SDD · 通用三方双 Tab 与时区统一',sddUrl:'__SDD_URL__',sddType:'feishu',demoControls:[{id:'platformView',label:'平台数据分区',default:'ecommerce',options:[{value:'ecommerce',label:'电商平台'},{value:'non-ecommerce',label:'非电商平台'}]}]},changes:[
+{id:'chg-general-tabs',level:'module',page:'generalThirdpartyPage',module:'平台分类',target:'#platformTabs',type:'new',title:'新增电商与非电商双 Tab',desc:'通用三方按平台类型隔离，默认进入电商平台，交互与掉单管理一致。',before:'线上通用三方无平台类型 Tab',after:'默认电商平台 Tab + 非电商平台 Tab',examples:[{case:'默认进入',input:'打开通用三方',result:'展示电商平台订单'},{case:'切换',input:'点击非电商平台',result:'只展示非电商平台订单'}],sdd:{section:'FR-1 平台双 Tab 与查询隔离'}},
+{id:'chg-general-scope',level:'module',page:'generalThirdpartyPage',module:'非电商数据分区',target:'#filterArea',type:'logic',title:'非电商数据独立查询与展示',desc:'非电商 Tab 锁定第三方平台并将店铺文案改为渠道 ID/名称；两类数据不可串查。',before:'线上只有电商三方数据列表',after:'非电商数据进入独立 Tab，平台值不可修改',examples:[{case:'渠道筛选',input:'非电商平台；渠道ID=xiaobaobaba',result:'只展示小宝爸爸订单'},{case:'切回电商',input:'点击电商平台',result:'恢复电商平台筛选和数据'}],sdd:{section:'FR-1 平台双 Tab 与查询隔离'}},
+{id:'chg-created-at-display',level:'field',page:'generalThirdpartyPage',module:'时间展示',target:'#createdAtColumn',type:'enum',title:'列表展示 created_at 东八区时间',desc:'列表主时间列为订单创建时间，与筛选字段一致，按 Asia/Shanghai 格式化。',before:'列表把 pay_time 按 UTC 墙钟原样展示，时间少 8 小时',after:'列名为订单创建时间，展示 created_at 的东八区时间',examples:[{case:'创建时间',input:'created_at=2026-08-18T07:26:42.000Z',result:'展示 2026-08-18 15:26:42'}],sdd:{section:'FR-2 时间筛选与展示统一'}},
+{id:'chg-created-at-filter',level:'field',page:'generalThirdpartyPage',module:'时间展示',target:'#createdAtFilter',type:'logic',title:'筛选按东八区选择 created_at',desc:'运营选择的时间范围按 Asia/Shanghai 解释，后端按该范围过滤 created_at。',before:'筛选时区与列表展示口径不一致',after:'筛选、过滤、列表展示使用同一 created_at 字段和东八区口径',sdd:{section:'FR-2 时间筛选与展示统一'}},
+{id:'chg-request-utc',level:'module',page:'generalThirdpartyPage',module:'请求转换',target:'#utcPreview',type:'flow',title:'请求边界转换为 UTC ISO',desc:'前端把东八区起止时间转换为 UTC ISO 后发给后端，不改变运营输入与展示时区。',before:'时间转换链路未统一，UTC 墙钟值被直接展示',after:'页面东八区 ↔ 请求 UTC ISO ↔ created_at 过滤',examples:[{case:'开始时间',input:'2026-08-01 00:00:00 Asia/Shanghai',result:'2026-07-31T16:00:00.000Z'},{case:'结束时间',input:'2026-08-25 23:59:59 Asia/Shanghai',result:'2026-08-25T15:59:59.000Z'}],sdd:{section:'FR-2 时间筛选与展示统一'}},
+{id:'chg-export-timezone',level:'module',page:'generalThirdpartyPage',module:'导出',target:'#export',type:'logic',title:'导出时间统一为东八区',desc:'导出按 created_at 过滤，订单创建时间按 Asia/Shanghai 输出；保留现有单平台与 90 天限制。',before:'导出 pay_time 按 UTC 墙钟原样展示',after:'导出筛选与时间列均使用 created_at 东八区口径',sdd:{section:'FR-3 导出口径'}}
+]};
+</script>
+<script>
+/* ============ 原型变更标注引擎 proto-note（零依赖，可整段复用） ============
+   布局参考：固定右侧深色批注栏 + 页面编号锚点 + canvas 连线（axure 批注风格）
+   规则：默认不显示任何标注；按模块勾选显示；只联动 SDD（不展示 PRD）
+   约定：
+   - change.target 为 null 的“页面不可见”变更（纯流程/链路），不画锚点不连线，
+     统一排在批注栏最后的「流程与链路」分节；数据数组中也应放在最后。
+   - target 在弹窗内的变更，点击批注卡片时由 DIFF_HOOKS.locate(pageId) 自动打开弹窗，
+     引擎轮询等待目标挂载后再滚动定位并连线。
+   - 浮层 z-index 必须压过 Element 弹窗（2000+），否则弹窗打开时锚点与连线被蒙层盖住。 */
+(function () {
+  const CS = window.DIFF_CHANGESET;
+  if (!CS || !CS.changes || !CS.changes.length) return;
+
+  const TYPE_LABEL = { new: "新增", modify: "修改", copy: "文案", enum: "口径", logic: "逻辑", flow: "流程", remove: "删除" };
+  const LEVEL_LABEL = { page: "页面级", module: "模块级", field: "字段级" };
+  const LS_KEY = "diff-annotator-v4:" + location.pathname;
+  const PANEL_W = 360;
+
+  CS.changes.forEach((c, i) => { c._no = String(i + 1).padStart(2, "0"); });
+  const targeted = c => !!c.target;
+
+  /* ---------- 状态 ---------- */
+  const moduleKeys = [];
+  const byModule = {};
+  CS.changes.forEach(c => {
+    const key = c.page + "::" + c.module;
+    if (!byModule[key]) { byModule[key] = []; moduleKeys.push(key); }
+    byModule[key].push(c);
+  });
+  const byTarget = {};
+  CS.changes.filter(targeted).forEach(c => { (byTarget[c.target] = byTarget[c.target] || []).push(c); });
+  const keyOf = c => c.page + "::" + c.module;
+
+  let state = { open: true, enabled: {}, demo: {} };
+  try { state = Object.assign(state, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); } catch (e) {}
+  state.enabled = state.enabled || {};
+  state.demo = state.demo || {};
+  // 新版本新增的模块必须继承"全部显示"状态：老访客的 localStorage 里没有新模块的 key，
+  // 若一律默认 false，新增的变更卡在"全部显示"下会凭空消失（严重漏标错觉）。
+  // 缺失的模块开关一律默认可见：新增模块（尤其 type:new——线上现状没有的能力）绝不能默认隐藏，
+  // 否则老访客在"全部显示"下也看不到新变更，造成"漏标"错觉。历史脏状态由 LS_KEY 版本号升级清除。
+  moduleKeys.forEach(k => { if (!(k in state.enabled)) state.enabled[k] = true; });
+  const demoControls = Array.isArray(CS.meta.demoControls) ? CS.meta.demoControls : [];
+  demoControls.forEach(control => {
+    if (!(control.id in state.demo)) {
+      const firstOption = Array.isArray(control.options) ? control.options[0] : null;
+      state.demo[control.id] = control.default ?? (firstOption && firstOption.value);
+    }
+  });
+  const persist = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} };
+  const isOn = c => state.enabled[keyOf(c)];
+
+  function pageName(pid) {
+    const el = document.getElementById(pid);
+    return (el && el.getAttribute("data-diff-page")) || pid;
+  }
+
+  /* ---------- 样式 ---------- */
+  const style = document.createElement("style");
+  style.setAttribute("data-da", "1");
+  style.textContent = `
+  :root { --da-navy:#071d2f; --da-blue:#1479d1; --da-blue-soft:#2c93e8; --da-sky:#72c4ff; --da-panel-w:${PANEL_W}px; }
+  html.da-open { overflow-x:auto !important; }
+  body.da-open { padding-right:0 !important; overflow-x:visible !important; }
+  .da-scroll-spacer { position:absolute; top:0; width:var(--da-panel-w); height:1px; pointer-events:none; visibility:hidden; }
+
+  .da-launch { position:fixed; top:14px; right:14px; z-index:9200; display:inline-flex; align-items:center; gap:8px;
+    background:var(--da-navy); color:#fff; border:0; border-radius:999px; padding:9px 16px; font-size:13px; font-weight:600;
+    cursor:pointer; box-shadow:0 6px 20px rgba(7,29,47,.28); }
+  .da-launch .da-launch-n { color:var(--da-sky); font-weight:700; }
+
+  .da-panel { position:fixed; z-index:9100; top:0; right:0; bottom:0; width:var(--da-panel-w); overflow-y:auto;
+    color:rgba(255,255,255,.78); border-left:1px solid rgba(255,255,255,.08);
+    background:radial-gradient(circle at 100% 0, rgba(44,147,232,.16), transparent 20rem), var(--da-navy);
+    box-shadow:-18px 0 50px rgba(7,29,47,.12); font-size:12px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.2) transparent; }
+  .da-panel-inner { padding:20px 20px 40px; }
+  .da-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+  .da-top h2 { margin:0; color:#fff; font-size:17px; font-weight:740; letter-spacing:-.01em; }
+  .da-top h2 small { margin-left:6px; color:var(--da-sky); font-size:12px; font-weight:700; }
+  .da-top-actions { display:flex; align-items:center; gap:8px; }
+  .da-sdd-doc { color:var(--da-sky); font-size:11px; font-weight:650; text-decoration:none; white-space:nowrap; }
+  .da-sdd-doc:hover { text-decoration:underline; }
+  .da-hide { width:28px; height:28px; flex:0 0 auto; border:1px solid rgba(255,255,255,.14); border-radius:8px;
+    color:#fff; background:rgba(255,255,255,.06); font-size:14px; line-height:1; cursor:pointer; }
+  .da-hide:hover { background:rgba(255,255,255,.12); }
+
+  .da-demo { margin-bottom:12px; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:rgba(255,255,255,.045); }
+  .da-demo-title { margin-bottom:8px; color:#fff; font-size:12px; font-weight:700; }
+  .da-demo-row + .da-demo-row { margin-top:9px; }
+  .da-demo-label { display:block; margin-bottom:5px; color:rgba(255,255,255,.45); font-size:10px; font-weight:650; }
+  .da-segments { display:flex; padding:2px; border:1px solid rgba(255,255,255,.1); border-radius:8px; background:rgba(5,17,28,.4); }
+  .da-segment { min-width:0; flex:1; min-height:28px; border:0; border-radius:6px; color:rgba(255,255,255,.58);
+    background:transparent; font-size:11px; cursor:pointer; }
+  .da-segment:hover { color:#fff; }
+  .da-segment.da-selected { color:#fff; background:rgba(44,147,232,.42); box-shadow:0 1px 5px rgba(0,0,0,.16); }
+
+  .da-mods { margin-bottom:20px; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:rgba(255,255,255,.045); }
+  .da-mods-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .da-mods-head span { color:#fff; font-size:12px; font-weight:700; }
+  .da-bulk { display:flex; gap:10px; }
+  .da-bulk button { border:0; background:none; padding:0; color:rgba(255,255,255,.5); font-size:11px; cursor:pointer; }
+  .da-bulk button:hover { color:var(--da-sky); }
+  .da-mod-group { margin-top:8px; }
+  .da-mod-group-name { margin-bottom:2px; color:rgba(255,255,255,.4); font-size:10px; font-weight:650; letter-spacing:.04em; }
+  .da-mod { display:flex; align-items:center; gap:8px; padding:5px 6px; border-radius:7px; cursor:pointer; }
+  .da-mod:hover { background:rgba(255,255,255,.06); }
+  .da-mod input { margin:0; flex:0 0 auto; accent-color:var(--da-blue-soft); cursor:pointer; }
+  .da-mod-name { flex:1; min-width:0; color:rgba(255,255,255,.86); font-size:12px; font-weight:550; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .da-mod-types { flex:0 0 auto; color:rgba(255,255,255,.34); font-size:10px; }
+
+  .da-note-section { margin-bottom:18px; }
+  .da-note-heading { display:flex; align-items:center; gap:9px; margin-bottom:10px; color:#fff; font-size:12px; font-weight:700; }
+  .da-note-heading::after { height:1px; flex:1; background:rgba(255,255,255,.1); content:""; }
+  .da-empty { padding:10px 2px; color:rgba(255,255,255,.35); font-size:11px; }
+
+  .da-note { position:relative; scroll-margin-top:16px; margin-bottom:9px; padding:12px 13px; border:1px solid rgba(255,255,255,.1);
+    border-radius:11px; background:rgba(255,255,255,.045); cursor:pointer;
+    transition:border-color .18s ease, background .18s ease, transform .18s ease; }
+  .da-note::before { content:""; position:absolute; top:23px; left:-15px; width:14px; height:1px;
+    background:rgba(114,196,255,.32); transition:background .16s ease, box-shadow .16s ease; }
+  .da-note::after { content:""; position:absolute; top:20px; left:-19px; width:7px; height:7px; border-radius:50%;
+    border:1px solid rgba(114,196,255,.55); background:var(--da-navy); transition:background .16s ease, box-shadow .16s ease; }
+  .da-note.da-nowire::before, .da-note.da-nowire::after { display:none; }
+  .da-note:hover, .da-note.da-active { border-color:rgba(114,196,255,.65); background:rgba(44,147,232,.13); transform:translateX(-3px); }
+  .da-note.da-active::before { background:#72c4ff; box-shadow:0 0 12px rgba(44,147,232,.62); }
+  .da-note.da-active::after { background:#72c4ff; box-shadow:0 0 0 4px rgba(44,147,232,.18); }
+  .da-note-head { display:flex; align-items:center; gap:9px; margin-bottom:6px; color:#fff; font-size:12px; font-weight:700; }
+  .da-no { display:inline-grid; width:22px; height:22px; flex:0 0 auto; place-items:center; border:1px solid rgba(114,196,255,.3);
+    border-radius:50%; color:#8fd1ff; background:rgba(44,147,232,.09); font-size:9px; font-weight:800; }
+  .da-note.da-active .da-no { color:var(--da-navy); border-color:#bfe6ff; background:#bfe6ff; }
+  .da-note-kind { flex:0 0 auto; margin-left:auto; color:rgba(255,255,255,.35); font-size:10px; font-weight:500; }
+  .da-note p { margin:0; color:rgba(255,255,255,.62); font-size:11px; line-height:1.75; }
+  .da-note-ba { margin-top:8px; padding:7px 9px; border-radius:7px; background:rgba(5,17,28,.52); font-size:10px; line-height:1.7; color:rgba(255,255,255,.55); }
+  .da-note-ba b { color:#bfe6ff; font-weight:650; }
+  .da-examples { margin-top:8px; overflow:hidden; border:1px solid rgba(114,196,255,.15); border-radius:7px; background:rgba(5,17,28,.34); }
+  .da-example { display:grid; grid-template-columns:58px minmax(0,1fr); gap:4px 8px; padding:7px 9px; font-size:10px; line-height:1.55; }
+  .da-example + .da-example { border-top:1px solid rgba(255,255,255,.07); }
+  .da-example-case { grid-row:1 / span 2; color:#bfe6ff; font-weight:650; }
+  .da-example-input { min-width:0; color:#fff; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap:anywhere; }
+  .da-example-result { color:rgba(255,255,255,.5); }
+  .da-example-result::before { content:"→ "; color:rgba(114,196,255,.55); }
+  .da-note-sdd { display:inline-flex; align-items:center; gap:5px; margin-top:9px; color:var(--da-sky); font-size:10.5px;
+    font-weight:650; text-decoration:none; }
+  .da-note-sdd:hover { text-decoration:underline; }
+
+  .da-anchors { position:absolute; left:0; top:0; width:0; height:0; z-index:9000; pointer-events:none; }
+  .da-anchor { position:absolute; display:grid; width:22px; height:22px; place-items:center; border:1px solid rgba(20,121,209,.28);
+    border-radius:50%; color:var(--da-blue); background:#eff8ff; font-size:9px; font-weight:800; cursor:pointer;
+    pointer-events:auto; box-shadow:0 2px 8px rgba(7,29,47,.14); transition:transform .15s ease, background .15s ease; }
+  .da-anchor:hover { transform:scale(1.1); }
+  .da-anchor.da-active { color:#fff; border-color:var(--da-blue-soft); background:var(--da-blue);
+    box-shadow:0 0 0 4px rgba(44,147,232,.16), 0 5px 14px rgba(20,121,209,.24); transform:scale(1.08); }
+
+  .da-outlined { outline:1.5px dashed rgba(20,121,209,.45) !important; outline-offset:2px; }
+  @keyframes da-pulse { 0% { box-shadow:0 0 0 0 rgba(44,147,232,.4); } 100% { box-shadow:0 0 0 14px rgba(44,147,232,0); } }
+  .da-pulsing { animation:da-pulse .9s ease-out 2; }
+
+  .da-wires { position:fixed; inset:0; z-index:8990; width:100vw; height:100vh; pointer-events:none; }
+
+  @media print { .da-panel, .da-anchors, .da-wires, .da-launch, .da-scroll-spacer { display:none !important; }
+    html.da-open { overflow-x:visible !important; } body.da-open { padding-right:0 !important; } }
+  `;
+  document.head.appendChild(style);
+
+  /* ---------- DOM 骨架 ---------- */
+  const launcher = document.createElement("button");
+  launcher.className = "da-launch";
+  launcher.setAttribute("data-da", "1");
+  launcher.innerHTML = '变更导览 <span class="da-launch-n">' + CS.changes.length + "</span>";
+  document.body.appendChild(launcher);
+
+  const panel = document.createElement("aside");
+  panel.className = "da-panel";
+  panel.setAttribute("data-da", "1");
+  document.body.appendChild(panel);
+
+  // 在业务页面真实右边缘后追加与批注栏等宽的滚动缓冲区。
+  // 它只扩展 scrollWidth，不改变、压缩或重排原页面。
+  const scrollSpacer = document.createElement("div");
+  scrollSpacer.className = "da-scroll-spacer";
+  scrollSpacer.setAttribute("data-da", "1");
+  document.body.appendChild(scrollSpacer);
+
+  const anchorLayer = document.createElement("div");
+  anchorLayer.className = "da-anchors";
+  anchorLayer.setAttribute("data-da", "1");
+  document.body.appendChild(anchorLayer);
+
+  const wires = document.createElement("canvas");
+  wires.className = "da-wires";
+  wires.setAttribute("data-da", "1");
+  document.body.appendChild(wires);
+  const wctx = wires.getContext("2d");
+
+  let activeId = null;   // 悬停中的变更
+  let pinnedId = null;   // 点击固定的变更（再次点击取消）
+
+  /* ---------- 面板渲染 ---------- */
+  const pages = [];
+  const modsByPage = {};
+  moduleKeys.forEach(k => {
+    const p = k.split("::")[0];
+    if (!modsByPage[p]) { modsByPage[p] = []; pages.push(p); }
+    modsByPage[p].push(k);
+  });
+
+  function noteCard(c) {
+    let html = '<article class="da-note' + (targeted(c) ? "" : " da-nowire") + '" id="da-note-' + c.id + '" data-chg="' + c.id + '">';
+    html += '<div class="da-note-head"><span class="da-no">' + c._no + '</span><span>' + c.title + '</span>';
+    html += '<span class="da-note-kind">' + (TYPE_LABEL[c.type] || "变更") + " · " + (LEVEL_LABEL[c.level] || "") + "</span></div>";
+    html += "<p>" + c.desc + "</p>";
+    if (c.before && c.after) html += '<div class="da-note-ba"><b>前</b>　' + c.before + '<br><b>后</b>　' + c.after + "</div>";
+    if (Array.isArray(c.examples) && c.examples.length) {
+      html += '<div class="da-examples">';
+      c.examples.forEach(example => {
+        html += '<div class="da-example"><span class="da-example-case">' + example.case + '</span>' +
+          '<code class="da-example-input">' + example.input + '</code>' +
+          '<span class="da-example-result">' + example.result + "</span></div>";
+      });
+      html += "</div>";
+    }
+    if (c.sdd && CS.meta.sddUrl && c.sdd.blockId) {
+      html += '<a class="da-note-sdd" target="_blank" href="' + CS.meta.sddUrl + "#" + c.sdd.blockId + '">SDD · ' + c.sdd.section + " ↗</a>";
+    } else if (c.sdd && c.sdd.section) {
+      html += '<span class="da-note-sdd" style="color:rgba(255,255,255,.4)">SDD · ' + c.sdd.section + "</span>";
+    }
+    html += "</article>";
+    return html;
+  }
+
+  function renderPanel() {
+    let html = '<div class="da-panel-inner">';
+    html += '<div class="da-top"><h2>变更导览<small>' + CS.changes.length + "</small></h2><div class=\"da-top-actions\">";
+    if (CS.meta.sddUrl) html += '<a class="da-sdd-doc" target="_blank" href="' + CS.meta.sddUrl + '">' + (CS.meta.sddTitle || "SDD") + " ↗</a>";
+    html += '<button class="da-hide" title="收起">✕</button></div></div>';
+
+    if (demoControls.length && window.DIFF_HOOKS && typeof window.DIFF_HOOKS.setDemoState === "function") {
+      html += '<section class="da-demo"><div class="da-demo-title">演示状态</div>';
+      demoControls.forEach(control => {
+        html += '<div class="da-demo-row"><span class="da-demo-label">' + control.label + '</span><div class="da-segments">';
+        (control.options || []).forEach(option => {
+          const selected = state.demo[control.id] === option.value;
+          html += '<button class="da-segment' + (selected ? " da-selected" : "") + '" data-demo-control="' + control.id +
+            '" data-demo-value="' + option.value + '">' + option.label + "</button>";
+        });
+        html += "</div></div>";
+      });
+      html += "</section>";
+    }
+
+    html += '<div class="da-mods"><div class="da-mods-head"><span>模块</span><span class="da-bulk"><button data-all="on">全部显示</button><button data-all="off">全部隐藏</button></span></div>';
+    pages.forEach(p => {
+      html += '<div class="da-mod-group"><div class="da-mod-group-name">' + pageName(p) + "</div>";
+      modsByPage[p].forEach(k => {
+        const mod = k.split("::")[1];
+        const types = [...new Set(byModule[k].map(c => TYPE_LABEL[c.type] || "变更"))].join("·");
+        html += '<label class="da-mod" data-key="' + k + '"><input type="checkbox"' + (state.enabled[k] ? " checked" : "") + ">";
+        html += '<span class="da-mod-name">' + mod + '</span><span class="da-mod-types">' + types + "</span></label>";
+      });
+      html += "</div>";
+    });
+    html += "</div>";
+
+    const anyOn = CS.changes.some(isOn);
+    if (!anyOn) {
+      html += '<div class="da-empty">勾选模块后展示对应标注与连线</div>';
+    } else {
+      pages.forEach(p => {
+        const list = CS.changes.filter(c => c.page === p && isOn(c) && targeted(c));
+        if (!list.length) return;
+        html += '<section class="da-note-section"><h3 class="da-note-heading">' + pageName(p) + "</h3>";
+        list.forEach(c => { html += noteCard(c); });
+        html += "</section>";
+      });
+      // 页面不可见的流程/链路变更统一放在最后，不连线
+      const flowList = CS.changes.filter(c => isOn(c) && !targeted(c));
+      if (flowList.length) {
+        html += '<section class="da-note-section"><h3 class="da-note-heading">流程与链路 · 页面不可见</h3>';
+        flowList.forEach(c => { html += noteCard(c); });
+        html += "</section>";
+      }
+    }
+    html += "</div>";
+    panel.innerHTML = html;
+    bindPanel();
+  }
+
+  function bindPanel() {
+    panel.querySelector(".da-hide").addEventListener("click", () => setOpen(false));
+    panel.querySelectorAll("[data-demo-control]").forEach(button => {
+      button.addEventListener("click", () => {
+        const controlId = button.getAttribute("data-demo-control");
+        const value = button.getAttribute("data-demo-value");
+        state.demo[controlId] = value;
+        persist();
+        window.DIFF_HOOKS.setDemoState(controlId, value);
+        renderPanel();
+        setTimeout(scheduleUpdate, 80);
+      });
+    });
+    panel.querySelectorAll(".da-mod input").forEach(cb => {
+      cb.addEventListener("change", () => {
+        const k = cb.closest(".da-mod").getAttribute("data-key");
+        state.enabled[k] = cb.checked;
+        if (pinnedId && !isOn(CS.changes.find(x => x.id === pinnedId))) pinnedId = null;
+        persist();
+        renderPanel();
+        syncAnnotations();
+        applyActive();
+        if (cb.checked) locateModule(k);
+      });
+    });
+    panel.querySelectorAll("[data-all]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const on = btn.getAttribute("data-all") === "on";
+        moduleKeys.forEach(k => { state.enabled[k] = on; });
+        if (!on) pinnedId = null;
+        persist(); renderPanel(); syncAnnotations(); applyActive();
+      });
+    });
+    panel.querySelectorAll(".da-note").forEach(card => {
+      const id = card.getAttribute("data-chg");
+      card.addEventListener("mouseenter", () => setActive(id));
+      card.addEventListener("mouseleave", () => clearActive(id));
+      card.addEventListener("click", e => {
+        if (e.target.closest("a")) return;
+        const c = CS.changes.find(x => x.id === id);
+        if (!c) return;
+        pinnedId = id;
+        applyActive();
+        locateChange(c);
+      });
+    });
+    panel.addEventListener("scroll", scheduleUpdate, { passive: true });
+  }
+
+  /* ---------- 锚点浮层（仅针对有 target 的变更） ---------- */
+  const anchorEls = {};   // change.id -> { el, last:{x,y,shown} }
+  CS.changes.filter(targeted).forEach(c => {
+    const a = document.createElement("button");
+    a.className = "da-anchor";
+    a.setAttribute("data-da", "1");
+    a.textContent = c._no;
+    a.style.display = "none";
+    a.addEventListener("mouseenter", () => setActive(c.id));
+    a.addEventListener("mouseleave", () => clearActive(c.id));
+    a.addEventListener("click", () => {
+      togglePin(c.id);
+      if (pinnedId === c.id) {
+        const card = document.getElementById("da-note-" + c.id);
+        if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+    anchorLayer.appendChild(a);
+    anchorEls[c.id] = { el: a, last: { x: -1, y: -1, shown: false } };
+  });
+
+  function targetVisible(el, rect) {
+    if (!el.getClientRects().length) return false;
+    // 遮挡检测（仅当取样点在视口内才有意义）：取样点若不属于目标元素（如被弹窗蒙层盖住），视为不可见。
+    // 引擎自身的浮层（锚点/连线，[data-da]）不算遮挡。目标滚出视口时不做钳制——锚点随文档自然滚出即可。
+    const inViewport = (x, y) => x >= 0 && x <= innerWidth && y >= 0 && y <= innerHeight;
+    const hit = (x, y) => {
+      const top = document.elementFromPoint(x, y);
+      if (!top) return false;
+      if (top.closest && top.closest("[data-da]")) return true;
+      return el === top || el.contains(top) || top.contains(el);
+    };
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    if (inViewport(cx, cy)) {
+      if (hit(cx, cy)) return true;
+      const sx = rect.left + 10, sy = rect.top + 10;
+      if (inViewport(sx, sy)) return hit(sx, sy);
+      return false;
+    }
+    return true;
+  }
+
+  function syncAnnotations() {
+    Object.keys(byTarget).forEach(t => {
+      const el = document.querySelector(t);
+      if (!el) return;
+      const on = byTarget[t].some(isOn) && state.open;
+      el.classList.toggle("da-outlined", on);
+    });
+    scheduleUpdate();
+  }
+
+  function updateOverlay() {
+    // 弹窗跟随页面滚动（横/纵；滚动/弹窗开合都会触发本函数，随动即可）
+    syncDialogFollow();
+    // 锚点钉在目标左上角，使用文档坐标（以锚点层自身为基准），随页面原生滚动——
+    // 杜绝 fixed 浮层"滚动事件追帧"造成的抖动漂移，也不做视口钳制（滚出即自然滚出）
+    const layerRect = anchorLayer.getBoundingClientRect();
+    Object.keys(byTarget).forEach(t => {
+      const el = document.querySelector(t);
+      const rect = el ? el.getBoundingClientRect() : null;
+      const visible = el && state.open && rect && targetVisible(el, rect);
+      byTarget[t].forEach((c, slot) => {
+        const rec = anchorEls[c.id];
+        const show = visible && isOn(c);
+        if (!show) {
+          if (rec.last.shown) { rec.el.style.display = "none"; rec.last.shown = false; }
+          return;
+        }
+        const x = Math.max(rect.left - 11, 2) + slot * 25 - layerRect.left;
+        const y = rect.top - 11 - layerRect.top;
+        if (!rec.last.shown) { rec.el.style.display = "grid"; rec.last.shown = true; }
+        if (rec.last.x !== x || rec.last.y !== y) {
+          rec.el.style.left = x + "px";
+          rec.el.style.top = y + "px";
+          rec.last.x = x; rec.last.y = y;
+        }
+      });
+    });
+    drawWires();
+  }
+
+  /* ---------- 连线 ---------- */
+  function setWireSize() {
+    const ratio = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.round(innerWidth * ratio));
+    const h = Math.max(1, Math.round(innerHeight * ratio));
+    if (wires.width !== w || wires.height !== h) { wires.width = w; wires.height = h; }
+    wctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+
+  function wirePath(sx, sy, ex, ey, active) {
+    const gap = Math.max(38, ex - sx);
+    wctx.save();
+    wctx.beginPath();
+    wctx.moveTo(sx, sy);
+    wctx.bezierCurveTo(sx + Math.min(120, gap * 0.42), sy, ex - Math.min(82, gap * 0.28), ey, ex, ey);
+    wctx.lineWidth = active ? 2 : 1.3;
+    wctx.strokeStyle = active ? "rgba(44,147,232,.96)" : "rgba(44,147,232,.42)";
+    wctx.shadowColor = active ? "rgba(44,147,232,.7)" : "transparent";
+    wctx.shadowBlur = active ? 9 : 0;
+    wctx.stroke();
+    wctx.shadowBlur = 0;
+    wctx.beginPath(); wctx.arc(sx, sy, active ? 3.2 : 2.1, 0, Math.PI * 2);
+    wctx.fillStyle = active ? "#2c93e8" : "rgba(44,147,232,.5)"; wctx.fill();
+    wctx.beginPath(); wctx.arc(ex - 1, ey, active ? 3 : 2, 0, Math.PI * 2);
+    wctx.fillStyle = active ? "#72c4ff" : "rgba(114,196,255,.45)"; wctx.fill();
+    wctx.restore();
+  }
+
+  function drawWires() {
+    setWireSize();
+    wctx.clearRect(0, 0, innerWidth, innerHeight);
+    if (!state.open) return;
+    // 一个编号一条线：固定态优先于悬停态（滚动中误触发的 hover 不得篡改已选中的连线）
+    const id = pinnedId || activeId;
+    if (!id) return;
+    const c = CS.changes.find(x => x.id === id);
+    if (!c || !isOn(c) || !targeted(c)) return;
+    const rec = anchorEls[id];
+    if (!rec || !rec.last.shown) return;
+    // 起点取锚点实时视口坐标（锚点在文档流中，滚动时坐标必须现算，不能用缓存）
+    const ar = rec.el.getBoundingClientRect();
+    if (ar.bottom < 0 || ar.top > innerHeight) return; // 锚点滚出视口则不画线
+    const card = document.getElementById("da-note-" + id);
+    if (!card) return;
+    const cr = card.querySelector(".da-no").getBoundingClientRect();
+    if (cr.bottom < 40 || cr.top > innerHeight - 8) return;
+    wirePath(ar.right, ar.top + ar.height / 2, innerWidth - PANEL_W + 1, cr.top + cr.height / 2, true);
+  }
+
+  /* ---------- 高亮联动 ---------- */
+  function applyActive() {
+    // 固定态优先：钉住某编号后，悬停其他锚点不改变高亮与连线
+    const id = pinnedId || activeId;
+    CS.changes.forEach(c => {
+      const rec = anchorEls[c.id];
+      if (rec) rec.el.classList.toggle("da-active", c.id === id);
+      const card = document.getElementById("da-note-" + c.id);
+      if (card) card.classList.toggle("da-active", c.id === id);
+    });
+    drawWires();
+  }
+  function setActive(id) { activeId = id; applyActive(); }
+  function clearActive(id) { if (activeId === id) { activeId = null; applyActive(); } }
+  function togglePin(id) {
+    pinnedId = pinnedId === id ? null : id;
+    applyActive();
+  }
+
+  /* ---------- 定位 ---------- */
+  function locateChange(c) {
+    // 先执行页面钩子（可能需要打开弹窗），再轮询等待目标挂载/弹窗动画结束后定位。
+    if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.locate === "function") window.DIFF_HOOKS.locate(c.page);
+    else if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.showPage === "function") window.DIFF_HOOKS.showPage(c.page);
+    if (!targeted(c)) { scheduleUpdate(); return; }
+    let tries = 0;
+    const attempt = () => {
+      const el = document.querySelector(c.target);
+      if (!el || !el.getClientRects().length) {
+        if (++tries < 12) { setTimeout(attempt, 130); }
+        return;
+      }
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.classList.remove("da-pulsing"); void el.offsetWidth; el.classList.add("da-pulsing");
+      setTimeout(() => el.classList.remove("da-pulsing"), 2000);
+      scheduleUpdate();
+      setTimeout(scheduleUpdate, 360); // 弹窗打开动画结束后再校准一次锚点与连线
+    };
+    setTimeout(attempt, 160);
+  }
+  function locateModule(key) { locateChange(byModule[key][0]); }
+
+  /* ---------- 内容视口 ---------- */
+  function syncScrollSpace() {
+    if (!state.open) return;
+    // 业务内容宽度用 document.body.scrollWidth 测：spacer 是 body 下的 absolute 子元素，
+    // 它贡献的是 html 的滚动区而非 body.scrollWidth，所以测量全程不需要隐藏/移动 spacer——
+    // scrollWidth 不会瞬间收缩，浏览器也就不会钳制 scrollLeft。
+    // （旧实现先 display:none 再测量，页面若设了 scroll-behavior:smooth，恢复滚动是异步动画，
+    //   会和用户正在进行的横向拖拽打架，表现为"一拽就弹回"。）
+    const contentWidth = Math.max(document.documentElement.clientWidth, document.body.scrollWidth);
+    const next = contentWidth + "px";
+    scrollSpacer.style.display = "block";
+    if (scrollSpacer.style.left !== next) {
+      const sx = window.scrollX, sy = window.scrollY;
+      scrollSpacer.style.left = next;
+      // 内容变窄仍可能钳制一次，必须用 instant 立即恢复，绝不能吃页面的 scroll-behavior:smooth
+      if (window.scrollX !== sx || window.scrollY !== sy) window.scrollTo({ left: sx, top: sy, behavior: "instant" });
+    }
+  }
+
+  /* ---------- 弹窗跟随页面滚动 ----------
+     Element 弹窗容器是 position:fixed，不随文档滚动。批注栏开着时：
+     - 横滚：被批注栏遮住的弹窗右侧要能拖出来；
+     - 纵滚：高于视口的弹窗底部要能跟着底页一起滚出。
+     做法：批注栏开启时，把弹窗容器（不含蒙层）按 (-scrollX, -scrollY) 平移，
+     弹窗与底层页面同步滑动；收起批注栏时清掉 transform。 */
+  function syncDialogFollow() {
+    const sx = state.open ? window.scrollX : 0;
+    const sy = state.open ? window.scrollY : 0;
+    const tf = (sx || sy) ? ("translate(" + (-sx) + "px," + (-sy) + "px)") : "";
+    document.querySelectorAll(".el-dialog__wrapper, .el-overlay-dialog").forEach(w => {
+      if (!(w.offsetWidth || w.offsetHeight)) return;
+      if (w.style.transform !== tf) w.style.transform = tf;
+    });
+  }
+
+  /* ---------- 开关 ---------- */
+  function setOpen(open) {
+    state.open = open;
+    persist();
+    document.documentElement.classList.toggle("da-open", open);
+    document.body.classList.toggle("da-open", open);
+    panel.style.display = open ? "" : "none";
+    launcher.style.display = open ? "none" : "";
+    if (open) {
+      syncScrollSpace();
+    } else {
+      scrollSpacer.style.display = "none";
+      if (scrollX) window.scrollTo(0, scrollY);
+    }
+    syncAnnotations();
+  }
+  launcher.addEventListener("click", () => setOpen(true));
+
+  /* ---------- 更新调度 ---------- */
+  let frame = 0;
+  function scheduleUpdate() {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(updateOverlay);
+  }
+  window.addEventListener("scroll", scheduleUpdate, { passive: true, capture: true });
+  window.addEventListener("resize", () => {
+    syncScrollSpace();
+    scheduleUpdate();
+  }, { passive: true });
+  document.addEventListener("click", e => {
+    if (e.target.closest("[data-da]")) return;
+    setTimeout(scheduleUpdate, 60);
+    setTimeout(scheduleUpdate, 360);
+  }, true);
+  const mo = new MutationObserver(records => {
+    if (records.every(r => r.target && r.target.closest && r.target.closest("[data-da]"))) return;
+    syncScrollSpace();
+    scheduleUpdate();
+  });
+  mo.observe(document.body, { attributes: true, attributeFilter: ["class", "style"], childList: true, subtree: true });
+
+  /* ---------- 初始 ---------- */
+  if (window.DIFF_HOOKS && typeof window.DIFF_HOOKS.setDemoState === "function") {
+    demoControls.forEach(control => window.DIFF_HOOKS.setDemoState(control.id, state.demo[control.id]));
+  }
+  renderPanel();
+  setOpen(state.open);
+  setTimeout(scheduleUpdate, 150);
+})();
+
+</script>
+</body></html>
