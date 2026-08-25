@@ -1,7 +1,9 @@
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parent
 ENGINE = Path("/Users/zhuchuming/.cursor/skills/proto-note/assets/diff-annotator.js").read_text()
+REVIEW_TEMPLATE = Path("/Users/zhuchuming/.cursor/skills/review-package/template.html").read_text()
 
 PROTOTYPE_URL = "https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/prototype.html"
 PACKAGE_URL = "https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/review-package.html"
@@ -171,6 +173,58 @@ const KEY='general-thirdparty-tabs-timezone-decisions-v1';let store;try{store=JS
 function draw(){['todo','consensus','review'].forEach(k=>{document.getElementById(k+'List').innerHTML=store[k].map((x,i)=>`<div class="dm-row"><span class="pill">${new Date(x.at).toLocaleString('zh-CN')}</span><span style="flex:1">${x.text}</span><button data-del="${k}:${i}">删除</button></div>`).join('')})}function save(){localStorage.setItem(KEY,JSON.stringify(store));draw()}document.addEventListener('click',e=>{if(e.target.dataset.add){const k=e.target.dataset.add,inp=document.getElementById(k+'Input');if(inp.value.trim()){store[k].push({text:inp.value.trim(),at:Date.now()});inp.value='';save()}}if(e.target.dataset.del){const [k,i]=e.target.dataset.del.split(':');store[k].splice(+i,1);save()}});draw();
 document.getElementById('exportHtml').addEventListener('click',()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['<!doctype html>\n'+document.documentElement.outerHTML],{type:'text/html'}));a.download='general-thirdparty-tabs-timezone-review.html';a.click()});
 </script></body></html>""".replace("__PROTOTYPE_URL__", PROTOTYPE_URL).replace("__REQUIREMENT_URL__", REQ_URL).replace("__SDD_URL__", SDD_URL)
+
+# GitHub Pages 版直接复用 review-package/template.html 的完整编辑与决策引擎。
+# 只删除 MinIO 的 window.__SAVE__ 注入位；编辑、localStorage/IndexedDB 与导出均保留。
+template_style = re.search(r"<style>(.*?)</style>", REVIEW_TEMPLATE, re.S).group(1)
+editor_script = re.search(
+    r'(<script>\s*/\* ===== 在线编辑：.*?</script>)',
+    REVIEW_TEMPLATE,
+    re.S,
+).group(1)
+editor_script = re.sub(
+    r'^window\.__SAVE__=\{url:"__SAVE_URL__",exp:0/\*__SAVE_EXP__\*/\};\s*$',
+    '',
+    editor_script,
+    flags=re.M,
+)
+decision_script = re.search(
+    r'(<script>\s*/\* ===== 决策事项 \+ 分页评审意见.*?</script>)',
+    REVIEW_TEMPLATE,
+    re.S,
+).group(1)
+package = package.replace("</style></head>", template_style + "\n</style></head>")
+package = package.replace(
+    '<body><button class="export-btn" id="exportHtml">导出 HTML</button>',
+    '<body>',
+)
+package = re.sub(
+    r'<section id="decisions" class="tab">.*?</section>',
+    '<section id="decisions" class="tab"><div id="dmRoot"></div></section>',
+    package,
+    flags=re.S,
+)
+runtime = r"""
+</div>
+<div id="rvPanel">
+  <div class="rv-t">本页评审意见 · <span id="rvTab"></span></div>
+  <div id="rvList"></div>
+  <div class="dm-add"><input id="rvT" placeholder="记录评审意见"><input id="rvB" class="dm-by" placeholder="撰写人"><select id="rvC" class="dm-catmini"><option value="">分类（可不选）</option><option value="pend">待办事项</option><option value="dec">决策共识</option></select><button id="rvAdd">添加</button></div>
+</div>
+<div id="rvFab">评审意见<span id="rvN"></span></div>
+<script>
+const nav=document.querySelector('#nav');nav.addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;document.querySelectorAll('#nav button').forEach(b=>b.classList.remove('on'));document.querySelectorAll('.tab').forEach(s=>s.classList.remove('on'));e.target.classList.add('on');document.getElementById(e.target.dataset.tab).classList.add('on')});
+</script>
+""" + editor_script + decision_script + "\n</body></html>"
+package = re.sub(
+    r'</div><script>\s*const nav=document\.querySelector.*?</script></body></html>',
+    lambda _: runtime,
+    package,
+    flags=re.S,
+)
+assert "✎ 编辑" in package and "dmRoot" in package
+assert "window.__SAVE__={" not in package
+assert "__SAVE_URL__" not in package and "__SAVE_EXP__" not in package
 
 
 requirement = """# 需求说明 · 通用三方双 Tab 与时区统一

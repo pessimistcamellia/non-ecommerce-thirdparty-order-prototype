@@ -25,3 +25,8 @@
 ## 原型标注
 - 至少包含：双 Tab、非电商数据分区、`created_at` 东八区展示、请求 UTC ISO。
 - 标注引擎必须完整复制最新 `assets/diff-annotator.js`，并包含 `syncDialogFollow`。
+
+## 编辑入口缺失根因
+- 首版 `build_artifacts.py` 没有复用 `review-package/template.html` 的在线编辑与决策事项引擎，而是手写了一个只支持新增/删除和页面快照下载的简化脚本。
+- 简化脚本缺少 `#edBar`、`stamp()`、正文 `contenteditable`、`ed2-*` 草稿、完整 `dm-*` 决策状态、IndexedDB 贴图与分页评审意见，因此 GitHub Pages 页面不存在「✎ 编辑」入口。
+- 问题不是 GitHub Pages 技术限制，而是生成分支整体跳过了模板引擎。GitHub 静态托管只限制原址 PUT，不限制浏览器内编辑、localStorage / IndexedDB 与 HTML 导出。

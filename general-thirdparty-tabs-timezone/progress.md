@@ -14,3 +14,8 @@
 - 当前 OpenAPI schema 不支持修改 `manage_collaborator_entity`，直接请求返回 `1063001 Invalid parameter`；该字段保持 `collaborator_can_view`。
 - 已取得 SDD FR-1/FR-2/FR-3 block ID 并回填原型变更卡深链。
 - GitHub Pages 最终流水线成功；评审包与原型两个 HTTPS 链接均已外网回读，且评审包 iframe 指向同仓独立原型 URL。
+- 已定位编辑入口缺失根因：生成脚本手写简化决策/导出逻辑，完全未注入 `template.html` 的编辑与决策引擎。
+- 已改为从 `template.html` 直接提取完整 CSS、正文编辑脚本和决策事项脚本；GitHub 版仅移除 `window.__SAVE__` 注入位。
+- 已恢复正文就地编辑、三区决策增删改勾选、时间/撰写人、悬浮评审意见、共识贴图、localStorage / IndexedDB 与 HTML 导出。
+- 本地浏览器实测通过：正文修改、三区新增/编辑/勾选、临时项删除、刷新持久化、导出 HTML 含正文修改；GitHub 提示存在且无「保存发布」按钮。
+- 已同步修订 `review-package` 的 `SKILL.md`、`template.html` 与 `references/delivery-gate.md`，明确 GitHub 兜底保留完整编辑能力，仅移除原址保存发布。

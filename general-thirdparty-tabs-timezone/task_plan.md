@@ -10,6 +10,8 @@
 - [completed] 4. 部署 GitHub Pages 外网独立路径
 - [completed] 5. 创建飞书需求说明与 SDD、互链并开放权限
 - [completed] 6. 更新规划文件并自动打开全部本地产物
+- [completed] 7. 恢复 template 编辑引擎与 GitHub 本地持久化
+- [in_progress] 8. 原链接重部署并完成线上全量交互验证
 
 ## 硬约束
 - 不修改或混入现有 v14 MinIO 大评审包。
@@ -24,3 +26,4 @@
 | deploy-prototype 文档中的旧脚本路径不存在 | 1 | 改用实际技能目录下脚本 |
 | `Leo-ai05/prototypes` 推送被 GitHub 403 拒绝 | 1 | 改用已授权的 `pessimistcamellia/non-ecommerce-thirdparty-order-prototype` GitHub Pages 独立目录 |
 | OpenAPI 不接受 `manage_collaborator_entity=collaborator_can_edit` | 1 | 已完成 `tenant_editable`、评论/复制可编辑、分享范围 anyone；保留现有协作者管理设置并在交付说明中披露 |
+| 生成脚本用 `re.sub` 直接替换含 `\d` 的模板脚本时报 bad escape | 1 | replacement 改用 lambda，按原字节注入 template 编辑引擎 |
