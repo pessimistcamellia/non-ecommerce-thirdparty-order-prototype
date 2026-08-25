@@ -27,3 +27,6 @@
 - 已通过 chrome-devtools 留下「编辑入口与 GitHub 提示」「决策三区与共识贴图」「proto-note 卡片/锚点连线」三张在线截图证据。
 - 已按用户要求彻底移除评审包页 GitHub Pages 提示条（容器、样式、注入脚本）；编辑引擎与导出 HTML 保留。
 - 已同步去掉 template.html 中的提示条生成逻辑，并修订 skill/delivery-gate：规则仍说明 GitHub 兜底不提供原址发布，但不再要求在页面上渲染提示文案。
+- 已从评审包简介彻底删除「上线与回滚」「监控要点」两张卡片；简介顺序现为背景与问题 → 目标 → 范围 → 相关文档。
+- 已删除相关文档表中「MRD | 暂未生成」整行；表内仅保留需求说明、SDD、高保真原型真实链接。
+- 已更新 review-package SKILL.md / template.html / delivery-gate.md：相关文档禁止占位行；未改「上线与回滚 / 监控要点」的 Skill 骨架表述。
