@@ -61,9 +61,6 @@ button,input,select{font:inherit}.shell{display:flex;width:1520px;min-height:100
         <span class="export-note">导出需指定单个第三方平台，且时间范围不得超过 90 天</span>
       </div>
     </section>
-    <div id="utcPreview" class="request-preview"><b>时间口径演示：</b>页面按 Asia/Shanghai 选择与展示；请求转换为 UTC ISO：
-      <code>2026-07-31T16:00:00.000Z ~ 2026-08-25T15:59:59.000Z</code>；后端过滤 <code>thirdpart_general_order.created_at</code>。
-    </div>
     <div id="orderTable" class="table-wrap">
       <table class="table">
         <colgroup><col style="width:160px"><col style="width:170px"><col style="width:150px"><col style="width:90px"><col style="width:90px"><col style="width:140px"><col style="width:110px"><col style="width:160px"><col style="width:155px"><col style="width:90px"><col style="width:100px"><col style="width:90px"><col style="width:90px"><col style="width:80px"></colgroup>
@@ -118,10 +115,7 @@ window.DIFF_HOOKS={locate(pageId){if(pageId==='generalThirdpartyPage'){}},setDem
 window.DIFF_CHANGESET={meta:{sddTitle:'SDD · 通用三方双 Tab 与时区统一',sddUrl:'__SDD_URL__',sddType:'feishu',demoControls:[{id:'platformView',label:'平台数据分区',default:'ecommerce',options:[{value:'ecommerce',label:'电商平台'},{value:'non-ecommerce',label:'非电商平台'}]}]},changes:[
 {id:'chg-general-tabs',level:'module',page:'generalThirdpartyPage',module:'平台分类',target:'#platformTabs',type:'new',title:'新增电商与非电商双 Tab',desc:'通用三方按平台类型隔离，默认进入电商平台，交互与掉单管理一致。',before:'线上通用三方无平台类型 Tab',after:'默认电商平台 Tab + 非电商平台 Tab',examples:[{case:'默认进入',input:'打开通用三方',result:'展示电商平台订单'},{case:'切换',input:'点击非电商平台',result:'只展示非电商平台订单'}],sdd:{section:'FR-1 平台双 Tab 与查询隔离'}},
 {id:'chg-general-scope',level:'module',page:'generalThirdpartyPage',module:'非电商数据分区',target:'#filterArea',type:'logic',title:'非电商数据独立查询与展示',desc:'非电商 Tab 锁定第三方平台并将店铺文案改为渠道 ID/名称；两类数据不可串查。',before:'线上只有电商三方数据列表',after:'非电商数据进入独立 Tab，平台值不可修改',examples:[{case:'渠道筛选',input:'非电商平台；渠道ID=xiaobaobaba',result:'只展示小宝爸爸订单'},{case:'切回电商',input:'点击电商平台',result:'恢复电商平台筛选和数据'}],sdd:{section:'FR-1 平台双 Tab 与查询隔离'}},
-{id:'chg-created-at-display',level:'field',page:'generalThirdpartyPage',module:'时间展示',target:'#createdAtColumn',type:'enum',title:'列表展示 created_at 东八区时间',desc:'列表主时间列为订单创建时间，与筛选字段一致，按 Asia/Shanghai 格式化。',before:'列表把 pay_time 按 UTC 墙钟原样展示，时间少 8 小时',after:'列名为订单创建时间，展示 created_at 的东八区时间',examples:[{case:'创建时间',input:'created_at=2026-08-18T07:26:42.000Z',result:'展示 2026-08-18 15:26:42'}],sdd:{section:'FR-2 时间筛选与展示统一'}},
-{id:'chg-created-at-filter',level:'field',page:'generalThirdpartyPage',module:'时间展示',target:'#createdAtFilter',type:'logic',title:'筛选按东八区选择 created_at',desc:'运营选择的时间范围按 Asia/Shanghai 解释，后端按该范围过滤 created_at。',before:'筛选时区与列表展示口径不一致',after:'筛选、过滤、列表展示使用同一 created_at 字段和东八区口径',sdd:{section:'FR-2 时间筛选与展示统一'}},
-{id:'chg-request-utc',level:'module',page:'generalThirdpartyPage',module:'请求转换',target:'#utcPreview',type:'flow',title:'请求边界转换为 UTC ISO',desc:'前端把东八区起止时间转换为 UTC ISO 后发给后端，不改变运营输入与展示时区。',before:'时间转换链路未统一，UTC 墙钟值被直接展示',after:'页面东八区 ↔ 请求 UTC ISO ↔ created_at 过滤',examples:[{case:'开始时间',input:'2026-08-01 00:00:00 Asia/Shanghai',result:'2026-07-31T16:00:00.000Z'},{case:'结束时间',input:'2026-08-25 23:59:59 Asia/Shanghai',result:'2026-08-25T15:59:59.000Z'}],sdd:{section:'FR-2 时间筛选与展示统一'}},
-{id:'chg-export-timezone',level:'module',page:'generalThirdpartyPage',module:'导出',target:'#export',type:'logic',title:'导出时间统一为东八区',desc:'导出按 created_at 过滤，订单创建时间按 Asia/Shanghai 输出；保留现有单平台与 90 天限制。',before:'导出 pay_time 按 UTC 墙钟原样展示',after:'导出筛选与时间列均使用 created_at 东八区口径',sdd:{section:'FR-3 导出口径'}}
+{id:'chg-created-at-consistency',level:'module',page:'generalThirdpartyPage',module:'时间口径',target:'#createdAtFilter',type:'logic',title:'查询时间与列表、导出的订单创建时间保持一致',desc:'列表查询条件的订单创建时间，与列表返回结果中的订单创建时间、以及导出订单中的订单创建时间保持一致。',before:'查询条件与列表、导出的时间口径不一致，结果时间比查询条件少 8 小时',after:'查询条件、列表结果、导出文件三处的订单创建时间完全一致',examples:[{case:'按创建时间查询',input:'订单创建时间 2026-08-18 15:00:00 至 2026-08-18 16:00:00',result:'列表与导出中的订单创建时间均在该区间内，且与查询条件同一口径'}],sdd:{section:'FR-2 时间筛选与展示统一',blockId:'doxcnE78JECH5jhfUex8syoEm7Z'}}
 ]};
 </script>
 <script>
@@ -156,7 +150,7 @@ package = r"""<!doctype html>
 </section>
 <section id="changes" class="tab"><h3>行为变更</h3><table><tr><th>序号</th><th>位置（端 · 平台 · 页面）</th><th>优先级</th><th>变更内容</th><th>开发团队</th></tr>
 <tr><td>1</td><td>运营后台 · 通用三方列表</td><td>P0 / P1</td><td><b>1-1 P0 【新增】</b>双 Tab：电商平台默认、非电商平台独立展示。<br><b>1-2 P1 【变更】</b>非电商 Tab 锁定平台，店铺 ID/名称改为渠道 ID/名称。<br><b>1-3 P1 【变更】</b>查询按 Tab 隔离数据源，清空和切换不得串数据。</td><td></td></tr>
-<tr><td>2</td><td>运营后台 · 通用三方列表</td><td>P0 / P1</td><td><b>2-2 P1 【变更】</b>查询条件里的订单创建时间，与查询结果的列表保持数据一致</td><td></td></tr></table></section>
+<tr><td>2</td><td>运营后台 · 通用三方列表</td><td>P0 / P1</td><td><b>2-2 P1 【变更】</b>列表查询条件里的订单创建时间，与列表返回结果中的订单创建时间、以及导出订单中的订单创建时间保持一致</td><td></td></tr></table></section>
 <section id="prototype" class="tab"><div class="iframe-card"><iframe src="__PROTOTYPE_URL__" title="通用三方高保真原型"></iframe></div></section>
 <section id="decisions" class="tab"><div class="card"><div class="dm-h">待办事项</div><div id="todoList"></div><div class="dm-add"><input id="todoInput" placeholder="新增待办事项"><button data-add="todo">添加</button></div><div class="dm-h">决策共识</div><div id="consensusList"></div><div class="dm-add"><input id="consensusInput" placeholder="新增决策共识"><button data-add="consensus">添加</button></div><div class="dm-h">评审意见</div><div id="reviewList"></div><div class="dm-add"><input id="reviewInput" placeholder="新增评审意见"><button data-add="review">添加</button></div></div></section>
 </div><script>
