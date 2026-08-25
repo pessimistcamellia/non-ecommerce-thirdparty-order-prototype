@@ -19,3 +19,9 @@
 - 已恢复正文就地编辑、三区决策增删改勾选、时间/撰写人、悬浮评审意见、共识贴图、localStorage / IndexedDB 与 HTML 导出。
 - 本地浏览器实测通过：正文修改、三区新增/编辑/勾选、临时项删除、刷新持久化、导出 HTML 含正文修改；GitHub 提示存在且无「保存发布」按钮。
 - 已同步修订 `review-package` 的 `SKILL.md`、`template.html` 与 `references/delivery-gate.md`，明确 GitHub 兜底保留完整编辑能力，仅移除原址保存发布。
+- 已推送到原 GitHub Pages 路径，`pages-build-deployment` run `32810412643` 成功；cache-bust 外网回读命中最新编辑引擎。
+- 线上评审包实测通过：正文编辑；待办/共识/意见新增、行内编辑、三区勾选、三区临时项删除；提交时间与意见撰写人展示；共识粘贴图片生成缩略图。
+- 刷新后正文、决策状态、勾选状态、作者/时间与 IndexedDB 图片均保持；线上导出 HTML 为 40112 bytes，包含正文修改与编辑引擎，不含保存配置占位符。
+- 线上评审包无「保存发布」按钮，`window.__SAVE__` 未定义；评审包控制台无 error。
+- 线上 proto-note 实测：6 张批注卡、5 个模块勾选、6 个锚点与 connector canvas 正常；模块开关可将可见卡从 6 降到 5，锚点 03 可定位卡片；控制台无 error。
+- 已通过 chrome-devtools 留下「编辑入口与 GitHub 提示」「决策三区与共识贴图」「proto-note 卡片/锚点连线」三张在线截图证据。

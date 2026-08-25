@@ -11,7 +11,7 @@
 - [completed] 5. 创建飞书需求说明与 SDD、互链并开放权限
 - [completed] 6. 更新规划文件并自动打开全部本地产物
 - [completed] 7. 恢复 template 编辑引擎与 GitHub 本地持久化
-- [in_progress] 8. 原链接重部署并完成线上全量交互验证
+- [completed] 8. 原链接重部署并完成线上全量交互验证
 
 ## 硬约束
 - 不修改或混入现有 v14 MinIO 大评审包。
