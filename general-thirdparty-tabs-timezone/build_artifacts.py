@@ -156,8 +156,7 @@ package = r"""<!doctype html>
 </section>
 <section id="changes" class="tab"><h3>行为变更</h3><table><tr><th>序号</th><th>位置（端 · 平台 · 页面）</th><th>优先级</th><th>变更内容</th><th>开发团队</th></tr>
 <tr><td>1</td><td>运营后台 · 通用三方列表</td><td>P0 / P1</td><td><b>1-1 P0 【新增】</b>双 Tab：电商平台默认、非电商平台独立展示。<br><b>1-2 P1 【变更】</b>非电商 Tab 锁定平台，店铺 ID/名称改为渠道 ID/名称。<br><b>1-3 P1 【变更】</b>查询按 Tab 隔离数据源，清空和切换不得串数据。</td><td></td></tr>
-<tr><td>2</td><td>运营后台 · 通用三方列表</td><td>P0 / P1</td><td><b>2-2 P1 【变更】</b>查询条件里的订单创建时间，与查询结果的列表保持数据一致</td><td></td></tr></table>
-<h3>存量处理</h3><div class="card">不迁移、不回填存量订单。现有 created_at 与 pay_time 数据继续保留；上线后仅调整过滤字段和格式化方式。若历史 created_at 缺失，按现有数据质量流程处理，不回退用 pay_time 伪装创建时间。</div></section>
+<tr><td>2</td><td>运营后台 · 通用三方列表</td><td>P0 / P1</td><td><b>2-2 P1 【变更】</b>查询条件里的订单创建时间，与查询结果的列表保持数据一致</td><td></td></tr></table></section>
 <section id="rules" class="tab"><div class="card"><h3>字段口径</h3><table><tr><th>页面位置</th><th>字段</th><th>读取 / 传输</th><th>展示</th></tr><tr><td>查询条件</td><td>订单创建时间</td><td>按 Asia/Shanghai 选择；请求转 UTC ISO</td><td>东八区年月日时分秒</td></tr><tr><td>后端过滤</td><td>thirdpart_general_order.created_at</td><td>按请求 UTC 起止过滤</td><td>不直接展示 UTC 墙钟值</td></tr><tr><td>列表 / 导出</td><td>created_at</td><td>服务端或前端统一转换</td><td>列名「订单创建时间」，Asia/Shanghai</td></tr><tr><td>可选列</td><td>pay_time</td><td>仅在业务仍需展示时保留</td><td>列名「支付时间」，Asia/Shanghai</td></tr></table></div>
 <div class="card"><h3>校验与反馈</h3><table><tr><th>校验项</th><th>规则</th><th>是否必填</th><th>报错反馈文案</th></tr><tr><td>订单创建时间</td><td>查询必须提供起止时间，按 Asia/Shanghai 解释。</td><td>必填</td><td>请选择订单创建时间</td></tr><tr><td>导出平台</td><td>导出必须指定单个第三方平台；非电商 Tab 已锁定为单个平台值。</td><td>条件必填</td><td>请选择单个第三方平台</td></tr><tr><td>导出时间范围</td><td>起止时间跨度不得超过 90 天。</td><td>必填</td><td>导出时间范围不得超过 90 天</td></tr></table></div>
 <div class="card"><h3>验收示例</h3><table><tr><th>输入</th><th>请求</th><th>预期展示</th></tr><tr><td>2026-08-01 00:00:00（东八区）</td><td>2026-07-31T16:00:00.000Z</td><td>列表/导出仍显示 2026-08-01 00:00:00</td></tr><tr><td>created_at=2026-08-18T07:26:42.000Z</td><td>后端按 created_at 命中</td><td>订单创建时间=2026-08-18 15:26:42</td></tr></table></div></section>
@@ -280,9 +279,6 @@ requirement = """# 需求说明 · 通用三方双 Tab 与时区统一
 | 订单创建时间 | 必须提供起止时间，按 `Asia/Shanghai` 解释 | 必填 | 请选择订单创建时间 |
 | 导出平台 | 必须指定单个第三方平台 | 条件必填 | 请选择单个第三方平台 |
 | 导出时间范围 | 起止时间跨度不得超过 90 天 | 必填 | 导出时间范围不得超过 90 天 |
-
-## 存量处理
-不迁移、不回填存量订单。现有 `created_at` 与 `pay_time` 数据继续保留；上线后仅调整过滤字段和格式化方式。
 """.replace("__SDD_URL__", SDD_URL)
 
 
