@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 GITHUB_PROTOTYPE = "https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/prototype.html"
-MINIO_PROTOTYPE = "https://minio.yc345.tv/onionext/review-pkg-demos/general-thirdparty-tabs-timezone-prototype-20260825.html"
+MINIO_PROTOTYPE = "https://minio.yc345.tv/onionext/review-pkg-demos/general-thirdparty-tabs-timezone-prototype-20260828-v3.html"
 SAVE_LINE = 'window.__SAVE__={url:"__SAVE_URL__",exp:0/*__SAVE_EXP__*/};\n'
 ANCHOR = "(function(){\nvar FILE=location.pathname.split('/').pop()||'pkg';"
 

@@ -34,8 +34,6 @@
     .om-table__action-row + .om-table__action-row { margin-top: 4px; }
     .om-table__action-row .el-button { height: 20px; padding: 2px; font-size: 14px; }
     .om-pagination { display: flex; justify-content: flex-end; margin-top: 14px; }
-    .om-platform-tabs { margin-bottom: 16px; }
-    .om-locked-platform { width: 420px; }
   </style>
 </head>
 <body>
@@ -51,10 +49,6 @@
         <h1>订单管理</h1>
         <el-button plain @click="notifyStub('原型不切换旧版页面')">返回旧版</el-button>
       </div>
-      <el-tabs id="orderPlatformTabs" v-model="activeTab" class="om-platform-tabs" @tab-change="switchTab">
-        <el-tab-pane label="电商平台" name="ecommerce"></el-tab-pane>
-        <el-tab-pane label="非电商平台" name="non-ecommerce"></el-tab-pane>
-      </el-tabs>
 
       <el-card class="om-search-card" shadow="never">
         <el-form id="orderFilters" class="om-search-form" :model="filters" label-width="84px" label-position="right">
@@ -95,18 +89,14 @@
               <template #prepend>根据用户洋葱ID查询</template>
             </el-input>
           </el-form-item>
-          <el-form-item v-if="activeTab === 'non-ecommerce'" label="支付平台">
-            <el-input id="paymentPlatformFilter" class="om-locked-platform" model-value="非电商平台的三方订单" disabled></el-input>
-            <span class="om-search-form__note">当前 Tab 已锁定，不可修改</span>
-          </el-form-item>
-          <el-form-item v-else label="支付平台">
+          <el-form-item label="支付平台">
             <el-radio-group v-model="filters.platformMode" class="om-search-form__mode">
               <el-radio value="all">不限</el-radio>
               <el-radio value="pick">筛选支付平台</el-radio>
             </el-radio-group>
             <span class="om-search-form__note">筛选使用以下任何支付平台的订单</span>
           </el-form-item>
-          <el-form-item v-if="activeTab === 'ecommerce' && filters.platformMode === 'pick'" label=" ">
+          <el-form-item v-if="filters.platformMode === 'pick'" label=" ">
             <el-checkbox-group v-model="filters.platforms">
               <el-checkbox value="微信">微信</el-checkbox>
               <el-checkbox value="支付宝">支付宝</el-checkbox>
@@ -114,6 +104,7 @@
               <el-checkbox value="天猫">天猫</el-checkbox>
               <el-checkbox value="抖店">抖店</el-checkbox>
               <el-checkbox value="小红书">小红书</el-checkbox>
+              <el-checkbox id="paymentPlatformFilter" value="非电商平台的三方订单">非电商平台的三方订单</el-checkbox>
             </el-checkbox-group>
           </el-form-item>
           <el-form-item label="订单号">
@@ -194,18 +185,6 @@
           </el-table-column>
           <el-table-column label="实付金额(元)" width="100" align="center">
             <template #default="scope">￥{{ money(scope.row.paid) }}</template>
-          </el-table-column>
-          <el-table-column v-if="activeTab === 'ecommerce'" label="主播" width="100" align="center">
-            <template #default>-</template>
-          </el-table-column>
-          <el-table-column v-if="activeTab === 'ecommerce'" label="预售" width="90" align="center">
-            <template #default>否</template>
-          </el-table-column>
-          <el-table-column v-if="activeTab === 'ecommerce'" label="买家留言" width="130" align="center">
-            <template #default>-</template>
-          </el-table-column>
-          <el-table-column v-if="activeTab === 'ecommerce'" label="商品数量" width="90" align="center">
-            <template #default>1</template>
           </el-table-column>
           <el-table-column label="洋葱ID" width="100" align="center">
             <template #default="scope">
@@ -347,7 +326,6 @@
         data: function () {
           return {
             state: PrototypeApp.getState(),
-            activeTab: 'ecommerce',
             filters: emptyFilters(),
             appliedFilters: emptyFilters(),
             demoState: 'normal',
@@ -359,7 +337,6 @@
         },
         computed: {
           visibleOrders: function () {
-            if (this.activeTab === 'ecommerce') return []
             let orders = this.state.orders.slice()
             if (this.demoState === 'refunded') {
               orders = orders.filter((item) => item.refundCount > 0 && item.status === '支付成功')
@@ -427,9 +404,6 @@
           resetFilters: function () {
             this.filters = emptyFilters()
             this.appliedFilters = emptyFilters()
-          },
-          switchTab: function () {
-            this.resetFilters()
           },
           notifyStub: function (message) {
             ElementPlus.ElMessage({ type: 'info', message: message })
@@ -508,30 +482,13 @@
           module: '订单筛选',
           target: '#paymentPlatformFilter',
           type: 'enum',
-          title: '非电商 Tab 锁定支付平台',
-          desc: '非电商 Tab 的支付平台固定为“非电商平台的三方订单”且不可修改；电商 Tab 保持原平台筛选。',
-          before: 'Tab 与支付平台筛选可重复选择，存在口径冲突',
-          after: '非电商 Tab 锁定平台值，电商 Tab 保持现有筛选',
+          title: '新增统一支付平台筛选值',
+          desc: '非电商渠道订单统一使用同一支付平台值，具体渠道以渠道名称区分（渠道注册表登记渠道 id）。',
+          before: '线上支付平台筛选无非电商三方订单选项',
+          after: '新增“非电商平台的三方订单”筛选值',
           examples: [
-            { case: '切换非电商', input: '点击“非电商平台”Tab', result: '支付平台自动锁定且不可修改' },
+            { case: '新平台', input: '支付平台→筛选支付平台→勾选“非电商平台的三方订单”', result: '展示三个渠道订单' },
             { case: '指定订单', input: '订单号切“支付平台订单号”=xiaobaobaba20260731101', result: '只展示对应订单' }
-          ],
-          sdd: { section: 'FR-4 洋葱订单同步与权益', blockId: 'doxcnBpsxepBxtMmueScIckHusc' }
-        },
-        {
-          id: 'chg-orders-columns',
-          level: 'module',
-          page: 'ordersPage',
-          module: '订单列表',
-          target: '#orderList',
-          type: 'logic',
-          title: '非电商 Tab 隐藏恒空列',
-          desc: '非电商列表隐藏主播、预售、买家留言和商品数量列；字段口径仍复用通用三方订单结构。',
-          before: '所有平台共用同一列集，非电商恒空/恒定列占用横向空间',
-          after: '仅非电商 Tab 隐藏四列，电商 Tab 保持原列集',
-          examples: [
-            { case: '非电商列表', input: '切换“非电商平台”Tab', result: '四个恒空/恒定列不展示' },
-            { case: '电商列表', input: '切回“电商平台”Tab', result: '原列集与平台筛选保留' }
           ],
           sdd: { section: 'FR-4 洋葱订单同步与权益', blockId: 'doxcnBpsxepBxtMmueScIckHusc' }
         },

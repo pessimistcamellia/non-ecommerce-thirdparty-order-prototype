@@ -36,3 +36,21 @@
 - 已从行为变更表整行删除序号 3「前后端 · 通用三方 · 查询与导出」；简介与字段规则中的时区口径保留。
 - 已更新 review-package SKILL.md / template.html / delivery-gate.md：相关文档禁止占位行；未改「上线与回滚 / 监控要点」的 Skill 骨架表述。
 - 行为变更已按截图定稿为两行（位置均为「运营后台 · 通用三方列表」；第 2 行仅 2-2）；已整节删除「数据变更」。
+
+## 2026-08-28
+- 启动任政沟通驱动的四件套原地更新；已续写任务计划，下一步读取群消息、字段口径表、线上评审包人工编辑及两篇飞书文档。
+- 已读取群消息 421、429—438 并提炼结论：退款状态对齐线上；补顺丰/普通单号；非电商商品名称展示与筛选运营上传值；字段口径遵循三方订单表。
+- 已回读「通用三方表」Q2:Q57 与「通用三方订单表前端」A1:C33，确认 `good_name`、`sf_tracking_num`、`tracking_num`、`confirmed` 及前端列定义。
+- `pull_user_edits.py` 确认线上内网评审包与本地 MinIO 版一致，无人工编辑待回灌。
+- 已更新 `build_artifacts.py`：原型新增字段规则交互与标注；评审包/需求说明/SDD 同步新增对应内容和待定项。
+- 首次重建失败：模板决策脚本前新增 `__DM_BOOT__` 标记，旧正则找不到脚本；已改为按该稳定标记提取，第二次重建成功。
+- 已重建 `prototype.html`、`review-package.html`、`review-package.minio.html`、`需求说明.md`、`SDD.md`。
+- 飞书首轮 `str_replace`：SDD 主体更新成功；两篇文档的文首段落/表格及需求说明主体因 Markdown 序列化空格差异未命中（`degrade_code=1013`）。未使用 overwrite；下一步改按 block ID 定点替换并回读。
+- 已按 block ID 定点完成两篇飞书文档剩余更新并回读：待定项、字段口径表、运营上传商品名称、退款状态、顺丰/普通单号均命中。
+- 原型旧 key 通过网关请求 `overwrite=true` 仍返回 `key_conflict_resolved=true`，未上传派生对象；新版改发 `general-thirdparty-tabs-timezone-prototype-20260828-v2.html`。
+- 固定评审包 `general-thirdparty-tabs-timezone-review-20260825.html` 通过 `--mode update` 原址覆盖，iframe 与两篇飞书文档的原型链接均已改指 v2。
+- 浏览器实测通过：非电商 Tab 锁定第三方平台；商品名称展示/筛选运营上传值；退款状态为「全部 / 已处理 / 未处理」；表头含顺丰单号、普通单号；商品名称筛选从 3 行正确收敛到 1 行；评审包原址保存配置有效。
+- Excel「通用三方订单表前端」新增 D 列专属口径；仅非电商平台操作调整为「激活课程」，原有平台说明未改。
+- 非电商原型 3 条模拟数据的「yc 商品 ID」已由组合商品 ID 改为 `yc_good_id` UUID 示例。
+- 新原型已发布为 `general-thirdparty-tabs-timezone-prototype-20260828-v3.html`；飞书需求说明、SDD 的原型链接已同步。
+- 固定评审包 URL 已再次原址更新，入口未变化。

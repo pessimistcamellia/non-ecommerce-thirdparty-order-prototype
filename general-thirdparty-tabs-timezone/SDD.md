@@ -2,20 +2,24 @@
 
 ## 待定问题
 
-无（本次产出均已基于明确输入，无待确认项）。
+| # | 待定项 | 当前处理方式 | 需用户确认 |
+|---|---|---|---|
+| 1 | 上传商品名称是否与 yc 商品名称并列展示 | <span style="background-color:#FFF3CD;color:#856404;">【待定-1】非电商 Tab 暂以运营上传商品名称替换 yc 商品名称，不并列增加第二列</span> | 确认替换或两列并存 |
 
 | 相关文档 | 链接 |
 |---|---|
-| 需求评审包 | [外网评审包](https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/review-package.html) |
+| 需求评审包 | [内网评审包](https://minio.yc345.tv/onionext/review-pkg-demos/general-thirdparty-tabs-timezone-review-20260825.html) |
 | 需求说明 | [需求说明 · 通用三方双 Tab 与时区统一](https://guanghe.feishu.cn/docx/Lpn2d8rjCo48VzxcT8lcWgUJn3e) |
-| 高保真原型 | [外网高保真原型](https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/prototype.html) |
-| 需求标签 | 通用三方 · 双 Tab · 非电商平台 · created_at · Asia/Shanghai · UTC ISO · 导出 |
+| 高保真原型 | [内网高保真原型](https://minio.yc345.tv/onionext/review-pkg-demos/general-thirdparty-tabs-timezone-prototype-20260828-v3.html) |
+| 字段口径表 | [三方订单表 · 通用三方表](https://guanghe.feishu.cn/sheets/shtcnEioTaphv14DdQVtmKlv6Eh) |
+| 需求标签 | 通用三方 · 双 Tab · 非电商平台 · 字段口径 · created_at · Asia/Shanghai · 导出 |
 
 ## 设计原则
 1. 页面展示与运营输入统一为 `Asia/Shanghai`。
 2. 网络请求统一传 UTC ISO，后端按 `thirdpart_general_order.created_at` 过滤。
 3. `pay_time` 不得冒充 `created_at`；保留时必须明确列名并转换时区。
 4. 电商与非电商查询条件、结果集合按 Tab 隔离。
+5. 非电商字段展示与筛选以「三方订单表」的「通用三方表」口径为准。
 
 ## FR-1 平台双 Tab 与查询隔离
 | ID | EARS 需求 |
@@ -23,6 +27,9 @@
 | FR-1.1 | 当运营打开通用三方页面时，系统应默认选中「电商平台」Tab 并只展示电商平台订单。 |
 | FR-1.2 | 当运营切换至「非电商平台」Tab 时，系统应只展示非电商平台订单，并将第三方平台锁定为「非电商平台的三方订单」。 |
 | FR-1.3 | 当处于非电商 Tab 时，系统应将店铺 ID/名称文案展示为渠道 ID/名称；底层可继续复用现有 shop 字段。 |
+| FR-1.4 | 当处于非电商 Tab 时，系统应将商品名称展示为 Excel「支付成功订单表/商品名称」的运营上传值，商品名称筛选也应按该值匹配。 |
+| FR-1.5 | 当运营展开退款状态筛选时，系统应提供「全部、已处理、未处理」，与现网通用三方页面一致。 |
+| FR-1.6 | 当列表展示非电商订单时，系统应展示「顺丰单号、普通单号」两列，分别读取 `sf_tracking_num`、`tracking_num`；无值显示「—」。 |
 
 ## FR-2 时间筛选与展示统一
 | ID | EARS 需求 |
@@ -53,6 +60,9 @@
 ## 测试重点
 - 默认 Tab 与切换后的数据隔离。
 - 非电商平台锁定、渠道文案和筛选生效。
+- 非电商商品名称展示与筛选均使用运营上传值，未混用按组合商品 ID 解析的洋葱商品名称。
+- 退款状态仅有「全部 / 已处理 / 未处理」，各选项过滤结果正确。
+- 顺丰单号、普通单号列存在，分别取对应字段，空值显示「—」。
 - 东八区跨日边界转换为 UTC ISO。
 - 列表、导出不再少 8 小时。
 - `created_at` 与 `pay_time` 列名、字段值不混用。

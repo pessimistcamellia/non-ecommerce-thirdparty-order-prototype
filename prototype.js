@@ -4,6 +4,7 @@
   const STATE_KEY = 'proto-note:non-ecommerce-thirdparty-order:state:v1'
   const PAGE_LINKS = [
     { id: 'upload', label: '运营后台 · 三方数据管理', href: 'admin-upload.html' },
+    { id: 'general', label: '运营后台 · 通用三方', href: 'admin-general-thirdparty.html' },
     { id: 'dropped', label: '运营后台 · 掉单管理', href: 'admin-dropped-orders.html' },
     { id: 'orders', label: '运营后台 · 订单管理', href: 'admin-orders.html' },
     { id: 'consumer', label: 'C 端 · 我的购买', href: 'consumer.html' },

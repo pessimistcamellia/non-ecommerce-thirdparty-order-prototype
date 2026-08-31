@@ -131,10 +131,13 @@
   .dm-lb img{max-width:92vw;max-height:92vh;border-radius:8px}
   /* 在线编辑 */
   #edBar{position:fixed;right:24px;top:14px;z-index:110;display:flex;gap:8px;align-items:center}
-  #edBar .eb{background:#fff;border:1px solid var(--line);color:var(--ink3);border-radius:999px;padding:5px 14px;font-size:13px;cursor:pointer;font-family:inherit}
-  #edBar .eb:hover{color:var(--ink2);border-color:#c9ced6}
-  #edBar .eb.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+  #edBar .eb,#dmSyncFab .eb{background:#fff;border:1px solid var(--line);color:var(--ink3);border-radius:999px;padding:5px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+  #edBar .eb:hover,#dmSyncFab .eb:hover{color:var(--ink2);border-color:#c9ced6}
+  #edBar .eb.pri,#dmSyncFab .eb.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+  #edBar .eb.warn,#dmSyncFab .eb.warn{background:#fff7ed;border-color:#fdba74;color:#c2410c}
   #edBar .ed-tip{font-size:13px;color:var(--ink3);background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 10px}
+  /* 决策事项未同步到线上时的提醒按钮（与 ✎ 编辑并列） */
+  #dmSyncFab{position:fixed;right:110px;top:14px;z-index:110;display:none}
   body.editing [data-eid]{outline:1px dashed #ddd0f5;outline-offset:2px;border-radius:3px}
   body.editing [data-eid]:hover{outline-color:var(--accent)}
   body.editing [data-eid]:focus{outline:2px solid var(--accent);background:#faf7ff}
@@ -147,15 +150,16 @@
   #rvPanel .rv-t{font-size:14px;font-weight:700;margin-bottom:6px}
 
 </style></head><body><div class="wrap">
-<header><h1>通用三方双 Tab 与时区统一 · 评审包</h1><div class="sub">高保真原型呈现通用三方页的平台数据分区、查询筛选、created_at 时间展示与 UTC 请求转换。</div><div class="meta"><span class="chip">需求类型：界面 · 中后台</span><span class="chip">通用三方</span><span class="chip">双 Tab</span><span class="chip">非电商平台</span><span class="chip">created_at</span><span class="chip">Asia/Shanghai</span><span class="chip">UTC ISO</span><span class="chip">导出</span></div></header>
+<header><h1>通用三方双 Tab 与时区统一 · 评审包</h1><div class="sub">高保真原型呈现平台数据分区、字段展示与筛选、订单创建时间一致性。</div><div class="meta"><span class="chip">需求类型：界面 · 中后台</span><span class="chip">通用三方</span><span class="chip">双 Tab</span><span class="chip">非电商平台</span><span class="chip">字段口径</span><span class="chip">created_at</span><span class="chip">Asia/Shanghai</span><span class="chip">导出</span></div></header>
 <nav id="nav"><button class="on" data-tab="intro">① 简介</button><button data-tab="changes">② 变更清单</button><button data-tab="prototype">③ 高保真交互原型</button><button data-tab="decisions">④ 决策事项</button></nav>
 <section id="intro" class="tab on">
-<div class="grid2"><div class="card"><h3>背景与问题</h3><ul><li><b>页面无平台类型分区：</b>通用三方现有电商数据与已 ready 的非电商数据缺少前端隔离入口。</li><li><b>查询与展示字段错位：</b>筛选按订单创建时间，列表和导出却以 pay_time 充当主时间列。</li><li><b>时区少 8 小时：</b>列表和导出把 UTC 墙钟值原样展示，未转换回东八区。</li></ul></div><div class="card"><h3>目标</h3><ol><li>默认电商平台 Tab，非电商订单只在非电商平台 Tab 展示，两类数据查询结果互不串行。</li><li>筛选、后端过滤、列表与导出统一使用 created_at；运营输入和输出均为东八区。</li><li>请求边界统一转换为 UTC ISO，示例可在原型中复现。</li></ol></div></div>
-<div class="grid2"><div class="card"><h3>范围 · 要做什么</h3><ul><li>新增「电商平台 / 非电商平台」双 Tab，视觉与掉单管理一致。</li><li>非电商 Tab 锁定第三方平台，店铺文案改为渠道 ID/名称。</li><li>列表主时间列改为订单创建时间，展示 created_at 东八区时间。</li><li>查询请求转 UTC ISO；导出按 created_at 过滤并按东八区展示。</li></ul></div><div class="card"><h3>范围 · 不做什么</h3><ul><li>不展开 Excel 导入、掉单 Base、10MB 文件限制、上传渠道必填弹窗。</li><li>不改变现有导出的单平台与 90 天限制，只明确反馈文案。</li><li>本页截图无主播、预售、买家留言、数量列，因此不新增也不专门隐藏这些列。</li></ul></div></div>
-<div class="card"><h3>相关文档</h3><table><tr><th>文档</th><th>链接</th></tr><tr><td>需求说明</td><td><a href="https://guanghe.feishu.cn/docx/Lpn2d8rjCo48VzxcT8lcWgUJn3e" target="_blank">需求说明 · 通用三方双 Tab 与时区统一</a></td></tr><tr><td>SDD</td><td><a href="https://guanghe.feishu.cn/docx/KHQfdClRjo5vnaxWTGjcdVJ3nS4" target="_blank">SDD · 通用三方双 Tab 与时区统一</a></td></tr><tr><td>高保真原型</td><td><a href="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/prototype.html" target="_blank">外网原型</a></td></tr></table></div>
+<div class="card"><h3>待定问题</h3><table><tr><th>#</th><th>待定项</th><th>当前处理方式</th><th>需确认</th></tr><tr><td>1</td><td>上传商品名称是否与 yc 商品名称并列展示</td><td><span style="background-color:#FFF3CD;color:#856404;">【待定-1】非电商 Tab 暂以运营上传商品名称替换 yc 商品名称，不并列增加第二列</span></td><td>确认替换或两列并存</td></tr></table></div>
+<div class="grid2"><div class="card"><h3>背景与问题</h3><ul><li><b>页面无平台类型分区：</b>通用三方现有电商数据与已 ready 的非电商数据缺少前端隔离入口。</li><li><b>非电商字段与既定口径不一致：</b>原型展示 yc 商品名称，退款状态选项与线上不同，且缺少顺丰单号、普通单号。</li><li><b>查询与展示字段错位：</b>筛选按订单创建时间，列表和导出却以 pay_time 充当主时间列并少 8 小时。</li></ul></div><div class="card"><h3>目标</h3><ol><li>默认电商平台 Tab，非电商订单只在非电商平台 Tab 展示，两类数据查询结果互不串行。</li><li>非电商页面字段展示与筛选遵循「三方订单表」口径：商品名称取运营上传值，退款状态与线上一致，展示两类物流单号。</li><li>列表查询、列表结果、导出文件中的订单创建时间保持一致。</li></ol></div></div>
+<div class="grid2"><div class="card"><h3>范围 · 要做什么</h3><ul><li>新增「电商平台 / 非电商平台」双 Tab，视觉与掉单管理一致。</li><li>非电商 Tab 锁定第三方平台，店铺文案改为渠道 ID/名称。</li><li>非电商商品名称展示并筛选运营上传值；退款状态为「全部 / 已处理 / 未处理」。</li><li>列表补充「顺丰单号、普通单号」。</li><li>列表查询、列表结果、导出文件统一使用订单创建时间。</li></ul></div><div class="card"><h3>范围 · 不做什么</h3><ul><li>不展开 Excel 导入、掉单 Base、10MB 文件限制、上传渠道必填弹窗。</li><li>不改变现有导出的单平台与 90 天限制。</li><li>不新增主播、预售、买家留言、商品数量列。</li></ul></div></div>
+<div class="card"><h3>相关文档</h3><table><tr><th>文档</th><th>链接</th></tr><tr><td>需求说明</td><td><a href="https://guanghe.feishu.cn/docx/Lpn2d8rjCo48VzxcT8lcWgUJn3e" target="_blank">需求说明 · 通用三方双 Tab 与时区统一</a></td></tr><tr><td>SDD</td><td><a href="https://guanghe.feishu.cn/docx/KHQfdClRjo5vnaxWTGjcdVJ3nS4" target="_blank">SDD · 通用三方双 Tab 与时区统一</a></td></tr><tr><td>字段口径表</td><td><a href="https://guanghe.feishu.cn/sheets/shtcnEioTaphv14DdQVtmKlv6Eh" target="_blank">三方订单表 · 通用三方表</a></td></tr><tr><td>高保真原型</td><td><a href="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/prototype.html" target="_blank">外网原型</a></td></tr></table></div>
 </section>
 <section id="changes" class="tab"><h3>行为变更</h3><table><tr><th>序号</th><th>位置（端 · 平台 · 页面）</th><th>优先级</th><th>变更内容</th><th>开发团队</th></tr>
-<tr><td>1</td><td>运营后台 · 通用三方列表</td><td>P0 / P1</td><td><b>1-1 P0 【新增】</b>双 Tab：电商平台默认、非电商平台独立展示。<br><b>1-2 P1 【变更】</b>非电商 Tab 锁定平台，店铺 ID/名称改为渠道 ID/名称。<br><b>1-3 P1 【变更】</b>查询按 Tab 隔离数据源，清空和切换不得串数据。</td><td></td></tr>
+<tr><td>1</td><td>运营后台 · 通用三方列表</td><td>P0 / P1</td><td><b>1-1 P0 【新增】</b>双 Tab：电商平台默认、非电商平台独立展示。<br><b>1-2 P1 【变更】</b>非电商 Tab 锁定平台，店铺 ID/名称改为渠道 ID/名称。<br><b>1-3 P1 【变更】</b>查询按 Tab 隔离数据源，清空和切换不得串数据。<br><b>1-4 P1 【变更】</b>非电商商品名称展示并筛选运营上传值。<br><b>1-5 P1 【变更】</b>退款状态与线上一致：全部 / 已处理 / 未处理。<br><b>1-6 P1 【变更】</b>列表补充顺丰单号、普通单号。</td><td></td></tr>
 <tr><td>2</td><td>运营后台 · 通用三方列表</td><td>P0 / P1</td><td><b>2-2 P1 【变更】</b>列表查询条件里的订单创建时间，与列表返回结果中的订单创建时间、以及导出订单中的订单创建时间保持一致</td><td></td></tr></table></section>
 <section id="prototype" class="tab"><div class="iframe-card"><iframe src="https://pessimistcamellia.github.io/non-ecommerce-thirdparty-order-prototype/general-thirdparty-tabs-timezone/prototype.html" title="通用三方高保真原型"></iframe></div></section>
 <section id="decisions" class="tab"><div id="dmRoot"></div></section>
@@ -174,14 +178,16 @@ const nav=document.querySelector('#nav');nav.addEventListener('click',e=>{if(e.t
 /* ===== 在线编辑：正文就地修改 + localStorage 草稿 + 导出 HTML；MinIO 可选原址发布 =====
    铁律：
    1. 本脚本必须位于所有会改写 DOM 的模块脚本之前（模块脚本一律放在它后面）。
-   2. 任何由脚本写入内容的容器必须加 data-noedit（判定输出区、手机预览区等；#dmRoot/#rvPanel 已内置排除）。
+   2. 任何由脚本写入内容的容器必须加 data-noedit（判定输出区、手机预览区等；#dmRoot/#rvPanel/#dmSyncFab 已内置排除）。
    3. MinIO 发布：禁止直接上传本模板、禁止用 upload_file.sh。必须跑
       python3 ~/.cursor/skills/review-package/scripts/publish_minio.py
       （--mode first 或 --mode update），由脚本注入本行 PUT URL 与整数毫秒 exp。
       MinIO 线上残留任一占位符即视为发布失败。
    4. GitHub Pages 发布：必须保留本编辑脚本、决策事项脚本与 localStorage 持久化；
       仅删除下一行 window.__SAVE__ 注入位。此时自动隐藏「保存发布」，保留「✎ 编辑」与「导出 HTML」。
-      禁止把整个编辑引擎一起删除；不要在页面上插入 GitHub 托管提示条。 */
+      禁止把整个编辑引擎一起删除；不要在页面上插入 GitHub 托管提示条。
+   5. 决策事项默认只在本机 localStorage；必须写入 window.__DM_BOOT__ 并保存发布/同步后，
+      别人打开同一链接才能看见。保存发布与「同步决策事项」都会注入 __DM_BOOT__。 */
 
 (function(){
 var FILE=location.pathname.split('/').pop()||'pkg';
@@ -191,7 +197,7 @@ var SKIP={SCRIPT:1,STYLE:1,LINK:1,META:1,INPUT:1,SELECT:1,TEXTAREA:1,BUTTON:1,IF
    列表（ul/ol）整体作为一个编辑单元，编辑态里回车即可新增一条、退格删空即可删除一条。 */
 function stamp(doc){
  var n=0,seen=[];
- function skip(el){return SKIP[el.tagName]||el.closest('#dmRoot,#rvPanel,#rvFab,#edBar,nav,[data-noedit]')}
+ function skip(el){return SKIP[el.tagName]||el.closest('#dmRoot,#rvPanel,#rvFab,#edBar,#dmSyncFab,nav,[data-noedit]')}
  [].forEach.call(doc.querySelectorAll('body *'),function(el){
   if(skip(el))return;
   var has=false,cs=el.childNodes;
@@ -227,6 +233,7 @@ if(saveMisconfigured){
  document.body.appendChild(bad);
 }
 function canPub(){return !!saveCfg&&!saveMisconfigured&&/^https?:/.test(saveCfg.url)&&expMs>Date.now()}
+window.__rpCanPub=canPub;
 var bar=document.createElement('div');bar.id='edBar';document.body.appendChild(bar);
 var editing=false;
 function draw(){
@@ -253,57 +260,181 @@ document.addEventListener('input',function(e){
 document.addEventListener('click',function(e){
  if(editing){var a=e.target.closest&&e.target.closest('a');if(a&&a.closest('[data-eid]'))e.preventDefault();}
 },true);
-/* 取回线上原始页面，套上本地改动，得到干净的完整 HTML（不带运行时注入的内容） */
+/* 把决策事项写入 HTML 真源，供他人打开同一链接可见 */
+function injectDmBoot(html,boot){
+ if(!boot)return html;
+ var block='/*__DM_BOOT_START__*/\nwindow.__DM_BOOT__='+JSON.stringify(boot).replace(/</g,'\\u003c')+';\n/*__DM_BOOT_END__*/';
+ if(html.indexOf('/*__DM_BOOT_START__*/')>=0){
+  return html.replace(/\/\*__DM_BOOT_START__\*\/[\s\S]*?\/\*__DM_BOOT_END__\*\//,block);
+ }
+ return html.replace(/(<script>\s*)(\/\* ===== 决策事项)/,'$1'+block+'\n$2');
+}
+/* 取回线上原始页面，套上正文改动 + 决策事项，得到可共享的完整 HTML */
 function merged(cb){
  fetch(location.href.split('#')[0],{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
   var doc=new DOMParser().parseFromString(t,'text/html');
   stamp(doc);
   Object.keys(OV).forEach(function(k){var el=doc.querySelector('[data-eid="'+k+'"]');if(el)el.innerHTML=OV[k]});
   [].forEach.call(doc.querySelectorAll('[data-eid]'),function(el){el.removeAttribute('data-eid');el.removeAttribute('contenteditable')});
-  cb('<!DOCTYPE html>\n'+doc.documentElement.outerHTML);
- }).catch(function(){cb(null)});
+  var html='<!DOCTYPE html>\n'+doc.documentElement.outerHTML;
+  function finish(boot){cb(injectDmBoot(html,boot),boot)}
+  if(typeof window.__packDmBoot==='function')window.__packDmBoot(finish);
+  else finish(window.__DM_BOOT__||null);
+ }).catch(function(){cb(null,null)});
 }
 var tEl=null,tTm=null;
 function tip(m){
  if(!tEl){tEl=document.createElement('div');tEl.className='dm-toast';document.body.appendChild(tEl)}
  tEl.textContent=m;tEl.classList.add('on');clearTimeout(tTm);tTm=setTimeout(function(){tEl.classList.remove('on')},3200);
 }
+function doExport(){
+ merged(function(html,boot){
+  if(!html){tip('导出失败：本页需在线打开才能导出');return}
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download=FILE.replace(/\.html?$/,'')+'-edited.html';a.click();
+  if(boot&&typeof window.__markDmSynced==='function'){/* 导出不等于线上同步，不 mark */}
+  tip('已导出（含决策事项），把文件发给 AI 即可重新发布');
+ });
+}
+function doPublish(okMsg){
+ if(!canPub()){tip('在线发布已过期，请导出 HTML 后找 AI 重新发布');draw();return}
+ merged(function(html,boot){
+  if(!html){tip('读取页面失败，请稍后重试');return}
+  tip('正在同步到线上…');
+  fetch(saveCfg.url,{method:'PUT',headers:{'Content-Type':'text/html'},body:html}).then(function(r){
+   if(r.ok){
+    OV={};try{localStorage.removeItem(OKEY)}catch(e){}
+    if(boot&&typeof window.__markDmSynced==='function')window.__markDmSynced(boot);
+    tip(okMsg||'已发布，其他人刷新页面即可看到最新版（含决策事项）');
+   }
+   else tip('发布失败（'+r.status+'），可先导出 HTML 找 AI 重新发布');
+  }).catch(function(){tip('发布失败：网络不通，可先导出 HTML 找 AI 重新发布')});
+ });
+}
+window.__rpPublish=doPublish;
+window.__rpExport=doExport;
 bar.addEventListener('click',function(e){
  var id=e.target.id;
  if(id==='ebOn')setMode(true);
  else if(id==='ebOff')setMode(false);
- else if(id==='ebExp'){
-  merged(function(html){
-   if(!html){tip('导出失败：本页需在线打开才能导出');return}
-   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
-   a.download=FILE.replace(/\.html?$/,'')+'-edited.html';a.click();
-   tip('已导出，把文件发给 AI 即可重新发布');
-  });
- }
- else if(id==='ebPub'){
-  if(!canPub()){tip('在线发布已过期，请导出 HTML 后找 AI 重新发布');draw();return}
-  merged(function(html){
-   if(!html){tip('读取页面失败，请稍后重试');return}
-   fetch(saveCfg.url,{method:'PUT',headers:{'Content-Type':'text/html'},body:html}).then(function(r){
-    if(r.ok){OV={};try{localStorage.removeItem(OKEY)}catch(e){};tip('已发布，其他人刷新页面即可看到最新版');}
-    else tip('发布失败（'+r.status+'），可先导出 HTML 找 AI 重新发布');
-   }).catch(function(){tip('发布失败：网络不通，可先导出 HTML 找 AI 重新发布')});
-  });
- }
+ else if(id==='ebExp')doExport();
+ else if(id==='ebPub')doPublish('已发布，其他人刷新页面即可看到最新版（含决策事项）');
 });
 draw();
 })();
 </script><script>
+/*__DM_BOOT_START__*/
+window.__DM_BOOT__=null;
+/*__DM_BOOT_END__*/
 /* ===== 决策事项 + 分页评审意见（现成实现，勿重写；只改 SEEDS） =====
-   SEEDS = 待定事项：只放做包前已与用户确认过要放的问题（需求文档自带的待确认事项可直接放入）。
-   留空数组时列表为空，但标题和新增入口仍然常驻，不可隐藏。 */
+   SEEDS = 做包前确认过的待办种子。共享真源 = 上方 __DM_BOOT__（写入线上 HTML 后他人可见）。
+   localStorage 仅作本机未同步草稿；改完后必须点「同步决策事项」或「保存发布」。 */
 (function(){
 var SEEDS=[];
 var KEY='dm-'+(location.pathname.split('/').pop()||'pkg').replace(/-v\d+.*$/,'');
+var META_KEY=KEY+'-meta';
 var IMG_MAX=5,IMG_MB=5;
-var D=null;try{D=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!D||!Array.isArray(D.pend)){D={pend:SEEDS.map(function(t){return{t:t,done:false}}),op:[],dec:[]};}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}}
+var BOOT=window.__DM_BOOT__;
+var bootRev=(BOOT&&BOOT._rev)||0;
+var meta=null;try{meta=JSON.parse(localStorage.getItem(META_KEY))}catch(e){}
+var stored=null;try{stored=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+var D;
+if(stored&&meta&&meta.dirty&&meta.bootRev===bootRev&&Array.isArray(stored.pend)){
+ D=stored; /* 同一线上版本上的本机未同步草稿 */
+}else if(BOOT&&BOOT.data&&Array.isArray(BOOT.data.pend)){
+ D=BOOT.data; /* 线上共享真源（他人打开链接看到的） */
+ try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}
+ meta={dirty:false,bootRev:bootRev};
+ try{localStorage.setItem(META_KEY,JSON.stringify(meta))}catch(e){}
+}else if(stored&&Array.isArray(stored.pend)){
+ D=stored; /* 旧包：仅有本机数据、尚未写入线上 */
+ if(!meta){
+  var hc=(D.pend&&D.pend.length)||(D.dec&&D.dec.length)||(D.op&&D.op.length);
+  meta={dirty:!!hc,bootRev:0};
+  try{localStorage.setItem(META_KEY,JSON.stringify(meta))}catch(e){}
+ }
+}else{
+ D={pend:SEEDS.map(function(t){return{t:t,done:false}}),op:[],dec:[]};
+}
+function isDirty(){
+ if(meta&&meta.dirty)return true;
+ /* 本机有内容但线上从未写入 __DM_BOOT__：必须提示同步，否则别人永远看不见 */
+ if((!BOOT||!BOOT._rev)&&((D.pend&&D.pend.length)||(D.dec&&D.dec.length)||(D.op&&D.op.length)))return true;
+ return false;
+}
+function saveMeta(dirty){
+ meta={dirty:!!dirty,bootRev:bootRev};
+ try{localStorage.setItem(META_KEY,JSON.stringify(meta))}catch(e){}
+ updateSyncUi();
+}
+function save(){
+ try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}
+ saveMeta(true);
+}
+window.__markDmSynced=function(bootObj){
+ if(bootObj&&bootObj.data){
+  D=bootObj.data;
+  bootRev=bootObj._rev||Date.now();
+  BOOT={_rev:bootRev,data:D};
+ }else{
+  bootRev=(bootObj&&bootObj._rev)||Date.now();
+  BOOT={_rev:bootRev,data:D};
+ }
+ window.__DM_BOOT__=BOOT;
+ try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}
+ saveMeta(false);
+};
+function copyItem(it){
+ var o={};Object.keys(it).forEach(function(k){if(k!=='imgs')o[k]=it[k]});
+ return o;
+}
+function blobToDataURL(blob,cb){
+ var fr=new FileReader();fr.onload=function(){cb(fr.result||null)};fr.onerror=function(){cb(null)};fr.readAsDataURL(blob);
+}
+/* 打包进 HTML：贴图从 IndexedDB 转成 dataURL，写入 imgData，他人打开无需本机 IDB */
+window.__packDmBoot=function(cb){
+ var out={pend:D.pend.map(copyItem),op:D.op.map(copyItem),dec:[]};
+ var list=D.dec.slice();
+ var i=0;
+ function nextDec(){
+  if(i>=list.length){cb({_rev:Date.now(),data:out});return}
+  var src=list[i++];
+  var item=copyItem(src);
+  item.imgData=(src.imgData&&src.imgData.slice())||[];
+  var ids=(src.imgs||[]).slice();
+  if(!ids.length){out.dec.push(item);nextDec();return}
+  var j=0;
+  function nextImg(){
+   if(j>=ids.length){out.dec.push(item);nextDec();return}
+   var id=ids[j++];
+   idbGet(id,function(b){
+    if(!b){nextImg();return}
+    blobToDataURL(b,function(url){if(url)item.imgData.push(url);nextImg()});
+   });
+  }
+  nextImg();
+ }
+ nextDec();
+};
+function updateSyncUi(){
+ var fab=document.getElementById('dmSyncFab');
+ if(!fab){fab=document.createElement('div');fab.id='dmSyncFab';fab.setAttribute('data-noedit','');document.body.appendChild(fab);
+  fab.addEventListener('click',function(e){
+   var id=e.target&&e.target.id;
+   if(id==='dmSyncBtn'){
+    if(window.__rpCanPub&&window.__rpCanPub()&&window.__rpPublish)window.__rpPublish('决策事项已同步，其他人刷新即可看到');
+    else toast('在线发布不可用，请点「导出」后发给 AI 重发');
+   }else if(id==='dmExpBtn'&&window.__rpExport)window.__rpExport();
+  });
+ }
+ if(!isDirty()){fab.style.display='none';fab.innerHTML='';return}
+ fab.style.display='block';
+ if(window.__rpCanPub&&window.__rpCanPub()){
+  fab.innerHTML='<button class="eb pri" id="dmSyncBtn" title="把决策事项写入线上 HTML，别人打开链接才能看见">同步决策事项</button>';
+ }else{
+  fab.innerHTML='<button class="eb warn" id="dmExpBtn" title="决策还只在本机；导出后发给 AI 重新发布">⚠ 决策未同步 · 导出</button>';
+ }
+}
 function uid(){return 'op'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 /* 分类：''=不选 | 'pend'=待办事项 | 'dec'=决策共识 */
 var CATS=[['','分类'],['pend','待办事项'],['dec','决策共识']];
@@ -340,10 +471,16 @@ function rowHtml(k,ki,it,i){
   meta='<div class="dm-meta">'+esc(it.at)+'</div>';
  }
  var thumbs='';
- if(k==='dec'&&it.imgs&&it.imgs.length){
-  thumbs='<div class="dm-thumbs">'+it.imgs.map(function(id){
-   return '<span class="dm-thumb"><img data-img="'+id+'"><span class="dm-timg-x" data-k="'+ki+'" data-i="'+i+'" data-id="'+id+'">✕</span></span>';
-  }).join('')+'</div>';
+ if(k==='dec'){
+  if(it.imgData&&it.imgData.length){
+   thumbs='<div class="dm-thumbs">'+it.imgData.map(function(src,j){
+    return '<span class="dm-thumb"><img data-dataimg="'+j+'" src="'+src+'"><span class="dm-timg-x" data-k="'+ki+'" data-i="'+i+'" data-di="'+j+'">✕</span></span>';
+   }).join('')+'</div>';
+  }else if(it.imgs&&it.imgs.length){
+   thumbs='<div class="dm-thumbs">'+it.imgs.map(function(id){
+    return '<span class="dm-thumb"><img data-img="'+id+'"><span class="dm-timg-x" data-k="'+ki+'" data-i="'+i+'" data-id="'+id+'">✕</span></span>';
+   }).join('')+'</div>';
+  }
  }
  var ext=(k==='dec')?'<span class="dm-p" data-k="'+ki+'" data-i="'+i+'" title="贴图 · 最多'+IMG_MAX+'张 · 每张不超过'+IMG_MB+'MB">图</span>':'';
  var ck;
@@ -364,6 +501,7 @@ function render(){
  });
  rvRender();
  hydrate();
+ updateSyncUi();
 }
 /* 勾掉一条评审意见 → 按其分类，在待办事项/决策共识区新增一条（原意见保留、置勾并锁定分类） */
 function promoteOp(i){
@@ -395,8 +533,13 @@ root.addEventListener('click',function(e){
  else if(t.classList.contains('dm-e')){var tx=t.closest('.dm-row').querySelector('.dm-txt');if(tx){tx.focus();var r=document.createRange();r.selectNodeContents(tx);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}}
  else if(t.classList.contains('dm-x')){var itx=D[KS[+t.dataset.k]][+t.dataset.i];if(itx){if(itx.imgs)itx.imgs.forEach(idbDel);if(itx.id)unpromoteOp(+t.dataset.i);}D[KS[+t.dataset.k]].splice(+t.dataset.i,1);save();render();}
  else if(t.classList.contains('dm-p')){imgTarget=D.dec[+t.dataset.i];fInp.click();}
- else if(t.classList.contains('dm-timg-x')){var it2=D.dec[+t.dataset.i];it2.imgs=(it2.imgs||[]).filter(function(x){return x!==+t.dataset.id});idbDel(+t.dataset.id);save();render();}
- else if(t.tagName==='IMG'&&t.dataset.img&&t.src){lightbox(t.src);}
+ else if(t.classList.contains('dm-timg-x')){
+  var it2=D.dec[+t.dataset.i];if(!it2)return;
+  if(t.dataset.di!==undefined){it2.imgData=(it2.imgData||[]).filter(function(_,j){return j!==+t.dataset.di});}
+  else if(t.dataset.id!==undefined){it2.imgs=(it2.imgs||[]).filter(function(x){return x!==+t.dataset.id});idbDel(+t.dataset.id);}
+  save();render();
+ }
+ else if(t.tagName==='IMG'&&t.src&&(t.dataset.img||t.dataset.dataimg!==undefined)){lightbox(t.src);}
  else if(t.tagName==='BUTTON'&&t.dataset.a!==undefined){
   var a=t.dataset.a,inp=document.getElementById('dmI'+a);if(!inp||!inp.value.trim())return;
   var it={t:inp.value.trim(),done:false,at:now()};
@@ -456,7 +599,9 @@ function addImgs(item,files){
  var list=[].slice.call(files).filter(function(f){return f&&/^image\//.test(f.type)});
  if(!list.length)return;
  item.imgs=item.imgs||[];
- var room=IMG_MAX-item.imgs.length;
+ item.imgData=item.imgData||[];
+ var used=(item.imgs.length||0)+(item.imgData.length||0);
+ var room=IMG_MAX-used;
  if(room<=0){toast('一条决策最多贴 '+IMG_MAX+' 张图');return}
  if(list.length>room){toast('最多还能贴 '+room+' 张，多余的已忽略');list=list.slice(0,room)}
  var pending=0;
