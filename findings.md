@@ -89,3 +89,12 @@
 - `__SAVE__` 占位符 + 键已存在 → 不能经网关续签，也不能用页面 PUT。
 - 救回原链：管理员 DELETE `onionext/review-pkg-demos/non-ecommerce-thirdparty-order-v14-20260812.html` 后按 `--mode first` 重发同一 key。
 - **2026-08-24 已执行**：管理员删键后探测均为 404；`--mode first` 原 key 回发成功。固定链接 https://minio.yc345.tv/onionext/review-pkg-demos/non-ecommerce-thirdparty-order-v14-20260812.html 现为注入后内容，sha256=`2b0c8d8c1343d493754cf38f3630bf23a4611e63eb4d9066182158137cb4dda9`，`__SAVE__.exp=1788179760297`（约 7 天）。次键 `prototypes/review-pkg-demos/non-ecommerce-thirdparty-order-v14-20260812.html` 仍 404，未另发。窗口内更新走 `--mode update` 同 URL PUT，禁止再裸 presign。
+
+## 2026-08-31 · 双 Tab 落位纠错
+
+- **根因**：大评审包无「通用三方」原型页，导致三条已批准的非电商 Tab 建议（锁平台 / 隐藏恒空列 / 店铺改渠道）被落到 `admin-orders.html` 订单管理页。判别信号：主播、预售、买家留言、商品数量四列只存在于订单管理页，通用三方页没有这些列 —— 「隐藏恒空列」这条在通用三方页本就无对应物，出现即说明落错页。
+- **教训**：批准一条页面级建议前，先确认该建议有明确的承载原型页；没有就先建页，不要就近塞进相邻页面。
+- **CSS 老坑复现**：`.gt-field { display:flex }` 覆盖 `[hidden]{display:none}`，`el.hidden = true` 在视觉上无效。凡是给 flex/grid 元素用 `hidden` 属性控制显隐，必须显式补 `.sel[hidden]{display:none}`。已在浏览器实测宽高归零后确认修复。
+- **Excel 与本次需求的两处口径冲突**（保持现状并标注）：
+    - `public_sellfrom`（Excel 检索项「渠道」）Q38 标注 202506 废弃不写入，与非电商侧「渠道 = 店铺」心智重名；处理为非电商 Tab 隐藏该筛选项，店铺文案改渠道文案。
+    - 「最近操作人 / 最近操作时间」在通用三方表中无字段行，属前端列；非电商取值口径待业务确认，原型暂以「—」占位。

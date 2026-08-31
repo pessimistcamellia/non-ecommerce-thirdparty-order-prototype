@@ -65,3 +65,30 @@
 - `CF from` **在任何来源都不存在**：本表 `+cells-search "CF from"` 0 命中（字段行仅到第 57 行，A58:A186 全空）；服务期/业绩归属 PRD `ZsgHdqisto2wDFxMTkrcZ4Pfnud` 全文 30020 字符内无 `CF from`/`cf_from`/`cfFrom`/`channel from` 等任何变体（keyword 命中仅为我自己的查询串被回显）；`docs +search "CF from"` 0 结果；仓库内仅有我自己写的 progress/task_plan 提及。
 - 因无口径来源、拒绝编造，Q37 追加标注：`；【待确认】CF from 取值未在服务期/业绩归属 PRD 中定义，也未在本表任何行出现，待业务确认`。增量写入保留原琥珀样式 `#FFF3CD/#856404`，Q36/Q38 未动，revision 5661 → 5663，回读一致。
 - 未 git commit `review-package.html`（保持 ` M` 未暂存）。
+
+## 2026-08-31 · 双 Tab 落位纠错并重新发布
+
+### 根因
+大评审包里原本没有「通用三方」原型页（最初需求是「原型就不加了」，第 7 节只有枚举新增一条）。后来批准「非电商 Tab 锁死平台 / 隐藏恒空列 / 店铺改渠道」三条建议时没有承载页面，被落到了 `admin-orders.html`（运营后台 · 订单管理）。佐证：主播/预售/买家留言/商品数量四列只有订单管理页才有，通用三方页根本没有这些列。
+
+### 回退
+- `git restore --source=2013b86^ --worktree -- admin-orders.html`，该 commit 对此文件的改动全部为 Tab 相关，回退后核验：`el-tabs` 0 处、`paymentPlatformFilter` 勾选项恢复、四列恒常显示、表头 12 列、5 行数据正常。
+
+### 新建通用三方页
+- `admin-general-thirdparty.html`：侧边栏「通用三方」选中、面包屑「渠道投放 / 通用三方」、Tab 样式复用掉单管理页。
+- 非电商 Tab：第三方平台锁定为「非电商平台的三方订单」并禁用；店铺 ID/名称 → 渠道 ID/名称（筛选项 + 表头同步）；隐藏「渠道（销售来源）」筛选项（`public_sellfrom` 202506 已废弃不写入）；操作项「激活课程」。
+- 列表 21 列按「通用三方订单表前端」对齐；`yc_good_id` 用 UUID 示例，与通用三方表非电商列一致。
+- 踩到并修掉旧坑：`.gt-field { display:flex }` 会盖掉 `[hidden]{display:none}`，导致 `hidden` 属性无效；补 `.gt-field[hidden]{display:none}` 后浏览器实测 `sellfromWidth/Height = 0`。
+- `prototype.js` PAGE_LINKS 新增 `general` 入口，`index.html` 新增卡片并把后续编号 04→09 顺移。
+
+### 文档同步
+- 评审包 `review-package.html`：问题描述补「非电商与电商订单混在一张列表」；范围条目改为通用三方页双 Tab；行为变更 4 项去掉 Tab 相关（4-1/4-2/4-3 重编号），7 项扩为 7-1～7-4；「订单列表 Tab 展示规则」表改为「通用三方 Tab 展示规则」共 5 条；流程图 ⑤ 文案同步。
+- 六份飞书文档全部原地更新（`str_replace` 改标题保住 block id，`block_replace` 换正文段）：
+    - 需求说明 ×3（`UYHRdsljPovrstxS8WjcWXHfnue` / `Ai5ndA0xxotxXnxomB0chKtsn6e` / `YwxLdUtMwoNFYsxcNgcc8Jbonxf`）：标题「本轮产品建议落地（通用三方列表与掉单管理）」、正文段改写、行为变更第 7 行扩为 7-1～7-4、范围 `<li>` 扩写。
+    - SDD ×3（`Cw69djCbsosrPGxKlURcM3ZAn6m` / `RqMmdBkwooZ881xMV45cZAeNnAg` / `MrEodK4Tvo3yUvxtqWAcX3SKnQc`）：标题「本轮实现约束（通用三方列表与掉单管理）」、正文段改写、SDD-IMP-010 后追加 SDD-IMP-011（页面分区）与 SDD-IMP-012（非电商展示口径）。
+- 回读六份文档：`主播` / `买家留言` / `（订单列表与掉单管理）` / `订单列表以 Tab` 残留全部为 0，新内容全部命中。
+
+### 发布
+- commit `8382bf2` 已推 GitHub，Pages 三个页面均 200；线上抽检：订单管理页 `el-tabs` 0 次、`paymentPlatformFilter` 2 次；通用三方页 `platformCategoryTabs` 2 次、`激活课程` 4 次。
+- MinIO 固定链接 `--mode update` 原址更新成功：复用线上 `__SAVE__`（`exp_ms=1788179760297`，剩余 6175s），`PUT HTTP 200`，etag `270355aaace1dfdd709e23adf0e8466b`；`validate_minio_release.py` 回读 `ok:true`，线上与本地 sha256 均为 `ad3a3047…86cbc9`。
+- 注意：该 presigned URL 于 2026-08-31 20:36 CST 到期，之后若还要原址更新需管理员先删对象再 `--mode first`。
